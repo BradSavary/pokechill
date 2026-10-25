@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Django
+db.sqlite3
+/staticfiles/
+.env
+
+# PokéAPI raw responses cache (re-downloadable, not committed)
+/data/pokeapi_cache/
+
+# Vercel
+.vercel/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

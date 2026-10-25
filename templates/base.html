@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}PokéChill{% endblock %}</title>
+  {# Compiled by Tailwind from assets/css/input.css #}
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body class="flex min-h-screen flex-col bg-night font-sans text-slate-100">
+  {# Shown only on a phone held in portrait #}
+  <div class="hidden min-h-screen items-center justify-center p-8 text-center portrait-phone:flex">
+    <p>Please rotate your device to landscape mode.</p>
+  </div>
+
+  <div class="flex flex-1 portrait-phone:hidden">
+    <nav class="flex w-28 flex-col gap-1 bg-panel p-2" aria-label="Main navigation">
+      {# Only the Pokédex exists in step 0; other tabs are locked placeholders #}
+      <span class="tab cursor-not-allowed text-muted" title="Coming soon">Ranch</span>
+      <span class="tab cursor-not-allowed text-muted" title="Coming soon">Zones</span>
+      <a class="tab {% if active_tab == 'pokedex' %}bg-accent font-bold text-night{% endif %}"
+         href="{% url 'pokedex:index' %}">Pokédex</a>
+      <span class="tab cursor-not-allowed text-muted" title="Coming soon">Expeditions</span>
+    </nav>
+
+    <main class="flex-1 p-4">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <footer class="px-4 py-2 text-center text-xs text-muted portrait-phone:hidden">
+    PokéChill is an unofficial, non-commercial fan game.
+    Not affiliated with Nintendo, Game Freak or The Pokémon Company.
+  </footer>
+</body>
+</html>
