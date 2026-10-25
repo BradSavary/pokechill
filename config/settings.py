@@ -96,6 +96,11 @@ DATABASES = {
     )
 }
 
+if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+    # Neon's pooled connection (PgBouncer, transaction mode) can't keep the
+    # server-side cursors Django uses for .iterator(): disable them.
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
@@ -125,5 +130,26 @@ USE_TZ = True
 STATIC_URL = "static/"
 # Source static files (CSS, sprites, cries) committed in the repository
 STATICFILES_DIRS = [BASE_DIR / "static"]
-# Destination of `collectstatic`, served by Vercel's CDN in production
+# Destination of `collectstatic`, served by Vercel's CDN in production.
+# Vercel runs collectstatic itself during the build when STATIC_ROOT is set.
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+# --- Production security ---------------------------------------------------
+
+if not DEBUG:
+    # Vercel terminates HTTPS and forwards requests over HTTP with this header:
+    # trusting it lets Django know the original request was secure.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    # Cookies are only sent over HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Tell browsers to always use HTTPS for this site (one year, HSTS)
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
+
+# Deployment checks (`manage.py check --deploy`) that don't apply here:
+SILENCED_SYSTEM_CHECKS = [
+    "security.W008",  # HTTP -> HTTPS redirect: already done by Vercel's edge
+    "security.W005",  # HSTS on subdomains: we don't own the vercel.app domain
+    "security.W021",  # HSTS preload list: same reason
+]

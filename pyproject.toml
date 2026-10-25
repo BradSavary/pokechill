@@ -6,6 +6,7 @@ dependencies = [
     "dj-database-url>=3.1.2",
     "django>=5.2,<6",
     "httpx>=0.28.1",
+    "psycopg[binary]>=3.2",
 ]
 
 [dependency-groups]
@@ -35,3 +36,9 @@ select = ["E", "W", "F", "I", "B", "UP", "DJ", "SIM"]
 DJANGO_SETTINGS_MODULE = "config.settings"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+
+# --- Vercel deployment ---
+# Vercel detects Django from manage.py and runs collectstatic by itself.
+# This build step applies pending migrations to the production database.
+[tool.vercel.scripts]
+build = "python manage.py migrate --noinput"
