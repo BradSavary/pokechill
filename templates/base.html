@@ -1,21 +1,27 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+{# scheme-dark: native controls (scrollbars, selects) use their dark variant #}
+<html lang="en" class="scheme-dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}PokéChill{% endblock %}</title>
   {# Compiled by Tailwind from assets/css/input.css #}
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {# HTMX 2.0.4, served from our static files (works offline, no third-party CDN) #}
+  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+  {% block scripts %}{% endblock %}
 </head>
-<body class="flex min-h-screen flex-col bg-night font-sans text-slate-100">
+{# h-dvh: the app fills exactly the screen; long panes scroll inside it #}
+<body class="flex h-dvh flex-col bg-night font-sans text-slate-100">
   {# Shown only on a phone held in portrait #}
-  <div class="hidden min-h-screen items-center justify-center p-8 text-center portrait-phone:flex">
+  <div class="hidden h-full items-center justify-center p-8 text-center portrait-phone:flex">
     <p>Please rotate your device to landscape mode.</p>
   </div>
 
-  <div class="flex flex-1 portrait-phone:hidden">
-    <nav class="flex w-28 flex-col gap-1 bg-panel p-2" aria-label="Main navigation">
+  {# min-h-0 lets this flex child shrink, so inner panes can scroll #}
+  <div class="flex min-h-0 flex-1 portrait-phone:hidden">
+    <nav class="flex w-28 shrink-0 flex-col gap-1 bg-panel p-2" aria-label="Main navigation">
       {# Only the Pokédex exists in step 0; other tabs are locked placeholders #}
       <span class="tab cursor-not-allowed text-muted" title="Coming soon">Ranch</span>
       <span class="tab cursor-not-allowed text-muted" title="Coming soon">Zones</span>
@@ -24,7 +30,7 @@
       <span class="tab cursor-not-allowed text-muted" title="Coming soon">Expeditions</span>
     </nav>
 
-    <main class="flex-1 p-4">
+    <main class="min-w-0 flex-1 overflow-y-auto p-4">
       {% block content %}{% endblock %}
     </main>
   </div>

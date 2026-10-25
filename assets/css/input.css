@@ -1,5 +1,5 @@
 /* PokéChill — Tailwind CSS source file.
-   Compiled into static/css/main.css by the Tailwind CLI (see README / pyproject).
+   Compiled into static/css/main.css by scripts/build_css.py.
    Tailwind v4 scans the project for class names automatically
    (files ignored by git, like .venv, are skipped). */
 
@@ -11,16 +11,51 @@
   --color-panel: #2a3242;
   --color-muted: #8a93a6;
   --color-accent: #f2c14e;
+
+  /* Official-style type colors: bg-type-fire, bg-type-water... */
+  --color-type-normal: #a8a77a;
+  --color-type-fire: #ee8130;
+  --color-type-water: #6390f0;
+  --color-type-electric: #f7d02c;
+  --color-type-grass: #7ac74c;
+  --color-type-ice: #96d9d6;
+  --color-type-fighting: #c22e28;
+  --color-type-poison: #a33ea1;
+  --color-type-ground: #e2bf65;
+  --color-type-flying: #a98ff3;
+  --color-type-psychic: #f95587;
+  --color-type-bug: #a6b91a;
+  --color-type-rock: #b6a136;
+  --color-type-ghost: #735797;
+  --color-type-dragon: #6f35fc;
+  --color-type-dark: #705746;
+  --color-type-steel: #b7b7ce;
+  --color-type-fairy: #d685ad;
 }
+
+/* Templates build these class names dynamically (bg-type-{{ type.slug }}), so
+   Tailwind can't find them by reading the files: we list them explicitly. */
+@source inline("bg-type-{normal,fire,water,electric,grass,ice,fighting,poison,ground,flying,psychic,bug,rock,ghost,dragon,dark,steel,fairy}");
 
 /* The game is designed for landscape. On a phone held in portrait we hide the
    app and show a "rotate your device" hint instead: `portrait-phone:hidden`. */
 @custom-variant portrait-phone (@media (orientation: portrait) and (max-width: 600px));
 
-/* A tab of the side navigation. It is repeated for every tab, so a small
-   component class keeps the templates readable. */
+/* Keep pixel art sharp when sprites are scaled up (no blurry smoothing) */
+@utility pixelated {
+  image-rendering: pixelated;
+}
+
+/* Small component classes for elements repeated across templates */
 @layer components {
+  /* A tab of the side navigation */
   .tab {
     @apply rounded-lg px-2 py-3 text-center no-underline;
+  }
+
+  /* A colored type label; the color comes from a bg-type-* class */
+  .type-badge {
+    @apply inline-block rounded-md px-2 py-0.5 text-xs font-bold text-white uppercase;
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.5);
   }
 }

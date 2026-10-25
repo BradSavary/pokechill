@@ -70,7 +70,8 @@ def run_import(
     type_slugs = {m["type"] for m in parsed_moves}
     for s in parsed_species.values():
         type_slugs |= {s["primary_type"], s["secondary_type"]} - {None}
-    type_names = {slug: parsers.english(client.get("type", slug)["names"]) for slug in type_slugs}
+    type_data = {slug: client.get("type", slug) for slug in type_slugs}
+    type_names = {slug: parsers.english(data["names"]) for slug, data in type_data.items()}
 
     # --- Phase 2: write to the database -------------------------------------
     log("Saving to the database...")
@@ -130,7 +131,7 @@ def run_import(
 
     # --- Phase 3: media files -------------------------------------------------
     if media_dir is not None:
-        log("Downloading sprites and cries...")
+        log("Downloading sprites, cries and type icons...")
         for n, pokemon in pokemons.items():
             urls = parsers.media_urls(pokemon)
             targets = {
@@ -141,5 +142,9 @@ def run_import(
             for kind, destination in targets.items():
                 if urls[kind] and client.download(urls[kind], destination):
                     report.media_downloaded += 1
+        for slug, data in type_data.items():
+            url = parsers.type_icon_url(data)
+            if url and client.download(url, media_dir / "types" / f"{slug}.png"):
+                report.media_downloaded += 1
 
     return report

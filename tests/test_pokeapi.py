@@ -89,6 +89,17 @@ def fake_species(number, slug, name, chain_id=1):
     }
 
 
+def fake_type(slug, name):
+    return {
+        "names": en(name),
+        "sprites": {
+            "generation-vii": {
+                "lets-go-pikachu-lets-go-eevee": {"symbol_icon": f"https://icons/{slug}.png"}
+            }
+        },
+    }
+
+
 def chain_node(slug, *children):
     return {"species": {"name": slug}, "evolves_to": list(children)}
 
@@ -131,9 +142,9 @@ def fake_client():
                 "accuracy": 100,
                 "pp": 35,
             },
-            ("type", "grass"): {"names": en("Grass")},
-            ("type", "poison"): {"names": en("Poison")},
-            ("type", "normal"): {"names": en("Normal")},
+            ("type", "grass"): fake_type("grass", "Grass"),
+            ("type", "poison"): fake_type("poison", "Poison"),
+            ("type", "normal"): fake_type("normal", "Normal"),
         }
     )
 
@@ -246,6 +257,8 @@ def test_import_is_idempotent(fake_client):
 def test_import_downloads_media(fake_client, tmp_path):
     report = run_import(fake_client, limit=2, media_dir=tmp_path, log=lambda message: None)
 
-    assert report.media_downloaded == 6  # 2 species x (sprite, shiny sprite, cry)
+    # 2 species x (sprite, shiny sprite, cry) + 3 type icons
+    assert report.media_downloaded == 9
+    assert (tmp_path / "types" / "poison.png").exists()
     assert (tmp_path / "sprites" / "shiny" / "2.png").exists()
     assert (tmp_path / "cries" / "1.ogg").exists()

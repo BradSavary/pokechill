@@ -1,0 +1,116 @@
+{% comment %}
+  Entry of one species (right pane). Rendered inside the full page, or alone
+  when HTMX asks for it after a click in the list.
+{% endcomment %}
+<article class="flex flex-col gap-5">
+
+  {# --- Header: sprite, name, types, cry --- #}
+  <header class="flex items-center gap-5">
+    {# The background sits on a wrapper: the silhouette filter must only darken the sprite #}
+    <div class="shrink-0 rounded-xl bg-night">
+      <img src="{{ species.sprite_url }}" alt="{{ species.name }}" width="160" height="160"
+           class="pixelated size-40 group-has-[#silhouettes:checked]/dex:brightness-0">
+    </div>
+    <div class="flex flex-col gap-2">
+      <p class="text-sm text-muted">#{{ species.number|stringformat:"03d" }} · {{ species.genus }}</p>
+      <h1 class="text-3xl font-bold">{{ species.name }}</h1>
+      <div class="flex gap-2">
+        {% for type in species.types %}
+          {% include "pokedex/_type_badge.html" with type=type %}
+        {% endfor %}
+        {% if species.is_legendary %}<span class="type-badge bg-accent text-night">Legendary</span>{% endif %}
+        {% if species.is_mythical %}<span class="type-badge bg-accent text-night">Mythical</span>{% endif %}
+      </div>
+      <div class="flex items-center gap-4 text-sm text-muted">
+        <span>{{ species.height_m }} m</span>
+        <span>{{ species.weight_kg }} kg</span>
+        {# preload="none": the cry is only downloaded when played #}
+        <button type="button" onclick="this.nextElementSibling.play()"
+                class="rounded-lg bg-night px-3 py-1 text-slate-100 hover:ring-1 hover:ring-accent">
+          ▶ Cry
+        </button>
+        <audio src="{{ species.cry_url }}" preload="none"></audio>
+      </div>
+    </div>
+  </header>
+
+  {% if species.flavor_text %}
+    <p class="italic text-slate-300">{{ species.flavor_text }}</p>
+  {% endif %}
+
+  <div class="grid grid-cols-2 gap-5">
+    {# --- Base stats: bar width = stat / 255 (the highest possible base stat) --- #}
+    <section>
+      <h2 class="mb-2 font-bold">Base stats</h2>
+      <dl class="flex flex-col gap-1 text-sm">
+        {% for label, value in stats %}
+          <div class="flex items-center gap-2">
+            <dt class="w-16 text-muted">{{ label }}</dt>
+            <dd class="w-8 text-right">{{ value }}</dd>
+            <dd class="h-2 flex-1 rounded-full bg-night">
+              <div class="h-2 rounded-full bg-accent" style="width: {% widthratio value 255 100 %}%"></div>
+            </dd>
+          </div>
+        {% endfor %}
+        <div class="flex gap-2 border-t border-night pt-1">
+          <dt class="w-16 text-muted">Total</dt>
+          <dd class="w-8 text-right font-bold">{{ species.base_stat_total }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    {# --- Evolution family: in this game, each one is caught separately --- #}
+    <section>
+      <h2 class="mb-2 font-bold">Family</h2>
+      <ol class="flex flex-wrap items-center gap-2">
+        {% for member in family %}
+          <li>
+            <a href="{% url 'pokedex:detail' member.number %}"
+               hx-get="{% url 'pokedex:detail' member.number %}" hx-target="#entry" hx-push-url="true"
+               data-species-link
+               class="flex flex-col items-center rounded-lg p-1 text-xs hover:bg-night {% if member == species %}ring-1 ring-accent{% endif %}">
+              <img src="{{ member.sprite_url }}" alt="" width="64" height="64"
+                   class="pixelated size-16 group-has-[#silhouettes:checked]/dex:brightness-0">
+              {{ member.name }}
+            </a>
+          </li>
+        {% endfor %}
+      </ol>
+      {% if family|length == 1 %}<p class="text-sm text-muted">This species has no family in Kanto.</p>{% endif %}
+    </section>
+  </div>
+
+  {# --- Moves learned by level (FireRed/LeafGreen) --- #}
+  <section>
+    <h2 class="mb-2 font-bold">Moves by level</h2>
+    <table class="w-full text-left text-sm">
+      <thead class="text-muted">
+        <tr><th class="w-12 py-1">Lv.</th><th>Move</th><th>Type</th><th>Category</th><th>Power</th><th>Acc.</th><th>PP</th></tr>
+      </thead>
+      <tbody>
+        {% for entry in level_up_moves %}
+          <tr class="border-t border-night">
+            <td class="py-1">{{ entry.level }}</td>
+            <td>{{ entry.move.name }}</td>
+            <td>{% include "pokedex/_type_badge.html" with type=entry.move.type %}</td>
+            <td>{{ entry.move.get_damage_class_display }}</td>
+            <td>{{ entry.move.power|default:"—" }}</td>
+            <td>{{ entry.move.accuracy|default:"—" }}</td>
+            <td>{{ entry.move.pp }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  {% if machine_moves %}
+    <section>
+      <h2 class="mb-2 font-bold">TM / HM moves</h2>
+      <ul class="flex flex-wrap gap-1.5 text-sm">
+        {% for entry in machine_moves %}
+          <li class="rounded-lg bg-night px-2 py-0.5">{{ entry.move.name }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+</article>

@@ -24,6 +24,10 @@ class Type(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    @property
+    def icon_url(self) -> str:
+        return static(f"pokemon/types/{self.slug}.png")
+
 
 class EvolutionChain(models.Model):
     """

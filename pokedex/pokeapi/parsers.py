@@ -113,6 +113,12 @@ def evolution_family(chain: dict, allowed: set[str]) -> dict[str, tuple[int, str
     return family
 
 
+def type_icon_url(type_data: dict) -> str | None:
+    """Round type icon from Let's Go Pikachu/Eevee (absent for unused types)."""
+    lets_go = type_data["sprites"].get("generation-vii", {}).get("lets-go-pikachu-lets-go-eevee")
+    return lets_go["symbol_icon"] if lets_go else None
+
+
 def media_urls(pokemon: dict) -> dict[str, str | None]:
     """Black/White sprites (normal and shiny) and the original cry."""
     black_white = pokemon["sprites"]["versions"]["generation-v"]["black-white"]

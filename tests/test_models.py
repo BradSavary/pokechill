@@ -3,42 +3,10 @@
 import pytest
 from django.db import IntegrityError
 
-from pokedex.models import EvolutionChain, Move, Species, SpeciesMove, Type
+from pokedex.models import Move, SpeciesMove
 
 # Every test in this module needs the (temporary) test database
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def grass():
-    return Type.objects.create(slug="grass", name="Grass")
-
-
-@pytest.fixture
-def poison():
-    return Type.objects.create(slug="poison", name="Poison")
-
-
-@pytest.fixture
-def bulbasaur(grass, poison):
-    chain = EvolutionChain.objects.create(pokeapi_id=1)
-    return Species.objects.create(
-        number=1,
-        slug="bulbasaur",
-        name="Bulbasaur",
-        genus="Seed Pokémon",
-        primary_type=grass,
-        secondary_type=poison,
-        hp=45,
-        attack=49,
-        defense=49,
-        special_attack=65,
-        special_defense=65,
-        speed=45,
-        height_dm=7,
-        weight_hg=69,
-        evolution_chain=chain,
-    )
 
 
 def test_str_pads_the_pokedex_number(bulbasaur):
