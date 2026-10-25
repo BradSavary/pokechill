@@ -1,9 +1,11 @@
 /* PokéChill — Tailwind CSS source file.
-   Compiled into static/css/main.css by scripts/build_css.py.
-   Tailwind v4 scans the project for class names automatically
-   (files ignored by git, like .venv, are skipped). */
+   Compiled into static/css/main.css by scripts/build_css.py. */
 
-@import "tailwindcss";
+/* source(none) turns off the automatic scan of the whole project, which
+   mistook words in Python files and docs ("static", "table"...) for classes.
+   Only Django templates are scanned (paths are relative to this file). */
+@import "tailwindcss" source(none);
+@source "../../**/templates/**/*.html";
 
 /* Design tokens: each color becomes utilities such as bg-panel, text-muted... */
 @theme {

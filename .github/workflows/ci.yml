@@ -1,0 +1,45 @@
+# Continuous integration: runs on every push and pull request.
+# A red cross on GitHub means one of these checks failed.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      # Third-party action pinned by commit SHA: a tag can be moved, a SHA can't
+      - name: Install uv and Python (version from .python-version)
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          enable-cache: true
+
+      # --frozen: install exactly what uv.lock says, fail if it is out of date
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Check formatting (Ruff)
+        run: uv run ruff format --check .
+
+      - name: Lint (Ruff)
+        run: uv run ruff check .
+
+      - name: Django system checks
+        run: uv run python manage.py check
+
+      - name: No model change without a migration
+        run: uv run python manage.py makemigrations --check --dry-run
+
+      - name: Tests (pytest)
+        run: uv run pytest
+
+      # The compiled CSS is committed: make sure it matches the templates
+      - name: Compiled CSS is up to date
+        run: |
+          uv run python scripts/build_css.py
+          git diff --exit-code static/css/main.css
