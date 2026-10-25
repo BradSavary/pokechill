@@ -46,6 +46,7 @@ Le développement suit les étapes 0 à 7 de `docs/concept.md`. Chaque étape do
 ## Conventions
 
 - Tout en anglais : code, noms de variables et textes du jeu (noms des Pokémon, attaques, objets, interface). Le concept reste rédigé en français ; les noms français qu'il cite se traduisent par leurs noms anglais officiels.
+- Documentation en français : `README.md` et `docs/`.
 - Sprites : style Noir/Blanc (génération 5). Attaques apprises par niveau : version Rouge Feu/Vert Feuille. Types modernes (PokéAPI).
 - Dépendances et Python gérés avec uv (`uv run ...`). Sprites et cris commités dans `static/`, cache JSON de PokéAPI non commité.
 - Formatage et lint avec Ruff.

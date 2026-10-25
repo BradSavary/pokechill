@@ -2,86 +2,86 @@
 
 [![CI](https://github.com/BradSavary/pokechill/actions/workflows/ci.yml/badge.svg)](https://github.com/BradSavary/pokechill/actions/workflows/ci.yml)
 
-An idle + roguelike web game set in the Kanto region. You take over an abandoned Pokémon ranch: every hour a wild Pokémon shows up, attracted by what you built, what you put in the feeder, the time of day and the Pokémon already living there. The goal is to complete the 151-species research Pokédex, in the spirit of *Pokémon Legends: Arceus*.
+Un jeu web idle + roguelike dans la région de Kanto. Vous reprenez une pension Pokémon abandonnée : chaque heure, un Pokémon sauvage s'y présente, attiré par ce que vous avez construit, ce que vous avez mis dans la mangeoire, l'heure qu'il est et les Pokémon qui vivent déjà chez vous. L'objectif est de compléter le Pokédex de recherche des 151 espèces, dans l'esprit de *Légendes Pokémon : Arceus*.
 
-**Live: [pokechill.bradsavary.dev](https://pokechill.bradsavary.dev)**
+**En ligne : [pokechill.bradsavary.dev](https://pokechill.bradsavary.dev)**
 
-![Pokédex page](docs/images/pokedex.png)
+![Page Pokédex](docs/images/pokedex.png)
 
-> Personal learning project (Python and Django) built for my portfolio.
-> Unofficial, non-commercial fan game. Not affiliated with Nintendo, Game Freak or The Pokémon Company.
+> Projet personnel d'apprentissage de Python et Django, réalisé pour mon portfolio.
+> Fan-game non officiel et non commercial. Non affilié à Nintendo, Game Freak ou The Pokémon Company.
 
-## Status
+## Avancement
 
-The game is built in 8 playable steps, each one deployed (full design in [docs/concept.md](docs/concept.md), in French).
+Le jeu se construit en 8 étapes jouables, chacune déployée en ligne (conception complète dans [docs/concept.md](docs/concept.md)).
 
-| Step | Content | Status |
+| Étape | Contenu | État |
 | --- | --- | --- |
-| 0 | Foundations: Django on Vercel, PokéAPI import, browsable Pokédex | Done |
-| 1 | Hourly arrivals, guest mode and accounts | Next |
-| 2 | Harvest zones and the feeder | Planned |
-| 3 | Research: challenges, skill tree, mastery | Planned |
-| 4 | Daily and weekly quests | Planned |
-| 5 | Full ranch content (8 zones, TMs, natures, shinies) | Planned |
-| 6 | Roguelike expeditions (2D, Phaser) | Planned |
-| 7 | Legendaries and 3D dungeons (Three.js) | Planned |
+| 0 | Le socle : Django sur Vercel, import PokéAPI, Pokédex consultable | Terminée |
+| 1 | Les arrivées horaires, le mode invité et les comptes | Prochaine |
+| 2 | Les zones de récolte et la mangeoire | Prévue |
+| 3 | La recherche : défis, arbre de compétences, maîtrise | Prévue |
+| 4 | Les quêtes quotidiennes et hebdomadaires | Prévue |
+| 5 | Le contenu complet de la pension (8 zones, CT, natures, shiny) | Prévue |
+| 6 | Les expéditions roguelike (2D, Phaser) | Prévue |
+| 7 | Les légendaires et les donjons en 3D (Three.js) | Prévue |
 
-## Tech stack
+## Stack technique
 
-- **Back end:** Python 3.13, Django 5.2 (LTS)
-- **Front end:** Django templates, [HTMX](https://htmx.org) for partial page updates, Tailwind CSS v4
-- **Database:** SQLite locally, PostgreSQL ([Neon](https://neon.tech)) in production, selected by `DATABASE_URL`
-- **Hosting:** Vercel (serverless Python functions, static files on the CDN)
-- **Tooling:** [uv](https://docs.astral.sh/uv/) (Python and dependencies), Ruff (lint and format), pytest, GitHub Actions
+- **Back-end :** Python 3.13, Django 5.2 (LTS)
+- **Front-end :** templates Django, [HTMX](https://htmx.org) pour les mises à jour partielles de page, Tailwind CSS v4
+- **Base de données :** SQLite en local, PostgreSQL ([Neon](https://neon.tech)) en production, choisie selon `DATABASE_URL`
+- **Hébergement :** Vercel (fonctions Python serverless, fichiers statiques sur le CDN)
+- **Outillage :** [uv](https://docs.astral.sh/uv/) (Python et dépendances), Ruff (lint et formatage), pytest, GitHub Actions
 
-## Technical highlights
+## Points techniques
 
-- **One-off data import.** A Django command (`import_pokeapi`) fetches species, types, moves and FireRed/LeafGreen learnsets from [PokéAPI](https://pokeapi.co). Responses are cached on disk, parsing is done by pure functions, and everything is written in a single transaction, so a failed import never leaves half-written data. The import is idempotent: running it again updates rows instead of duplicating them.
-- **Progressive enhancement with HTMX.** Every Pokédex entry has its own URL and works without JavaScript. With HTMX, a click only swaps the entry pane, and the same view returns either a fragment or the full page depending on the `HX-Request` header.
-- **Query-conscious views.** A full Pokédex page takes 5 SQL queries and an entry 3, whatever the number of moves, thanks to `select_related` and `prefetch_related`.
-- **Serverless-first design.** No process runs permanently: game time will be recomputed on each visit from timestamps, with per-hour random seeds so the result doesn't depend on when it is computed.
-- **Tested without the network.** The PokéAPI client is injected, so tests use a fake client or `httpx.MockTransport`. CI checks formatting, lint, Django checks, missing migrations, tests, and that the committed CSS matches the templates.
+- **Import des données en une fois.** Une commande Django (`import_pokeapi`) récupère espèces, types, attaques et listes d'attaques de Rouge Feu/Vert Feuille depuis [PokéAPI](https://pokeapi.co). Les réponses sont mises en cache sur disque, l'analyse est faite par des fonctions pures, et tout est écrit dans une seule transaction : un import qui échoue ne laisse jamais de données à moitié écrites. L'import est idempotent : le relancer met les lignes à jour au lieu de les dupliquer.
+- **Amélioration progressive avec HTMX.** Chaque fiche du Pokédex a sa propre URL et fonctionne sans JavaScript. Avec HTMX, un clic ne remplace que le panneau de la fiche, et la même vue renvoie soit un fragment, soit la page complète selon l'en-tête `HX-Request`.
+- **Vues attentives aux requêtes SQL.** Une page Pokédex complète coûte 5 requêtes et une fiche 3, quel que soit le nombre d'attaques, grâce à `select_related` et `prefetch_related`.
+- **Pensé pour le serverless.** Aucun processus ne tourne en permanence : le temps de jeu sera recalculé à chaque visite à partir d'horodatages, avec une graine aléatoire par heure pour que le résultat ne dépende pas du moment du calcul.
+- **Testé sans réseau.** Le client PokéAPI est injecté : les tests utilisent un faux client ou `httpx.MockTransport`. La CI vérifie le formatage, le lint, les contrôles Django, les migrations manquantes, les tests, et que le CSS commité correspond aux templates.
 
-## Run it locally
+## Lancer le projet en local
 
-Requirements: [uv](https://docs.astral.sh/uv/getting-started/installation/) (it installs Python 3.13 by itself).
+Prérequis : [uv](https://docs.astral.sh/uv/getting-started/installation/) (il installe Python 3.13 tout seul).
 
 ```bash
 git clone https://github.com/BradSavary/pokechill.git
 cd pokechill
-uv sync                                       # create .venv and install dependencies
-uv run python manage.py migrate               # create the local SQLite database
-uv run python manage.py import_pokeapi --no-media   # import the 151 species (~2 min the first time)
+uv sync                                             # crée .venv et installe les dépendances
+uv run python manage.py migrate                     # crée la base SQLite locale
+uv run python manage.py import_pokeapi --no-media   # importe les 151 espèces (~2 min la première fois)
 uv run python manage.py runserver
 ```
 
-Then open <http://127.0.0.1:8000>. Sprites and cries are already in the repository, hence `--no-media`.
+Ouvrez ensuite <http://127.0.0.1:8000>. Les sprites et les cris sont déjà dans le dépôt, d'où l'option `--no-media`.
 
-Useful commands:
+Commandes utiles :
 
-| Task | Command |
+| Tâche | Commande |
 | --- | --- |
-| Run the tests | `uv run pytest` |
-| Format and lint | `uv run ruff format .` then `uv run ruff check .` |
-| Rebuild the CSS on template changes | `uv run python scripts/build_css.py --watch` |
-| Admin account (then visit `/admin/`) | `uv run python manage.py createsuperuser` |
+| Lancer les tests | `uv run pytest` |
+| Formater et vérifier le code | `uv run ruff format .` puis `uv run ruff check .` |
+| Recompiler le CSS à chaque modification de template | `uv run python scripts/build_css.py --watch` |
+| Compte administrateur (puis aller sur `/admin/`) | `uv run python manage.py createsuperuser` |
 
-## Project structure
+## Structure du projet
 
 ```
-config/              Django settings (read from environment variables) and root URLs
-pokedex/             Pokédex app: models, views, templates, admin
-  pokeapi/           PokéAPI client (with cache), parsers and importer
-  management/        The import_pokeapi command
-templates/           Shared base layout
-assets/css/          Tailwind source, compiled into static/css/main.css
-static/              Compiled CSS, HTMX, sprites, cries and type icons
-scripts/             CSS build script
-tests/               pytest suite
-docs/                Game design document
+config/              Réglages Django (lus depuis les variables d'environnement) et URLs racines
+pokedex/             App Pokédex : modèles, vues, templates, admin
+  pokeapi/           Client PokéAPI (avec cache), parseurs et importeur
+  management/        La commande import_pokeapi
+templates/           Gabarit de base commun
+assets/css/          Source Tailwind, compilée dans static/css/main.css
+static/              CSS compilé, HTMX, sprites, cris et icônes de types
+scripts/             Script de compilation du CSS
+tests/               Suite de tests pytest
+docs/                Document de conception du jeu
 ```
 
-## Credits
+## Crédits
 
-- Game data from [PokéAPI](https://pokeapi.co); sprites, cries and type icons from the [PokeAPI/sprites](https://github.com/PokeAPI/sprites) and [PokeAPI/cries](https://github.com/PokeAPI/cries) repositories.
-- Pokémon and all related names and images are trademarks and © of Nintendo, Game Freak and The Pokémon Company. This project is not affiliated with or endorsed by them.
+- Données de jeu issues de [PokéAPI](https://pokeapi.co) ; sprites, cris et icônes de types issus des dépôts [PokeAPI/sprites](https://github.com/PokeAPI/sprites) et [PokeAPI/cries](https://github.com/PokeAPI/cries).
+- Pokémon ainsi que tous les noms et images associés sont des marques déposées et © de Nintendo, Game Freak et The Pokémon Company. Ce projet n'est ni affilié à ces sociétés ni approuvé par elles.
