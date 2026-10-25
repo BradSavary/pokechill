@@ -22,13 +22,14 @@ OUTPUT = ROOT / "static" / "css" / "main.css"
 
 
 def main() -> None:
-    watch = "--watch" in sys.argv
-    args = ["-i", str(SOURCE), "-o", str(OUTPUT)]
-    # Minify the committed file; keep it readable while developing.
-    args.append("--watch" if watch else "--minify")
+    # Always minify, even in watch mode: the output file is committed, so it
+    # must be identical whichever mode produced it.
+    args = ["-i", str(SOURCE), "-o", str(OUTPUT), "--minify"]
+    if "--watch" in sys.argv:
+        args.append("--watch")
 
-    pytailwindcss.install(TAILWIND_VERSION)
-    pytailwindcss.run(args, cwd=ROOT, live_output=True)
+    # auto_install downloads the pinned binary only if it is missing
+    pytailwindcss.run(args, cwd=ROOT, live_output=True, auto_install=True, version=TAILWIND_VERSION)
 
 
 if __name__ == "__main__":
