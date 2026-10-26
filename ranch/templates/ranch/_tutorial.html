@@ -1,0 +1,35 @@
+{% comment %}
+  Tutorial card, shown on the page of the current step (see ranch/tutorial.py).
+  Variable: tutorial_step. Buttons post the step they complete, so a double
+  click can never skip a step.
+{% endcomment %}
+<aside class="flex flex-col gap-3 rounded-xl border-2 border-accent bg-panel p-5" aria-label="Tutorial">
+  {% if tutorial_step == 0 %}
+    <h2 class="text-lg font-bold">Welcome to your ranch!</h2>
+    <p>You just took over an abandoned Pokémon ranch. Three Pokémon came along with you: Bulbasaur, Charmander and Squirtle.</p>
+  {% elif tutorial_step == 1 %}
+    <h2 class="text-lg font-bold">Every hour, a visitor</h2>
+    <p>Every hour, on the hour, a wild Pokémon shows up. It waits at the Welcome area until you come back to discover it. The area holds a limited number of Pokémon: once it is full, newcomers leave.</p>
+  {% elif tutorial_step == 2 %}
+    <h2 class="text-lg font-bold">Your Pokédex</h2>
+    <p>Species you own appear in full. The others stay silhouettes until you meet them. Your goal: complete all 151 entries.</p>
+  {% elif tutorial_step == 3 %}
+    <h2 class="text-lg font-bold">Someone is waiting for you...</h2>
+    <p>A Pokémon came to welcome you to the ranch.</p>
+  {% endif %}
+
+  {% if tutorial_step == 3 %}
+    {# Opens the reveal dialog and asks the server for the gift (HTMX) #}
+    <button type="button" data-open-dialog
+            hx-post="{% url 'ranch:tutorial_gift' %}" hx-target="#reveal-content"
+            class="self-start rounded-lg bg-accent px-4 py-2 font-bold text-night">Go and see</button>
+  {% else %}
+    <form method="post" action="{% url 'ranch:tutorial_next' %}">
+      {% csrf_token %}
+      <input type="hidden" name="step" value="{{ tutorial_step }}">
+      <button class="rounded-lg bg-accent px-4 py-2 font-bold text-night">
+        {% if tutorial_step == 1 %}Open the Pokédex{% elif tutorial_step == 2 %}Back to the ranch{% else %}Next{% endif %}
+      </button>
+    </form>
+  {% endif %}
+</aside>

@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from game import balance
 from pokedex.models import Species
+from ranch import tutorial
 from ranch.models import Arrival, CandyStock, OwnedPokemon, Player
 from ranch.services import reveal_all, reveal_next
 
@@ -81,6 +82,7 @@ def guest_with_arrivals(client, common, monkeypatch):
     now = START + timedelta(minutes=5)
     monkeypatch.setattr("django.utils.timezone.now", lambda: now)
     client.get(reverse("ranch:index"))
+    Player.objects.update(tutorial_step=tutorial.DONE)  # tutorial already done
     monkeypatch.setattr("django.utils.timezone.now", lambda: now + timedelta(hours=3))
     return client
 
@@ -112,6 +114,7 @@ def test_reveals_require_post(guest_with_arrivals):
     assert guest_with_arrivals.get(reverse("ranch:reveal_all")).status_code == 405
 
 
-def test_no_dialog_when_nobody_is_waiting(client):
+def test_the_dialog_stays_closed_when_nobody_is_waiting(client):
     html = client.get(reverse("ranch:index")).content.decode()
-    assert "reveal-dialog" not in html
+    assert "data-auto-open" not in html
+    assert "Welcome back" not in html

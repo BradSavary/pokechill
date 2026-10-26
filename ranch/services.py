@@ -34,9 +34,14 @@ def ensure_player(user) -> Player:
     return player
 
 
+def seeded_rng(player: Player, purpose: str) -> random.Random:
+    """A generator dedicated to one player and one purpose: same draws every time."""
+    return random.Random(f"{purpose}:{player.pk}")
+
+
 def give_starters(player: Player) -> None:
     """The three Kanto starters, with a nature drawn from the player's own seed."""
-    rng = random.Random(f"starters:{player.pk}")
+    rng = seeded_rng(player, "starters")
     for species in Species.objects.filter(slug__in=balance.STARTER_SPECIES).order_by("number"):
         receive_pokemon(player, species, nature=rng.choice(NATURES), is_shiny=False)
 
@@ -165,3 +170,21 @@ def reveal_all(player: Player) -> list[Reveal]:
     """Reveal every waiting arrival at once, oldest first."""
     arrivals = player.arrivals.select_for_update().select_related("species__evolution_chain")
     return [_reveal(player, arrival) for arrival in arrivals]
+
+
+def player_for(user) -> Player | None:
+    """The save of `user` if there is one. Unlike ensure_player, never creates it."""
+    if not user.is_authenticated:
+        return None
+    return Player.objects.filter(user=user).first()
+
+
+def collection_of(player: Player) -> dict[int, OwnedPokemon]:
+    """The player's Pokémon, indexed by species id (for the Pokédex)."""
+    return {owned.species_id: owned for owned in player.pokemon.all()}
+
+
+def candies_of(player: Player, family) -> int:
+    """Candies of one evolution family (0 if none yet)."""
+    stock = CandyStock.objects.filter(player=player, family=family).first()
+    return stock.amount if stock else 0

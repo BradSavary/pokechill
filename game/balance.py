@@ -33,6 +33,9 @@ SHINY_ODDS = 1024
 # Species owned by every new player
 STARTER_SPECIES = ("bulbasaur", "charmander", "squirtle")
 
+# Species given at the end of the tutorial
+TUTORIAL_GIFT_SPECIES = "pikachu"
+
 # --- Duplicates ------------------------------------------------------------
 
 # Candies of the evolution family given when an owned species arrives again

@@ -1,6 +1,10 @@
-{# One row per species. Also returned alone by the `list` view (HTMX filtering). #}
+{% comment %}
+  One row per species. Also returned alone by the `list` view (HTMX filtering).
+  owned_ids is None in the public catalogue (everything shown), otherwise
+  species the player doesn't own appear as silhouettes named "???".
+{% endcomment %}
 {% for s in species_list %}
-  <li>
+  <li {% if not s.is_available and owned_ids is not None %}class="opacity-40" title="Not in the game yet"{% endif %}>
     {% comment %}
       A real link (works without JavaScript) enhanced by HTMX: hx-get loads only
       the entry fragment into #entry, hx-push-url updates the address bar.
@@ -10,16 +14,22 @@
        data-species-link
        {% if s.number == selected %}aria-current="page"{% endif %}
        class="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-night aria-[current=page]:bg-night aria-[current=page]:ring-1 aria-[current=page]:ring-accent">
-      <img src="{{ s.sprite_url }}" alt="" width="48" height="48" loading="lazy"
-           class="pixelated size-12 group-has-[#silhouettes:checked]/dex:brightness-0">
-      <span class="w-10 text-xs text-muted">#{{ s.number|stringformat:"03d" }}</span>
-      <span class="flex-1 truncate">{{ s.name }}</span>
-      <span class="flex gap-1">
-        {% for type in s.types %}
-          <img src="{{ type.icon_url }}" alt="{{ type.name }}" title="{{ type.name }}"
-               width="20" height="20" class="size-5">
-        {% endfor %}
-      </span>
+      {% if owned_ids is None or s.id in owned_ids %}
+        <img src="{{ s.sprite_url }}" alt="" width="48" height="48" loading="lazy" class="pixelated size-12">
+        <span class="w-10 text-xs text-muted">#{{ s.number|stringformat:"03d" }}</span>
+        <span class="flex-1 truncate">{{ s.name }}</span>
+        <span class="flex gap-1">
+          {% for type in s.types %}
+            <img src="{{ type.icon_url }}" alt="{{ type.name }}" title="{{ type.name }}"
+                 width="20" height="20" class="size-5">
+          {% endfor %}
+        </span>
+      {% else %}
+        {# Unknown species: black silhouette (CSS filter), no name, no types #}
+        <img src="{{ s.sprite_url }}" alt="" width="48" height="48" loading="lazy" class="pixelated size-12 brightness-0">
+        <span class="w-10 text-xs text-muted">#{{ s.number|stringformat:"03d" }}</span>
+        <span class="flex-1 truncate text-muted">???</span>
+      {% endif %}
     </a>
   </li>
 {% empty %}

@@ -24,6 +24,8 @@ class Player(models.Model):
     last_slot = models.DateTimeField()
     # Last visit to a game page: inactive guests are purged after a while
     last_seen_at = models.DateTimeField(default=timezone.now)
+    # Current step of the tutorial (see ranch/tutorial.py); finished at the end
+    tutorial_step = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self) -> str:
         return f"Player of {self.user.username}"

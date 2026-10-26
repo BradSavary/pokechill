@@ -17,6 +17,8 @@
       </p>
     </header>
 
+    {% if tutorial_step is not None %}{% include "ranch/_tutorial.html" %}{% endif %}
+
     <section class="flex flex-col gap-3 rounded-xl bg-panel p-5" aria-label="Welcome area">
       <h2 class="font-bold">Welcome area <span class="text-muted">{{ waiting }}/{{ request.player.welcome_capacity }}</span></h2>
       <div class="flex flex-wrap gap-2">
@@ -30,14 +32,15 @@
     </section>
   </div>
 
-  {% if waiting %}
-    {% comment %}
-      The reveal dialog (native <dialog>). It opens by itself on arrival
-      (data-auto-open). Its content is replaced by HTMX at each reveal.
-    {% endcomment %}
-    <dialog id="reveal-dialog" data-auto-open
-            class="m-auto w-full max-w-lg rounded-2xl bg-panel p-6 text-slate-100 backdrop:bg-black/70">
-      <div id="reveal-content" class="flex flex-col items-center gap-4 text-center">
+  {% comment %}
+    The reveal dialog (native <dialog>). It opens by itself when Pokémon are
+    waiting (data-auto-open, not during the tutorial). Its content is replaced
+    by HTMX at each reveal, and by the tutorial gift.
+  {% endcomment %}
+  <dialog id="reveal-dialog" {% if auto_open %}data-auto-open{% endif %}
+          class="m-auto w-full max-w-lg rounded-2xl bg-panel p-6 text-slate-100 backdrop:bg-black/70">
+    <div id="reveal-content" class="flex flex-col items-center gap-4 text-center">
+      {% if waiting %}
         <h2 class="text-xl font-bold">Welcome back!</h2>
         {% if catch_up.arrivals %}
           <p>While you were away, <strong>{{ catch_up.arrivals|length }}</strong> Pokémon came to your ranch.</p>
@@ -53,7 +56,7 @@
         {# This click also allows the browser to play the cries afterwards #}
         <button hx-post="{% url 'ranch:reveal' %}" hx-target="#reveal-content"
                 class="rounded-lg bg-accent px-6 py-2 font-bold text-night">Reveal</button>
-      </div>
-    </dialog>
-  {% endif %}
+      {% endif %}
+    </div>
+  </dialog>
 {% endblock %}
