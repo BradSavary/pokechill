@@ -55,6 +55,11 @@
     @apply rounded-lg px-2 py-3 text-center no-underline;
   }
 
+  /* Inputs rendered by Django inside accounts/_form_field.html */
+  .form-field input {
+    @apply rounded-lg bg-night px-3 py-2 text-slate-100;
+  }
+
   /* A colored type label; the color comes from a bg-type-* class */
   .type-badge {
     @apply inline-block rounded-md px-2 py-0.5 text-xs font-bold text-white uppercase;

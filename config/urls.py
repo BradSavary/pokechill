@@ -6,7 +6,9 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("accounts/", include("accounts.urls")),
     path("pokedex/", include("pokedex.urls")),
-    # Until the Ranch page exists (step 1), the home page is the Pokédex.
-    path("", RedirectView.as_view(pattern_name="pokedex:index"), name="home"),
+    path("ranch/", include("ranch.urls")),
+    # The Ranch is the main page of the game
+    path("", RedirectView.as_view(pattern_name="ranch:index"), name="home"),
 ]

@@ -50,7 +50,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Project apps
-    "pokedex",
+    "pokedex",  # reference catalogue: species, types, moves
+    "accounts",  # guest mode, sign up, log in (no model: uses Django's User)
+    "ranch",  # the player's game state: Player, collection, Welcome area
 ]
 
 MIDDLEWARE = [
@@ -76,6 +78,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                # Adds `is_guest` to every template (account box of the sidebar)
+                "accounts.context_processors.account",
             ],
         },
     },
@@ -105,6 +109,15 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # --- Authentication -------------------------------------------------------
+
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "ranch:index"
+LOGOUT_REDIRECT_URL = "pokedex:index"
+
+# Sessions last one year (default: two weeks). For a guest, the session cookie
+# IS the game: losing it means losing the save. An idle game is played over
+# months, so registered players also stay logged in.
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 365
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

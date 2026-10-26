@@ -1,0 +1,7 @@
+{# One form field with its label and errors. Usage: {% include "accounts/_form_field.html" with field=form.username %} #}
+{# {{ field }} lets Django render the input: it never re-displays passwords and sets autocomplete hints #}
+<label class="form-field flex flex-col gap-1 text-sm">
+  <span class="text-muted">{{ field.label }}</span>
+  {{ field }}
+  {% for error in field.errors %}<span class="text-red-400">{{ error }}</span>{% endfor %}
+</label>

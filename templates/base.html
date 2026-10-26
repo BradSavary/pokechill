@@ -22,12 +22,31 @@
   {# min-h-0 lets this flex child shrink, so inner panes can scroll #}
   <div class="flex min-h-0 flex-1 portrait-phone:hidden">
     <nav class="flex w-28 shrink-0 flex-col gap-1 bg-panel p-2" aria-label="Main navigation">
-      {# Only the Pokédex exists in step 0; other tabs are locked placeholders #}
-      <span class="tab cursor-not-allowed text-muted" title="Coming soon">Ranch</span>
+      <a class="tab {% if active_tab == 'ranch' %}bg-accent font-bold text-night{% endif %}"
+         href="{% url 'ranch:index' %}">Ranch</a>
+      {# Locked tabs: their content arrives in later steps #}
       <span class="tab cursor-not-allowed text-muted" title="Coming soon">Zones</span>
       <a class="tab {% if active_tab == 'pokedex' %}bg-accent font-bold text-night{% endif %}"
          href="{% url 'pokedex:index' %}">Pokédex</a>
       <span class="tab cursor-not-allowed text-muted" title="Coming soon">Expeditions</span>
+
+      {# Account box, pinned to the bottom of the sidebar (mt-auto) #}
+      <div class="mt-auto flex flex-col gap-1 text-center text-xs">
+        {% if is_guest %}
+          {# No log out for guests: their session is their only key to the save #}
+          <span class="text-muted">Guest</span>
+          <a class="rounded-lg bg-night px-2 py-1.5 text-accent" href="{% url 'accounts:sign_up' %}">Save your game</a>
+        {% elif user.is_authenticated %}
+          <span class="truncate text-muted" title="{{ user.username }}">{{ user.username }}</span>
+          {# Django 5 only logs out with POST (a link could be triggered by any page) #}
+          <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button class="w-full rounded-lg bg-night px-2 py-1.5 text-muted hover:text-slate-100">Log out</button>
+          </form>
+        {% else %}
+          <a class="rounded-lg bg-night px-2 py-1.5 text-muted hover:text-slate-100" href="{% url 'accounts:login' %}">Log in</a>
+        {% endif %}
+      </div>
     </nav>
 
     <main class="min-w-0 flex-1 overflow-y-auto p-4">
