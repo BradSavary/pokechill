@@ -1,0 +1,9 @@
+{
+  "species": "pikachu",
+  "rarity": "rare",
+  "min_level": 1,
+  "conditions": {
+    "time_of_day": "day"
+  },
+  "notes": "Also given at the end of the tutorial."
+}

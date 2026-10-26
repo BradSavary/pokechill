@@ -1,0 +1,8 @@
+{
+  "species": "pidgeot",
+  "rarity": "very_rare",
+  "min_level": 36,
+  "conditions": {
+    "time_of_day": "day"
+  }
+}

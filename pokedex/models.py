@@ -9,6 +9,13 @@ player owns: player data will live in other apps from step 1 onwards.
 from django.db import models
 from django.templatetags.static import static
 
+from game import balance
+from game.arrivals import SpeciesRule
+
+# Rarity values come from the game engine, the single source of truth:
+# ("very_rare", "Very rare"), ("legendary", "Legendary")...
+RARITY_CHOICES = [(key, key.replace("_", " ").capitalize()) for key in balance.RARITY_WEIGHTS]
+
 
 class Type(models.Model):
     """One of the 18 elemental types (modern type chart, Fairy included)."""
@@ -102,12 +109,26 @@ class Species(models.Model):
         related_name="evolutions",
     )
 
+    # --- Game data (from data/species/*.json, see the load_species command) -
+    # Everything above comes from PokéAPI; these fields are game design.
+    # A species without a data file is not available yet: it never arrives.
+    is_available = models.BooleanField(default=False)
+    rarity = models.CharField(max_length=10, choices=RARITY_CHOICES, blank=True)
+    # Level of the Pokémon when it arrives at the ranch
+    min_level = models.PositiveSmallIntegerField(default=1)
+    # Condition tree evaluated by game.conditions; null = may arrive any time
+    arrival_conditions = models.JSONField(null=True, blank=True)
+
     class Meta:
         ordering = ["number"]
         verbose_name_plural = "species"
 
     def __str__(self) -> str:
         return f"#{self.number:03d} {self.name}"
+
+    def to_rule(self) -> SpeciesRule:
+        """What the game engine needs to know about this species."""
+        return SpeciesRule(slug=self.slug, rarity=self.rarity, conditions=self.arrival_conditions)
 
     # --- Derived values -----------------------------------------------------
 

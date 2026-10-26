@@ -1,0 +1,8 @@
+{
+  "species": "ekans",
+  "rarity": "common",
+  "min_level": 1,
+  "conditions": {
+    "time_of_day": "night"
+  }
+}

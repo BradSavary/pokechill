@@ -21,9 +21,18 @@ class SpeciesMoveInline(admin.TabularInline):
 
 @admin.register(Species)
 class SpeciesAdmin(admin.ModelAdmin):
-    list_display = ["number", "name", "primary_type", "secondary_type", "evolution_stage"]
+    list_display = [
+        "number",
+        "name",
+        "primary_type",
+        "secondary_type",
+        "evolution_stage",
+        "is_available",
+        "rarity",
+        "min_level",
+    ]
     list_display_links = ["number", "name"]
-    list_filter = ["primary_type", "evolution_stage", "is_legendary"]
+    list_filter = ["is_available", "rarity", "primary_type", "evolution_stage", "is_legendary"]
     search_fields = ["name", "slug"]
     # Loads the related rows in the same SQL query (avoids one query per row)
     list_select_related = ["primary_type", "secondary_type"]

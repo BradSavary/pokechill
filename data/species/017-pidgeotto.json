@@ -1,0 +1,8 @@
+{
+  "species": "pidgeotto",
+  "rarity": "uncommon",
+  "min_level": 18,
+  "conditions": {
+    "time_of_day": "day"
+  }
+}

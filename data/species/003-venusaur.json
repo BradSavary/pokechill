@@ -1,0 +1,8 @@
+{
+  "species": "venusaur",
+  "rarity": "very_rare",
+  "min_level": 32,
+  "conditions": {
+    "time_of_day": "day"
+  }
+}

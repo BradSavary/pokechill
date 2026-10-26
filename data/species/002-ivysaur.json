@@ -1,0 +1,8 @@
+{
+  "species": "ivysaur",
+  "rarity": "very_rare",
+  "min_level": 16,
+  "conditions": {
+    "time_of_day": "day"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "species": "arbok",
+  "rarity": "rare",
+  "min_level": 22,
+  "conditions": {
+    "time_of_day": "night"
+  }
+}

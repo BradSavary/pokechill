@@ -1,0 +1,8 @@
+{
+  "species": "fearow",
+  "rarity": "rare",
+  "min_level": 20,
+  "conditions": {
+    "time_of_day": "day"
+  }
+}
