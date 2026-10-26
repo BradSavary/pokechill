@@ -12,15 +12,15 @@
     {% if tutorial_step is not None %}{% include "ranch/_tutorial.html" %}{% endif %}
 
     <section class="panel overflow-hidden" aria-label="Welcome area">
-      <header class="title-band flex items-baseline justify-between">
-        <h1>Your ranch</h1>
+      <header class="flex items-center justify-between pt-3 pr-5">
+        <h1 class="title-band">Your ranch</h1>
         {# ranch.js counts down to the next full hour, then reloads the page #}
-        <p class="text-base font-normal">Next arrival in
-          <time data-next-arrival="{{ next_arrival.isoformat }}" class="font-bold">--:--</time>
+        <p><span class="text-muted">Next arrival in</span>
+          <time data-next-arrival="{{ next_arrival.isoformat }}" class="text-xl font-bold">--:--</time>
         </p>
       </header>
       <div class="flex flex-col gap-3 p-5">
-      <h2 class="font-bold">Welcome area <span class="text-muted">{{ waiting }}/{{ request.player.welcome_capacity }}</span></h2>
+      <h2 class="section-title self-start">Welcome area <span class="font-normal text-white/70">{{ waiting }}/{{ request.player.welcome_capacity }}</span></h2>
       <div class="flex flex-wrap gap-2">
         {# Arrivals stay hidden: one closed Poké Ball per waiting Pokémon #}
         {% for _ in waiting_range %}<span class="pokeball size-10"></span>{% endfor %}

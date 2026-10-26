@@ -7,38 +7,36 @@
   moves: its current moves (computed, see game/moves.py); moves_level: their level.
 {% endcomment %}
 {% if known %}
-<article class="flex flex-col gap-3">
+<article class="flex flex-col gap-4">
 
-  {# --- Header: name plate and sprite on the Poké Ball watermark --- #}
-  <header class="grid grid-cols-2 gap-3">
-    <div class="flex flex-col gap-2">
-      <h2 class="name-plate"><span class="block text-2xl">{{ species.name }}</span></h2>
-      {# Big pale Poké Ball behind the sprite (the menu icon, like the GBA Pokédex) #}
-      <div class="relative mx-auto grid size-52 place-items-center">
-        <span class="absolute inset-0 text-sunken">{% include "icons/pokeball.svg" %}</span>
-        <img src="{{ species.sprite_url }}" alt="{{ species.name }}" width="160" height="160" class="pixelated relative size-40">
-      </div>
+  {# --- Header: the sprite on its red stage, then name, types and player info --- #}
+  <header class="grid grid-cols-2 gap-4">
+    <div class="dex-stage aspect-[4/3]">
+      <span class="absolute size-56 text-white/20">{% include "icons/pokeball.svg" %}</span>
+      <img src="{{ species.sprite_url }}" alt="{{ species.name }}" width="160" height="160" class="pixelated relative size-40">
     </div>
 
     <div class="flex flex-col gap-2">
-      <p class="text-muted">No. {{ species.number|stringformat:"03d" }} · {{ species.genus }}</p>
+      <p class="section-title self-start">No. {{ species.number|stringformat:"03d" }}</p>
+      <h2 class="text-3xl font-bold">{{ species.name }}</h2>
+      <p class="text-muted">{{ species.genus }}</p>
       <div class="flex flex-wrap gap-2">
         {% for type in species.types %}
           {% include "pokedex/_type_badge.html" with type=type %}
         {% endfor %}
-        {% if species.is_legendary %}<span class="type-badge bg-accent">Legendary</span>{% endif %}
+        {% if species.is_legendary %}<span class="type-label bg-accent px-3">Legendary</span>{% endif %}
       </div>
-      <p class="flex gap-4">
+      <p class="flex items-center gap-4">
         <span><span class="text-muted">HT</span> {{ species.height_m }} m</span>
         <span><span class="text-muted">WT</span> {{ species.weight_kg }} kg</span>
+        {# preload="none": the cry is only downloaded when played #}
+        <button type="button" onclick="this.nextElementSibling.play()" class="btn-secondary py-0.5">▶ Cry</button>
+        <audio src="{{ species.cry_url }}" preload="none"></audio>
       </p>
-      {# preload="none": the cry is only downloaded when played #}
-      <button type="button" onclick="this.nextElementSibling.play()" class="btn-secondary self-start py-0.5">▶ Cry</button>
-      <audio src="{{ species.cry_url }}" preload="none"></audio>
 
       {% if owned %}
         {# Research stage 1: the player owns this species #}
-        <dl class="mt-auto grid grid-cols-[auto_1fr] gap-x-3 rounded-lg bg-sunken px-3 py-2">
+        <dl class="mt-auto grid grid-cols-[auto_1fr] gap-x-4 rounded-xl bg-sky px-4 py-2">
           <dt class="text-muted">Stage</dt><dd class="font-bold text-accent">Encountered</dd>
           <dt class="text-muted">Level</dt><dd>{{ owned.level }}</dd>
           <dt class="text-muted">Candies</dt>
@@ -58,7 +56,7 @@
     <p>{{ species.flavor_text }}</p>
   {% endif %}
 
-  <div class="grid grid-cols-2 gap-3">
+  <div class="grid grid-cols-2 gap-4">
     {# --- Base stats: bar width = stat / 255 (the highest possible base stat) --- #}
     <section>
       <h3 class="section-title">Base stats</h3>
@@ -67,7 +65,7 @@
           <div class="flex items-center gap-2">
             <dt class="w-16 text-muted">{{ label }}</dt>
             <dd class="w-8 text-right">{{ value }}</dd>
-            <dd class="h-2.5 flex-1 rounded-full border border-outline bg-sunken">
+            <dd class="h-2.5 flex-1 rounded-full bg-sky">
               <div class="h-full rounded-full bg-accent" style="width: {% widthratio value 255 100 %}%"></div>
             </dd>
           </div>
@@ -81,13 +79,13 @@
 
     {# --- Current moves (changing them comes once Pokémon gain levels) --- #}
     <section>
-      <h3 class="section-title">Moves <span class="font-normal text-muted">(Lv. {{ moves_level }})</span></h3>
-      <ul class="flex flex-col gap-1">
+      <h3 class="section-title">Moves <span class="font-normal text-white/70">Lv. {{ moves_level }}</span></h3>
+      <ul class="flex flex-col gap-1.5">
         {% for move in moves %}
           <li class="flex items-center gap-2">
             <span class="flex-1 truncate">{{ move.name }}</span>
             {% include "pokedex/_type_badge.html" with type=move.type %}
-            <span class="w-12 text-right text-muted" title="Power">{{ move.power|default:"—" }}</span>
+            <span class="w-10 text-right text-muted" title="Power">{{ move.power|default:"—" }}</span>
           </li>
         {% empty %}
           <li class="text-muted">No move yet.</li>
@@ -97,18 +95,15 @@
   </div>
 </article>
 {% else %}
-  {# Research stage 0: the player hasn't met this species yet #}
-  <article class="grid grid-cols-2 gap-3">
-    <div class="flex flex-col gap-2">
-      <h2 class="name-plate"><span class="block text-2xl text-muted">???</span></h2>
-      {# The Poké Ball sits behind: the filter only darkens the sprite #}
-      <div class="relative mx-auto grid size-52 place-items-center">
-        <span class="absolute inset-0 text-sunken">{% include "icons/pokeball.svg" %}</span>
-        <img src="{{ species.sprite_url }}" alt="Unknown Pokémon" width="160" height="160" class="pixelated relative size-40 brightness-0">
-      </div>
+  {# Research stage 0: the player hasn't met this species yet (a black silhouette) #}
+  <article class="grid grid-cols-2 gap-4">
+    <div class="dex-stage aspect-[4/3]">
+      <span class="absolute size-56 text-white/20">{% include "icons/pokeball.svg" %}</span>
+      <img src="{{ species.sprite_url }}" alt="Unknown Pokémon" width="160" height="160" class="pixelated relative size-40 brightness-0">
     </div>
     <div class="flex flex-col gap-2">
-      <p class="text-muted">No. {{ species.number|stringformat:"03d" }}</p>
+      <p class="section-title self-start">No. {{ species.number|stringformat:"03d" }}</p>
+      <h2 class="text-3xl font-bold text-muted">???</h2>
       {% if species.is_available %}
         <p>You haven't met this Pokémon yet.</p>
       {% else %}

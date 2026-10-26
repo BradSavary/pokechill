@@ -24,7 +24,7 @@
   {# min-h-0 lets this flex child shrink, so inner panes can scroll #}
   <div class="flex min-h-0 flex-1 portrait-phone:hidden">
     {# Side menu, flush with the left edge, styled like the Sword/Shield main menu #}
-    <nav class="flex w-24 shrink-0 flex-col items-center gap-4 border-r-[3px] border-outline bg-accent px-2 py-4" aria-label="Main navigation">
+    <nav class="flex w-24 shrink-0 flex-col items-center gap-4 border-r-4 border-accent-dark bg-accent px-2 py-4" aria-label="Main navigation">
       {% url "ranch:index" as ranch_url %}
       {% url "pokedex:index" as pokedex_url %}
       {% include "_menu_item.html" with name="ranch" label="Ranch" color="text-menu-ranch" url=ranch_url %}

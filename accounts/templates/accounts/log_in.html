@@ -4,7 +4,7 @@
 
 {% block content %}
   <section class="mx-auto flex max-w-sm flex-col gap-4 panel p-6">
-    <h1 class="text-2xl font-bold">Log in</h1>
+    <h1 class="title-band -ml-6 self-start">Log in</h1>
     {% if is_guest %}
       <p class="rounded-lg border-2 border-accent bg-accent-light/30 p-3 text-sm">You are playing as a guest: logging in to another account leaves this guest game behind. <a class="underline" href="{% url 'accounts:sign_up' %}">Save it first</a>.</p>
     {% endif %}

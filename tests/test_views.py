@@ -14,7 +14,7 @@ HTMX = {"HTTP_HX_REQUEST": "true"}
 def test_index_selects_the_first_species(client, bulbasaur, charmander):
     html = client.get(reverse("pokedex:index")).content.decode()
     assert "Charmander" in html  # in the list
-    assert '<span class="block text-2xl">Bulbasaur</span>' in html  # entry of #001
+    assert "Bulbasaur</h2>" in html  # entry of #001
 
 
 def test_index_without_data_shows_the_import_hint(client):
@@ -26,14 +26,14 @@ def test_index_without_data_shows_the_import_hint(client):
 def test_detail_is_a_full_page_without_htmx(client, bulbasaur, charmander):
     html = client.get(reverse("pokedex:detail", args=[4])).content.decode()
     assert "<html" in html
-    assert '<span class="block text-2xl">Charmander</span>' in html
+    assert "Charmander</h2>" in html
     assert 'aria-current="page"' in html  # Charmander highlighted in the list
 
 
 def test_detail_is_a_fragment_for_htmx(client, bulbasaur, charmander):
     html = client.get(reverse("pokedex:detail", args=[4]), **HTMX).content.decode()
     assert "<html" not in html
-    assert '<span class="block text-2xl">Charmander</span>' in html
+    assert "Charmander</h2>" in html
 
 
 def test_history_restore_gets_the_full_page(client, bulbasaur):

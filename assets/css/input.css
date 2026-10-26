@@ -1,9 +1,9 @@
 /* PokéChill — Tailwind CSS source file.
    Compiled into static/css/main.css by scripts/build_css.py.
 
-   Visual style: the menus of Pokémon FireRed/LeafGreen (Game Boy Advance):
-   light grid background, white panels with thick dark outlines, red bands,
-   pixel font. */
+   Visual style: the menus of Pokémon Sword/Shield (red background cut
+   diagonally, white rounded panels, slanted title bands, dark type labels),
+   with pixel fonts as a nod to the older games. */
 
 /* source(none) turns off the automatic scan of the whole project, which
    mistook words in Python files and docs ("static", "table"...) for classes.
@@ -39,12 +39,12 @@
   /* The whole app uses the pixel font (font-sans is Tailwind's default family) */
   --font-sans: "PokeChill", ui-sans-serif, system-ui, sans-serif;
 
-  --color-screen: #e8e8e8; /* page background, under the grid */
-  --color-grid: #c8c8c8; /* grid lines of the background */
-  --color-surface: #f8f8f8; /* panels */
+  --color-sky: #e4f3f6; /* light side of the background */
+  --color-surface: #ffffff; /* panels */
   --color-sunken: #e0e0e0; /* inputs, inset areas */
-  --color-line: #c0c0c0; /* thin separators */
-  --color-outline: #383838; /* thick outlines of panels and buttons */
+  --color-line: #d0d4d8; /* thin separators, borders of fields */
+  --color-outline: #383838; /* dark rings (active menu entry) */
+  --color-label: #3d4452; /* dark type labels */
   --color-ink: #484848; /* text: dark grey, like the games */
   --color-muted: #888888;
   --color-accent: #e83838; /* Pokédex red */
@@ -96,10 +96,6 @@
   }
 }
 
-/* Templates build these class names dynamically (bg-type-{{ type.slug }}), so
-   Tailwind can't find them by reading the files: we list them explicitly. */
-@source inline("bg-type-{normal,fire,water,electric,grass,ice,fighting,poison,ground,flying,psychic,bug,rock,ghost,dragon,dark,steel,fairy}");
-
 /* The game is designed for landscape. On a phone held in portrait we hide the
    app and show a "rotate your device" hint instead: `portrait-phone:hidden`. */
 @custom-variant portrait-phone (@media (orientation: portrait) and (max-width: 600px));
@@ -118,49 +114,46 @@
     }
   }
 
-  /* The GBA menu background: light grey with a grid */
+  /* Sword/Shield background: a red slab cut diagonally on the left, with a
+     darker edge, over a light blue-white side. Fixed: it doesn't scroll. */
   body {
-    background-color: var(--color-screen);
+    background-color: var(--color-sky);
     background-image:
-      linear-gradient(var(--color-grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
-    background-size: 24px 24px;
+      linear-gradient(105deg, var(--color-accent) 0 28%, var(--color-accent-dark) 28% 29.5%, transparent 29.5%),
+      linear-gradient(105deg, transparent 0 62%, rgb(255 255 255 / 0.55) 62%),
+      linear-gradient(180deg, var(--color-sky), #fbfdfe);
+    background-attachment: fixed;
   }
 }
 
 /* Small component classes for elements repeated across templates */
 @layer components {
-  /* A white panel with the thick dark outline of the games */
+  /* A white rounded panel with a soft shadow */
   .panel {
-    @apply rounded-xl border-[3px] border-outline bg-surface;
+    @apply rounded-2xl bg-surface shadow-[0_8px_24px_rgb(0_0_0/0.18)];
   }
 
-  /* A red title band, like the top of the GBA Pokédex */
+  /* Slanted title band (Sword/Shield): dark red, right end cut diagonally */
   .title-band {
-    @apply border-b-[3px] border-outline px-4 py-2 text-xl font-bold text-white;
-    background: linear-gradient(var(--color-accent) 0 70%, var(--color-accent-dark) 70%);
-    text-shadow: 2px 2px 0 var(--color-accent-dark);
+    @apply inline-block bg-accent-dark py-1.5 pr-9 pl-4 text-xl font-bold text-white;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 1rem) 100%, 0 100%);
+  }
+  /* Smaller band for the sections inside a panel */
+  .section-title {
+    @apply mb-2 inline-block bg-accent-dark py-0.5 pr-7 pl-3 font-bold text-white;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 0.7rem) 100%, 0 100%);
   }
 
-  /* A name plate: white box framed in red (top left of the GBA Pokédex) */
-  .name-plate {
-    @apply rounded-lg border-[3px] border-outline px-1.5 py-1;
-    background: var(--color-accent);
-  }
-  .name-plate > * {
-    @apply rounded border-2 border-accent-light bg-surface px-3 py-1 text-center;
-  }
-
-  /* Buttons */
+  /* Buttons: rounded pills */
   .btn {
-    @apply inline-block rounded-lg border-[3px] border-outline bg-accent px-4 py-1.5 font-bold text-white;
-    text-shadow: 1px 1px 0 var(--color-accent-dark);
+    @apply inline-block rounded-full bg-accent px-5 py-1.5 font-bold text-white;
+    box-shadow: 0 3px 0 var(--color-accent-dark);
   }
   .btn:hover {
     @apply brightness-110;
   }
   .btn-secondary {
-    @apply inline-block rounded-lg border-[3px] border-outline bg-surface px-4 py-1.5 text-ink;
+    @apply inline-block rounded-full bg-surface px-5 py-1.5 text-ink ring-2 ring-line;
   }
 
   /* Side menu entry: a white disc holding a coloured icon (Sword/Shield style).
@@ -170,8 +163,10 @@
     @apply grid size-16 place-items-center rounded-full bg-surface p-3.5 transition;
     box-shadow: 0 4px 0 rgb(0 0 0 / 0.2);
   }
-  .menu-item:hover .menu-disc {
-    @apply scale-105;
+  /* Hover: a white ring, no scaling. Growing the disc made the icon seem to
+     slide sideways, as its centre falls on a half pixel. */
+  .menu-item:hover:not(.is-active):not(.is-locked) .menu-disc {
+    @apply outline-4 outline-offset-3 outline-white/80;
   }
   .menu-item.is-active .menu-disc {
     @apply outline-4 outline-offset-3 outline-outline;
@@ -183,7 +178,22 @@
   /* Text inputs and selects */
   .field,
   .form-field input {
-    @apply rounded-lg border-2 border-outline bg-surface px-3 py-1.5 text-ink;
+    @apply rounded-full border-2 border-line bg-surface px-4 py-1.5 text-ink;
+  }
+
+  /* Pokédex: the stage behind a sprite, red and cut diagonally like the
+     Sword/Shield raid screen (an unknown species shows as a black silhouette) */
+  .dex-stage {
+    @apply relative grid place-items-center overflow-hidden rounded-2xl;
+    background: linear-gradient(115deg, #f2525c 0 58%, var(--color-accent) 58%);
+  }
+
+  /* Pokédex list row: a rounded pill, red when selected */
+  .dex-row {
+    @apply flex items-center gap-3 rounded-full px-3 py-1 hover:bg-sky;
+  }
+  .dex-row[aria-current="page"] {
+    @apply bg-accent text-white hover:bg-accent;
   }
 
 
@@ -227,7 +237,7 @@
   }
 
   .new-badge {
-    @apply animate-bounce rounded-md border-2 border-outline bg-accent px-1.5 text-xs font-bold text-white;
+    @apply animate-bounce rounded-full bg-accent px-2 text-xs font-bold text-white shadow;
   }
 
   /* Family candy icon. Every candy sprite (32x32, from Let's Go) draws its
@@ -245,14 +255,13 @@
     image-rendering: pixelated;
   }
 
-  /* Section title inside a panel: red text over a thin line, no frame */
-  .section-title {
-    @apply mb-1 border-b-2 border-accent-light font-bold text-accent;
+  /* Type label (Sword/Shield): dark plate, type icon, name in capitals,
+     right end cut diagonally */
+  .type-label {
+    @apply inline-flex items-center gap-1.5 bg-label py-0.5 pr-3.5 pl-1 text-sm font-bold text-white uppercase;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 0.5rem) 100%, 0 100%);
   }
-
-  /* A colored type label; the color comes from a bg-type-* class */
-  .type-badge {
-    @apply inline-block rounded-md border-2 border-outline px-2 text-xs font-bold text-white uppercase;
-    text-shadow: 1px 1px 0 rgb(0 0 0 / 0.45);
+  .type-label > img {
+    @apply size-5;
   }
 }

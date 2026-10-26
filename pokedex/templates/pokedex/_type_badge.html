@@ -1,2 +1,2 @@
-{# A colored type label. Usage: {% include "pokedex/_type_badge.html" with type=some_type %} #}
-<span class="type-badge bg-type-{{ type.slug }}">{{ type.name }}</span>
+{# A type label (Sword/Shield style). Usage: {% include "pokedex/_type_badge.html" with type=some_type %} #}
+<span class="type-label"><img src="{{ type.icon_url }}" alt="" width="20" height="20">{{ type.name }}</span>

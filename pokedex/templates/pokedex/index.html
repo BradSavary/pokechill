@@ -12,10 +12,15 @@
     {% if tutorial_step is not None %}{% include "ranch/_tutorial.html" %}{% endif %}
 
     <div class="panel flex min-h-0 flex-1 flex-col overflow-hidden">
-      <h1 class="title-band text-center">Kanto Pokédex</h1>
+      <div class="flex items-center justify-between pt-3 pr-4">
+        <h1 class="title-band">Kanto Pokédex</h1>
+        {% if owned_count is not None %}
+          <p><span class="text-muted">Owned</span> <span class="text-xl font-bold">{{ owned_count }} / {{ total_count }}</span></p>
+        {% endif %}
+      </div>
 
       <div class="grid min-h-0 flex-1 grid-cols-5 gap-3 p-3">
-        {# --- Left (3/5): entry of the selected species, like the GBA Pokédex --- #}
+        {# --- Left (3/5): entry of the selected species --- #}
         <section id="entry" class="col-span-3 min-h-0 overflow-y-auto pr-1" aria-live="polite">
           {% if species %}
             {% include "pokedex/_entry.html" %}
@@ -24,7 +29,7 @@
           {% endif %}
         </section>
 
-        {# --- Right (2/5): search, filter, counter and species list --- #}
+        {# --- Right (2/5): search, filter and species list --- #}
         <section class="col-span-2 flex min-h-0 flex-col gap-2" aria-label="Species list">
           {% comment %}
             Typing in the search box or changing the type re-renders only the list:
@@ -49,14 +54,9 @@
             <input type="hidden" name="selected" value="{{ selected|default_if_none:'' }}">
           </form>
 
-          <ul id="species-list" class="min-h-0 flex-1 overflow-y-auto rounded-lg border-[3px] border-outline bg-surface">
+          <ul id="species-list" class="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
             {% include "pokedex/_species_list.html" %}
           </ul>
-
-          {% if owned_count is not None %}
-            {# Counter box, like "Seen / Owned" at the bottom of the GBA Pokédex #}
-            <p class="name-plate"><span class="flex justify-between"><span>Owned</span><span>{{ owned_count }} / {{ total_count }}</span></span></p>
-          {% endif %}
         </section>
       </div>
     </div>

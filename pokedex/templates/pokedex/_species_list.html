@@ -1,13 +1,13 @@
 {% load static %}
 {% comment %}
-  One row per species, like the GBA Pokédex list: a red stripe holding a
-  Poké Ball when the species is owned, then its number and name.
+  One row per species: a rounded pill (red when selected) with a Poké Ball
+  when the species is owned, then its number and name.
   Also returned alone by the `list` view (HTMX filtering).
   owned_ids is None in the public catalogue (everything shown); otherwise
   species the player doesn't own are named "???".
 {% endcomment %}
 {% for s in species_list %}
-  <li class="border-b border-line last:border-b-0 {% if not s.is_available and owned_ids is not None %}opacity-50{% endif %}"
+  <li class="{% if not s.is_available and owned_ids is not None %}opacity-50{% endif %}"
       {% if not s.is_available and owned_ids is not None %}title="Not in the game yet"{% endif %}>
     {% comment %}
       A real link (works without JavaScript) enhanced by HTMX: hx-get loads only
@@ -17,13 +17,13 @@
        hx-get="{% url 'pokedex:detail' s.number %}" hx-target="#entry" hx-push-url="true"
        data-species-link
        {% if s.number == selected %}aria-current="page"{% endif %}
-       class="flex items-center gap-3 pr-2 hover:bg-sunken aria-[current=page]:bg-accent-light/40 aria-[current=page]:outline-2 aria-[current=page]:-outline-offset-2 aria-[current=page]:outline-accent">
-      <span class="flex w-9 shrink-0 justify-center self-stretch border-r-2 border-accent-light bg-accent py-1">
+       class="dex-row group">
+      <span class="grid size-5 shrink-0 place-items-center">
         {% if owned_ids is not None and s.id in owned_ids %}
           <img src="{% static 'pokemon/poke-ball.png' %}" alt="Owned" width="20" height="20" class="pixelated size-5">
         {% endif %}
       </span>
-      <span class="text-muted">{{ s.number|stringformat:"03d" }}</span>
+      <span class="text-muted group-aria-[current=page]:text-white/80">{{ s.number|stringformat:"03d" }}</span>
       {% if owned_ids is None or s.id in owned_ids %}
         <span class="flex-1 truncate text-lg">{{ s.name }}</span>
         <span class="flex gap-1">
@@ -32,7 +32,7 @@
           {% endfor %}
         </span>
       {% else %}
-        <span class="flex-1 truncate text-lg text-muted">???</span>
+        <span class="flex-1 truncate text-lg text-muted group-aria-[current=page]:text-white/80">???</span>
       {% endif %}
     </a>
   </li>
