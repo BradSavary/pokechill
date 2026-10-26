@@ -10,7 +10,16 @@
   <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
   {# Compiled by Tailwind from assets/css/input.css #}
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
- 
+  {# HTMX 2.0.4, served from our static files (works offline, no third-party CDN) #}
+  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+  {# A game, not a web page: images (map, sprites, icons) can't be dragged away #}
+  <script>
+    document.addEventListener("dragstart", (event) => {
+      if (event.target instanceof HTMLImageElement) event.preventDefault();
+    });
+  </script>
+  {# Page scripts (ranch.js, pokedex.js...): without them, no countdown nor reveal dialog #}
+  {% block scripts %}{% endblock %}
 </head>
 {# h-dvh: the app fills exactly the screen; long panes scroll inside it #}
 {# hx-headers: every HTMX request sends the CSRF token, required by Django for POST #}

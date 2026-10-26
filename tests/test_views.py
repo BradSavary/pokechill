@@ -95,3 +95,15 @@ def test_type_filter_only_lists_types_carried_by_species(client, bulbasaur):
     html = client.get(reverse("pokedex:index")).content.decode()
     assert 'value="poison"' in html
     assert 'value="dark"' not in html
+
+
+@pytest.mark.parametrize(
+    ("page", "script"),
+    [("pokedex:index", "js/pokedex.js"), ("ranch:index", "js/ranch.js")],
+)
+def test_pages_load_htmx_and_their_own_script(client, bulbasaur, page, script):
+    # Without them the page still renders, but nothing reacts: no reveal
+    # dialog, no countdown, no HTMX requests (and Python tests run no JS)
+    html = client.get(reverse(page)).content.decode()
+    assert "js/htmx.min.js" in html
+    assert script in html
