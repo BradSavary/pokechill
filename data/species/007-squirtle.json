@@ -1,7 +1,9 @@
 {
   "species": "squirtle",
-  "rarity": "rare",
+  "rarity": "uncommon",
   "min_level": 1,
-  "conditions": null,
+  "conditions": {
+    "time_of_day": "day"
+  },
   "notes": "Starter: owned from the start, may also arrive at the Welcome area (candies)."
 }

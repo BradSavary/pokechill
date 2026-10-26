@@ -1,6 +1,6 @@
 {
   "species": "raticate",
-  "rarity": "uncommon",
+  "rarity": "rare",
   "min_level": 20,
   "conditions": {
     "time_of_day": "night"

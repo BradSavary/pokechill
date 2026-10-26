@@ -1,6 +1,8 @@
 {
   "species": "wartortle",
-  "rarity": "very_rare",
+  "rarity": "rare",
   "min_level": 16,
-  "conditions": null
+  "conditions": {
+    "time_of_day": "day"
+  }
 }
