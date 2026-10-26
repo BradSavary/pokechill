@@ -42,6 +42,8 @@ Le jeu se construit en 8 étapes jouables, chacune déployée en ligne (concepti
 - **Pensé pour le serverless.** Aucun processus ne tourne en permanence : le temps de jeu sera recalculé à chaque visite à partir d'horodatages, avec une graine aléatoire par heure pour que le résultat ne dépende pas du moment du calcul.
 - **Testé sans réseau.** Le client PokéAPI est injecté : les tests utilisent un faux client ou `httpx.MockTransport`. La CI vérifie le formatage, le lint, les contrôles Django, les migrations manquantes, les tests, et que le CSS commité correspond aux templates.
 
+Pour le détail de l'architecture, des choix et des procédures, voir la [synthèse technique](docs/technique.md).
+
 ## Lancer le projet en local
 
 Prérequis : [uv](https://docs.astral.sh/uv/getting-started/installation/) (il installe Python 3.13 tout seul).
