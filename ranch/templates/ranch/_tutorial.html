@@ -1,35 +1,84 @@
+{% load static %}
 {% comment %}
-  Tutorial card, shown on the page of the current step (see ranch/tutorial.py).
-  Variable: tutorial_step. Buttons post the step they complete, so a double
-  click can never skip a step.
+  The tutorial, shown as a popup over the page of the current step (see
+  ranch/tutorial.py). Variables: tutorial_step, starters (step 0 only).
+
+  - Intro and gift: centred popup over a dimmed page.
+  - Guided steps: a "spotlight" dims everything except the element explained
+    (data-spot: a CSS selector), placed by tutorial.js; the popup sits aside.
+
+  Buttons post the step they complete, so a double click never skips a step.
+  The intro has two pages (story, then the starters): the browser switches
+  between them, the server only knows step 0.
 {% endcomment %}
-<aside class="flex flex-col gap-3 panel p-5" aria-label="Tutorial">
-  {% if tutorial_step == 0 %}
-    <h2 class="section-title self-start">Welcome to your ranch!</h2>
-    <p>You just took over an abandoned Pokémon ranch. Three Pokémon came along with you: Bulbasaur, Charmander and Squirtle.</p>
-  {% elif tutorial_step == 1 %}
-    <h2 class="section-title self-start">Every hour, a visitor</h2>
-    <p>Every hour, on the hour, a wild Pokémon shows up. It waits at the Welcome area until you come back to discover it. The area holds a limited number of Pokémon: once it is full, newcomers leave.</p>
-  {% elif tutorial_step == 2 %}
-    <h2 class="section-title self-start">Your Pokédex</h2>
-    <p>Species you own appear in full. The others stay silhouettes until you meet them. Your goal: complete all 151 entries.</p>
-  {% elif tutorial_step == 3 %}
-    <h2 class="section-title self-start">Someone is waiting for you...</h2>
-    <p>A Pokémon came to welcome you to the ranch.</p>
+<div data-tutorial
+     {% if tutorial_step == 1 %}data-spot="#welcome-area"{% elif tutorial_step == 2 %}data-spot="#species-list-section"{% endif %}>
+
+  {% if tutorial_step == 0 or tutorial_step == 3 %}
+    <div class="fixed inset-0 z-40 bg-black/55"></div>
+  {% else %}
+    {# Transparent box over the explained element; its huge shadow dims the rest #}
+    <div class="tutorial-spot" hidden></div>
   {% endif %}
 
-  {% if tutorial_step == 3 %}
-    {# Opens the reveal dialog and asks the server for the gift (HTMX) #}
-    <button type="button" data-open-dialog
-            hx-post="{% url 'ranch:tutorial_gift' %}" hx-target="#reveal-content"
-            class="self-start btn">Go and see</button>
-  {% else %}
-    <form method="post" action="{% url 'ranch:tutorial_next' %}">
-      {% csrf_token %}
-      <input type="hidden" name="step" value="{{ tutorial_step }}">
-      <button class="btn">
-        {% if tutorial_step == 1 %}Open the Pokédex{% elif tutorial_step == 2 %}Back to the ranch{% else %}Next{% endif %}
-      </button>
-    </form>
-  {% endif %}
-</aside>
+  <aside id="tutorial-content" aria-label="Tutorial" role="dialog" aria-modal="true"
+         class="panel fixed z-50 flex w-[min(34rem,90vw)] flex-col gap-3 p-6 {% if tutorial_step == 1 %}bottom-8 left-1/2 -translate-x-1/2{% elif tutorial_step == 2 %}bottom-8 left-36{% else %}inset-0 m-auto h-fit{% endif %}">
+
+    {% if tutorial_step == 0 %}
+      {# Page 1: the story #}
+      <section data-tutorial-page class="flex flex-col gap-3">
+        <h2 class="title-band -ml-6 self-start">Welcome to PokéChill!</h2>
+        <p>You have always loved Pokémon. After years of saving up, you finally did it: you bought an old ranch on the edge of Kanto.</p>
+        <p>A few fences, a wide meadow, plenty of room... The perfect place for Pokémon to come and live. Who knows who will drop by?</p>
+        <button type="button" data-tutorial-next-page class="btn self-end">Next</button>
+      </section>
+
+      {# Page 2: the starters, hopping one after another #}
+      <section data-tutorial-page hidden class="flex flex-col gap-3">
+        <h2 class="title-band -ml-6 self-start">You're not alone</h2>
+        <p>Three Pokémon followed you from Professor Oak's lab. They will be the first residents of your ranch!</p>
+        <div class="flex justify-center gap-6 py-2">
+          {% for species in starters %}
+            <figure class="flex flex-col items-center">
+              <img src="{{ species.sprite_url }}" alt="" width="96" height="96"
+                   class="pixelated size-24 animate-hop" style="animation-delay: {% widthratio forloop.counter0 1 200 %}ms">
+              <figcaption class="font-bold">{{ species.name }}</figcaption>
+            </figure>
+          {% endfor %}
+        </div>
+        <form method="post" action="{% url 'ranch:tutorial_next' %}" class="self-end">
+          {% csrf_token %}
+          <input type="hidden" name="step" value="0">
+          <button class="btn">Let's go!</button>
+        </form>
+      </section>
+
+    {% elif tutorial_step == 1 %}
+      <h2 class="title-band -ml-6 self-start">Every hour, a visitor</h2>
+      <p>On the hour, a wild Pokémon comes to the ranch and waits at the <strong>Welcome area</strong>. Come back to find out who came!</p>
+      <p>The area holds 8 Pokémon: once it is full, newcomers leave. Every Pokémon you meet gets an entry in your Pokédex.</p>
+      <form method="post" action="{% url 'ranch:tutorial_next' %}" class="self-end">
+        {% csrf_token %}
+        <input type="hidden" name="step" value="1">
+        <button class="btn">Open the Pokédex</button>
+      </form>
+
+    {% elif tutorial_step == 2 %}
+      <h2 class="title-band -ml-6 self-start">Your Pokédex</h2>
+      <p>Species you own appear in full, with a Poké Ball. The others stay silhouettes until you meet them: there are 151 to find!</p>
+      <form method="post" action="{% url 'ranch:tutorial_next' %}" class="self-end">
+        {% csrf_token %}
+        <input type="hidden" name="step" value="2">
+        <button class="btn">Back to the ranch</button>
+      </form>
+
+    {% elif tutorial_step == 3 %}
+      <h2 class="title-band -ml-6 self-start">Someone is waiting for you...</h2>
+      <p>A Pokémon came to welcome you to your new ranch.</p>
+      {# The server answers with the reveal of the gift, swapped into this popup #}
+      <button type="button" hx-post="{% url 'ranch:tutorial_gift' %}" hx-target="#tutorial-content"
+              hx-swap="innerHTML" class="btn self-end">Go and see</button>
+    {% endif %}
+  </aside>
+</div>
+<script src="{% static 'js/tutorial.js' %}" defer></script>

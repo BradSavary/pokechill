@@ -81,6 +81,8 @@
   --animate-shake: shake 0.3s ease-in-out 3;
   --animate-pop: pop 0.4s ease-out both;
   --animate-spin-slow: spin 6s linear infinite;
+  /* The starters hop in the tutorial: animate-hop */
+  --animate-hop: hop 1.2s ease-in-out infinite;
 
   @keyframes shake {
     0%, 100% { transform: rotate(0deg); }
@@ -93,6 +95,10 @@
   }
   @keyframes vanish {
     to { opacity: 0; transform: scale(0); }
+  }
+  @keyframes hop {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-14px); }
   }
 }
 
@@ -238,6 +244,13 @@
 
   .new-badge {
     @apply animate-bounce rounded-full bg-accent px-2 text-xs font-bold text-white shadow;
+  }
+
+  /* Tutorial spotlight: a transparent box over the explained element (placed
+     by tutorial.js); its huge shadow dims everything around it. */
+  .tutorial-spot {
+    @apply pointer-events-none fixed z-40 rounded-2xl ring-4 ring-white;
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
   }
 
   /* Family candy icon. Every candy sprite (32x32, from Let's Go) draws its

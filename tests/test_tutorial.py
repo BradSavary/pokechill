@@ -30,8 +30,14 @@ def current_step():
 
 def test_a_new_player_starts_the_tutorial(client):
     html = client.get(reverse("ranch:index")).content.decode()
-    assert "Welcome to your ranch!" in html
+    assert "Welcome to PokéChill!" in html
     assert current_step() == tutorial.WELCOME
+
+
+def test_the_intro_shows_the_starters(client, bulbasaur, charmander):
+    html = client.get(reverse("ranch:index")).content.decode()
+    assert "You're not alone" in html
+    assert "<figcaption" in html and "Bulbasaur</figcaption>" in html
 
 
 def test_the_tutorial_goes_through_the_pokedex_and_back(client):

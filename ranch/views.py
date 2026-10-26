@@ -10,6 +10,9 @@ from datetime import timedelta
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+from game import balance
+from pokedex.models import Species
+
 from . import tutorial
 from .decorators import player_required
 from .services import reveal_all, reveal_next
@@ -20,6 +23,7 @@ def index(request):
     """The Ranch, main page of the game: absence summary and Welcome area."""
     player = request.player
     waiting = player.arrivals.count()
+    tutorial_step = tutorial.step_for_page(player, "ranch")
     return render(
         request,
         "ranch/index.html",
@@ -30,7 +34,11 @@ def index(request):
             "catch_up": request.catch_up,  # what happened since the last visit
             # The next arrival comes at the next full hour
             "next_arrival": player.last_slot + timedelta(hours=1),
-            "tutorial_step": tutorial.step_for_page(player, "ranch"),
+            "tutorial_step": tutorial_step,
+            # The intro of the tutorial shows the starters hopping
+            "starters": Species.objects.filter(slug__in=balance.STARTER_SPECIES)
+            if tutorial_step == tutorial.WELCOME
+            else [],
             # The reveal dialog opens by itself, but never over the tutorial
             "auto_open": waiting and player.tutorial_step == tutorial.DONE,
         },
@@ -70,7 +78,7 @@ def tutorial_next(request):
 @require_POST
 @player_required
 def tutorial_gift(request):
-    """Last tutorial step: reveal the gift Pokémon in the reveal dialog."""
+    """Last tutorial step: reveal the gift Pokémon in the tutorial popup."""
     return render(
         request,
         "ranch/_reveal.html",

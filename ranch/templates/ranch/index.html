@@ -11,7 +11,7 @@
   <div class="flex flex-col gap-3">
     {% if tutorial_step is not None %}{% include "ranch/_tutorial.html" %}{% endif %}
 
-    <section class="panel overflow-hidden" aria-label="Welcome area">
+    <section id="welcome-area" class="panel overflow-hidden" aria-label="Welcome area">
       <header class="flex items-center justify-between pt-3 pr-5">
         <h1 class="title-band">Your ranch</h1>
         {# ranch.js counts down to the next full hour, then reloads the page #}

@@ -30,7 +30,7 @@
         </section>
 
         {# --- Right (2/5): search, filter and species list --- #}
-        <section class="col-span-2 flex min-h-0 flex-col gap-2" aria-label="Species list">
+        <section id="species-list-section" class="col-span-2 flex min-h-0 flex-col gap-2" aria-label="Species list">
           {% comment %}
             Typing in the search box or changing the type re-renders only the list:
             hx-get sends the form fields, hx-target says where to put the answer.
