@@ -1,75 +1,79 @@
 # PokéChill — Synthèse technique
 
-État du projet à la fin de l'**étape 0 (le socle)**, au 26 octobre 2026. Ce document décrit ce qui est construit, comment les pièces s'articulent et pourquoi elles ont été conçues ainsi. Il sera complété à chaque étape. Pour le gameplay, voir [concept.md](concept.md).
+État du projet à la fin de l'**étape 1 (les arrivées)**, au 26 octobre 2026. Ce document décrit ce qui est construit, comment les pièces s'articulent et pourquoi elles ont été conçues ainsi. Il est mis à jour à chaque étape. Pour le gameplay, voir [concept.md](concept.md).
 
 - **Production :** https://pokechill.bradsavary.dev
 - **Dépôt :** https://github.com/BradSavary/pokechill
-- **Contenu jouable :** un Pokédex consultable des 151 espèces de Kanto (fiches, recherche, filtre par type, silhouettes).
+- **Contenu jouable :**
+    - on joue sans compte (invité), puis on sauvegarde sa partie en créant un compte ;
+    - chaque heure, un Pokémon arrive à la Pension. On le découvre à son retour dans une fenêtre de révélation, et les doublons rapportent des bonbons ;
+    - le Pokédex personnel montre les espèces possédées et des silhouettes pour les autres ;
+    - un tutoriel se termine par un Pikachu offert.
 
 ## 1. Vue d'ensemble
 
 | Couche | Technologie | Rôle |
 | --- | --- | --- |
 | Langage et outillage | Python 3.13, uv | Version de Python, environnement virtuel, dépendances figées dans `uv.lock` |
-| Framework | Django 5.2 LTS | URLs, vues, modèles, templates, admin, commandes |
+| Moteur de jeu | Python pur (package `game/`) | Règles du jeu, sans Django ni base de données |
+| Framework | Django 5.2 LTS | URLs, vues, modèles, templates, admin, comptes, commandes |
 | Interface | Templates Django, HTMX 2.0.4, Tailwind CSS v4.3.3 | Pages rendues côté serveur, mises à jour partielles sans framework JavaScript |
 | Base de données | SQLite (local), PostgreSQL Neon (production) | Choisie par la variable `DATABASE_URL` |
 | Hébergement | Vercel, région `fra1` (Francfort) | Une fonction serverless Python, fichiers statiques sur le CDN |
-| Qualité | Ruff, pytest, GitHub Actions | Formatage, lint, tests, intégration continue |
+| Qualité | Ruff, pytest, GitHub Actions | Formatage, lint, 161 tests, intégration continue |
 
-### Le circuit d'une requête
+### Les trois couches
 
 ```
-Navigateur ──GET /pokedex/25/──▶ Vercel (HTTPS) ──▶ fonction Python (Django)
-                                                        │
-                       middlewares (sécurité, session, CSRF)
-                                                        │
-               config/urls.py ─▶ pokedex/urls.py ─▶ views.species_detail
-                                                        │
-                            modèles (ORM) ◀──▶ PostgreSQL Neon
-                                                        │
-                 template : page complète, ou fragment si requête HTMX
-                                                        │
-Navigateur ◀──────────────── HTML ◀─────────────────────┘
-     └──▶ /static/... (CSS, JS, sprites, cris) servis directement par le CDN de Vercel
+┌───────────────────────────────────────────────────────────┐
+│ Interface : templates, HTMX, Tailwind (style Épée/Bouclier)│
+├───────────────────────────────────────────────────────────┤
+│ Couche Django                                             │
+│   pokedex  : catalogue (espèces, types, attaques)         │
+│   accounts : invité, inscription, connexion               │
+│   ranch    : partie du joueur (collection, Accueil...)    │
+├───────────────────────────────────────────────────────────┤
+│ Moteur pur game/ : horloge, conditions, arrivées,         │
+│                    obtention, attaques, équilibrage       │
+└───────────────────────────────────────────────────────────┘
 ```
 
-### L'architecture cible
+Les dépendances vont toujours vers le bas, jamais dans l'autre sens :
+- `game/` ne connaît pas Django. Un test d'architecture fait échouer la CI si un fichier de `game/` importe Django ;
+- les **modèles** de `pokedex` ne dépendent pas de `ranch` : pas de dépendance circulaire ;
+- `accounts` ne dépend pas de `ranch` : c'est `ranch` qui demande à `accounts` de créer un invité ;
+- seules les **vues** combinent les apps. Par exemple, la vue du Pokédex lit la collection du joueur dans `ranch`.
 
-Le projet vise trois couches. À la fin de l'étape 0, seules les deux premières existent :
-
-1. **Interface** : templates, HTMX, Tailwind.
-2. **Couche Django** : modèles, vues, commandes, comptes.
-3. **Moteur de jeu en Python pur, sans import Django** : conditions d'arrivée, objectifs, rattrapage du temps. Il arrive à l'étape 1 et sera testé sans base de données.
+Une vue suit toujours le même schéma : elle charge l'état depuis la base, appelle une fonction pure de `game/`, puis enregistre le résultat. Toutes les règles de jeu se testent donc en quelques millisecondes, sans base de données.
 
 ## 2. Arborescence
 
 ```
-config/                  Projet Django
-  settings.py            Réglages lus depuis l'environnement
-  urls.py                Aiguillage racine (/admin/, /pokedex/, / redirige vers le Pokédex)
-pokedex/                 App Pokédex
-  models.py              Type, EvolutionChain, Species, Move, SpeciesMove
-  views.py               Pages et fragments HTMX
-  urls.py                /pokedex/, /pokedex/list/, /pokedex/<numéro>/
-  admin.py               Interface d'administration (vérification des données)
-  pokeapi/               Import des données
-    client.py            Client HTTP avec cache disque
-    parsers.py           Fonctions pures JSON -> dictionnaires
-    importer.py          Orchestration en 3 phases
-  management/commands/
-    import_pokeapi.py    Commande Django d'import
-  templates/pokedex/     index.html, _species_list.html, _entry.html, _type_badge.html
-templates/base.html      Gabarit commun : navigation, pied de page légal
+game/                    Moteur de jeu en Python pur (aucun import Django)
+  balance.py             Toutes les valeurs d'équilibrage
+  clock.py               Créneaux horaires, jour/nuit à Paris, graine par heure
+  conditions.py          Arbres de conditions ET/OU/NON et leur validation
+  arrivals.py            Espèces éligibles, tirage pondéré, rattrapage
+  collection.py          Ce que rapporte une capture (nouvelle espèce ou doublon)
+  moves.py               Les 4 attaques connues à un niveau donné
+config/                  Projet Django : réglages (lus dans l'environnement), URLs racines
+pokedex/                 Catalogue : modèles, vues du Pokédex, admin
+  pokeapi/               Import PokéAPI : client avec cache, parsers, importeur
+  species_files.py       Lecture et validation des fichiers d'espèces
+  management/commands/   import_pokeapi, load_species
+accounts/                Invité, inscription (conversion), connexion (pas de modèle)
+ranch/                   Partie du joueur
+  models.py              Player, OwnedPokemon, CandyStock, Arrival
+  services.py            Rattrapage, obtention, révélation, purge des invités
+  tutorial.py            Étapes du tutoriel et cadeau
+  decorators.py          @player_required (invité automatique + rattrapage)
+  management/commands/   purge_guests, players, rewind_clock, reset_player
+data/species/            Un fichier JSON par espèce disponible (26 : #001 à #026)
+templates/               base.html, _menu_item.html, icons/ (SVG Tabler, MIT)
 assets/css/input.css     Source Tailwind (non servie)
-static/                  Fichiers servis tels quels
-  css/main.css           CSS compilé et minifié (commité)
-  js/                    htmx.min.js, pokedex.js
-  pokemon/               sprites/, sprites/shiny/, cries/, types/
-scripts/build_css.py     Compilation Tailwind (version figée)
-tests/                   conftest.py, test_smoke, test_models, test_pokeapi, test_views
-.github/workflows/ci.yml Intégration continue
-vercel.json              Région des fonctions
+static/                  CSS compilé, HTMX, JS, polices, sprites, cris, icônes, bonbons
+scripts/                 build_css.py (Tailwind), vercel_build.py (build de production)
+tests/                   161 tests pytest
 data/pokeapi_cache/      Cache des réponses PokéAPI (66 Mo, non commité)
 ```
 
@@ -88,159 +92,238 @@ Réglages notables de [config/settings.py](../config/settings.py) :
 
 - **`conn_max_age=0`** : chaque requête ouvre puis ferme sa connexion, ce qui convient à des fonctions de courte durée.
 - **`DISABLE_SERVER_SIDE_CURSORS`** (PostgreSQL uniquement) : le pooler de Neon, en mode transaction, ne gère pas les curseurs serveur de Django.
-- **`TIME_ZONE = "UTC"`** : toutes les dates sont stockées en UTC. L'heure de Paris ne servira qu'aux règles de jeu.
-- **Sécurité en production :** proxy HTTPS de Vercel reconnu (`SECURE_PROXY_SSL_HEADER`), cookies réservés au HTTPS et HSTS d'un an. Trois avertissements de `check --deploy` sont volontairement désactivés, avec leur justification dans le code :
-    - la redirection HTTPS, déjà assurée par Vercel ;
-    - HSTS sur les sous-domaines ;
-    - la liste de préchargement HSTS.
+- **`TIME_ZONE = "UTC"`** : toutes les dates sont stockées en UTC. L'heure de Paris ne sert qu'au jour et à la nuit.
+- **`SESSION_COOKIE_AGE` = 1 an** : pour un invité, le cookie de session est la seule clé de sa partie.
+- **Sécurité en production :** proxy HTTPS de Vercel reconnu (`SECURE_PROXY_SSL_HEADER`), cookies réservés au HTTPS, HSTS d'un an. Trois avertissements de `check --deploy` sont volontairement désactivés, avec leur justification dans le code.
 
-## 4. Modèle de données
+## 4. Le moteur de jeu (`game/`)
 
-Ces tables contiennent des **données de référence statiques**, importées depuis PokéAPI. Elles décrivent ce qu'est une espèce, jamais ce qu'un joueur possède : les données de joueur arriveront dans d'autres apps à partir de l'étape 1.
+Le moteur ne reçoit que des valeurs simples (des dates, des règles d'espèces) et rend des résultats (des arrivées, une issue de capture). Il ne lit et n'écrit jamais rien en base.
 
-```
-Type ◀──── primary_type / secondary_type ──── Species ────▶ EvolutionChain
- ▲                                            │   ▲
- │                                            │   └── evolves_from (vers une autre Species)
- └──── type ──── Move ◀──── SpeciesMove ──────┘
-```
-
-| Modèle | Champs clés | Remarques |
+| Module | Rôle | Point clé |
 | --- | --- | --- |
-| `Type` | `slug` (`"fire"`), `name` | 18 types modernes. Ténèbres n'existe que par les attaques. Propriété `icon_url` |
-| `EvolutionChain` | `pokeapi_id` | Une famille. Sert aux bonbons partagés |
-| `Species` | `number`, `slug`, `name`, `genus`, `flavor_text`, 2 types, 6 stats, `height_dm`, `weight_hg`, `evolution_chain`, `evolution_stage`, `evolves_from`, `is_legendary` (Mew inclus) | Propriétés : `types`, `base_stat_total`, `height_m`, `weight_kg`, `sprite_url`, `shiny_sprite_url`, `cry_url` |
-| `Move` | `slug`, `name`, `type`, `damage_class`, `power`, `accuracy`, `pp` | `power` et `accuracy` peuvent être vides (attaques de statut, attaques qui ne ratent jamais) |
-| `SpeciesMove` | `species`, `move`, `learn_method` (`level-up` ou `machine`), `level` | Table d'association explicite. Contrainte d'unicité sur les 4 champs |
+| [clock.py](../game/clock.py) | Créneaux horaires en UTC, jour ou nuit selon l'heure de Paris | `slot_rng(joueur, heure)` : un générateur aléatoire dont la graine est un SHA-256 du joueur et de l'heure |
+| [conditions.py](../game/conditions.py) | Évalue et valide les arbres de conditions | Un **registre de feuilles** : ajouter un type de condition revient à ajouter une entrée |
+| [arrivals.py](../game/arrivals.py) | Espèces éligibles, tirage pondéré par la rareté, nature, shiny, rattrapage | Les candidats sont triés avant le tirage : l'ordre de la liste reçue n'influe pas |
+| [collection.py](../game/collection.py) | Ce que rapporte une capture | Une nouvelle espèce est ajoutée ; un doublon donne des bonbons, une nature et un shiny éventuels |
+| [moves.py](../game/moves.py) | Les 4 attaques connues à un niveau | Comme dans les jeux : les 4 dernières apprises par niveau |
+| [balance.py](../game/balance.py) | Toutes les valeurs d'équilibrage | Voir le tableau ci-dessous |
+
+**Le déterminisme est la propriété centrale.** Une même heure donne toujours le même Pokémon, la même nature et le même shiny, quel que soit le moment du calcul. Un test vérifie que rattraper 10 heures d'un coup donne exactement les mêmes arrivées que rattraper 4 heures, puis 6.
+
+### Valeurs d'équilibrage
+
+| Valeur | Réglage |
+| --- | --- |
+| Poids de rareté | commune 100, peu commune 40, rare 12, très rare 3, légendaire 0,2 (Mew compte comme légendaire) |
+| Places de l'Accueil | 8 au départ (`WELCOME_CAPACITY_BASE`), augmentées plus tard par l'arbre de compétences |
+| Shiny | 1/1024 (1/512 avec le Charme Chroma, à l'étape 5) |
+| Bonbons par doublon | 3 / 5 / 10 / 20 / 50 selon la rareté |
+| Nuit (heure de Paris) | 21 h – 6 h |
+| Starters | Bulbasaur, Charmander, Squirtle ; cadeau du tutoriel : Pikachu |
+
+## 5. Modèle de données
+
+```
+pokedex (catalogue, identique pour tous)       ranch (partie du joueur)
+Type ◀── Species ──▶ EvolutionChain ◀──────── CandyStock (bonbons par lignée)
+           ▲  │                                  │
+           │  └── SpeciesMove ──▶ Move           │
+           │                                     ▼
+           ├──────────────── OwnedPokemon ──▶ Player ◀── Arrival (Accueil)
+           │                                     │
+           └──────────────────── Arrival         └──▶ User (Django)
+```
+
+| Modèle | App | Champs clés | Remarques |
+| --- | --- | --- | --- |
+| `Type` | pokedex | `slug`, `name` | 18 types modernes. Propriété `icon_url` |
+| `EvolutionChain` | pokedex | `pokeapi_id` | Une famille. Propriétés `base_species` et `candy_url` |
+| `Species` | pokedex | Données PokéAPI (numéro, nom, types, stats, famille, `is_legendary`) et **données de jeu** (`is_available`, `rarity`, `min_level`, `arrival_conditions` en JSON) | `to_rule()` la convertit pour le moteur |
+| `Move`, `SpeciesMove` | pokedex | Attaques, et comment une espèce les apprend (Rouge Feu/Vert Feuille) | Contrainte d'unicité sur l'entrée de learnset |
+| `Player` | ranch | `user` (un-à-un), `last_slot`, `last_seen_at`, `tutorial_step` | `last_slot` est la dernière heure rattrapée. Propriété `welcome_capacity` |
+| `OwnedPokemon` | ranch | `player`, `species`, `level`, `unlocked_natures` (JSON), `shiny_unlocked` | **Un seul par espèce**, garanti par une contrainte en base |
+| `CandyStock` | ranch | `player`, `family`, `amount` | Un stock par lignée |
+| `Arrival` | ranch | `player`, `species`, `slot`, `nature`, `is_shiny` | Un Pokémon qui attend à l'Accueil. **Une seule arrivée par heure**, garantie en base |
 
 Choix de conception :
+- **`User` et `Player` sont séparés.** `User` (Django) porte l'identité, et `Player` l'état de jeu. Modifier le `User` en cours de projet est délicat, et un compte peut exister sans partie, comme celui de l'administrateur.
+- **Les natures et le shiny sont enregistrés dès l'étape 1**, mais leurs effets (bonus de stats, apparence) arrivent à l'étape 5.
+- **Le stade de recherche 1 se déduit** de l'existence d'un `OwnedPokemon` : pas de champ supplémentaire.
 
-- **Deux clés étrangères pour les types** plutôt qu'une relation plusieurs-à-plusieurs : une espèce a au plus 2 types, et leur ordre compte.
-- **Une colonne par stat** : ce sont exactement les 6 stats ciblées par les natures du concept.
-- **Pas de champ pour les médias** : le chemin se déduit du numéro (`pokemon/sprites/25.png`) ou du slug (`pokemon/types/fire.png`).
-- **Unités brutes de PokéAPI** (décimètres, hectogrammes), converties à l'affichage.
-- **La famille sans l'évolution.** Les Pokémon n'évoluent pas dans ce jeu. On garde la chaîne, le stade (1 à 3) et la pré-évolution, qui serviront aux bonbons, à leur coût et aux conditions d'arrivée. Les champs décrivant le déclencheur d'évolution (niveau, objet, échange) ont été retirés : ils relèvent des fichiers de données par espèce de l'étape 1.
-- **`on_delete`** : `PROTECT` pour les types et les chaînes (pas de suppression d'une ligne encore utilisée), `CASCADE` pour le learnset, `SET_NULL` pour `evolves_from`.
+## 6. Les données d'espèces
 
-## 5. Import depuis PokéAPI
+Chaque espèce disponible a un fichier dans [data/species/](../data/species/) :
+
+```json
+{
+  "species": "pikachu",
+  "rarity": "rare",
+  "min_level": 1,
+  "conditions": {"time_of_day": "day"},
+  "notes": "Also given at the end of the tutorial."
+}
+```
+
+- **La validation est stricte** ([species_files.py](../pokedex/species_files.py)). Une clé inconnue est refusée, ce qui attrape les fautes de frappe comme `rarety`. Une rareté inconnue, un niveau hors de 1 à 100 ou un arbre de conditions invalide le sont aussi. **Toutes les erreurs sont listées d'un coup**, avec le nom de leur fichier.
+- **La commande `load_species` est tout ou rien**, dans une transaction. Une espèce dont le fichier est supprimé repasse en « non disponible ».
+- **Un test valide les vrais fichiers du dépôt** : une erreur dans un JSON fait échouer la CI.
+- **En production**, `load_species` tourne **à chaque déploiement** ([scripts/vercel_build.py](../scripts/vercel_build.py)). Les fichiers du dépôt font foi.
+- Règle retenue pour les **évolutions par pierre** (Raichu) : le niveau d'arrivée vaut le niveau minimal de la forme précédente plus 15.
+
+## 7. Joueurs et comptes
+
+- **Un invité est un `User` sans mot de passe utilisable** (`set_unusable_password`). Il n'a besoin d'aucun champ ni modèle supplémentaire, et personne ne peut se connecter à sa place.
+- **`@player_required`** protège les pages de jeu. Il crée un invité à la première visite, crée sa partie avec les 3 starters, enregistre la visite, puis lance le rattrapage. Le Pokédex n'en a pas besoin : les robots d'indexation qui le parcourent ne créent donc aucun compte.
+- **Créer un compte convertit l'invité** : le `UserCreationForm` de Django reçoit l'utilisateur existant (`instance=`), qui garde son identifiant et toute sa partie. `update_session_auth_hash` le garde connecté après le changement de mot de passe.
+- **La connexion et la déconnexion** utilisent les vues de Django. La déconnexion se fait uniquement en POST, et un invité n'a pas de bouton de déconnexion, qui lui ferait perdre sa partie.
+- **`purge_guests`** supprime les invités inactifs depuis 180 jours, avec leur partie. Un compte inscrit n'est jamais supprimé. La commande se lance à la main pour l'instant, et son automatisation par un Cron Vercel est prévue.
+
+## 8. Les arrivées : rattrapage et révélation
+
+```
+Visite d'une page de jeu
+  └─▶ catch_up_player(player)                              [transaction]
+        ├─ verrouille le joueur (select_for_update)
+        ├─ places libres = capacité de l'Accueil − arrivées en attente
+        ├─ game.arrivals.catch_up(...)   ← rejoue chaque heure depuis last_slot
+        ├─ bulk_create des Arrival       ← contrainte (joueur, heure) unique
+        └─ last_slot = heure actuelle    (même si l'Accueil était plein)
+
+Clic sur « Reveal » (POST, HTMX)
+  └─▶ reveal_next / reveal_all                             [transaction]
+        └─ receive_pokemon()  ← unique porte d'entrée pour obtenir un Pokémon
+              └─ game.collection.resolve_obtention()
+```
+
+- **Deux protections contre les visites simultanées**, par exemple deux onglets ouverts : le verrou sur le joueur, puis la contrainte d'unicité en dernier recours. SQLite ignore `select_for_update`, donc en local seule la contrainte joue.
+- **L'Accueil plein arrête le rattrapage.** Le moteur compte alors les heures perdues (`hours_while_full`), que le résumé d'absence affiche.
+- **La révélation** se fait une par une (la Poké Ball tremble, le Pokémon apparaît devant des rayons de la couleur de sa rareté, son cri est joué) ou tout d'un coup (« Skip »). Les actions qui modifient l'état n'acceptent que POST, et HTMX envoie le jeton CSRF sur toutes ses requêtes (`hx-headers` sur `<body>`).
+- **Le tutoriel** ([tutorial.py](../ranch/tutorial.py)) a 4 étapes (Pension, Pokédex, puis retour). Chaque bouton envoie le numéro de l'étape qu'il termine, si bien qu'un double clic ne peut pas en sauter une. Le cadeau (Pikachu) n'est donné qu'une fois, sous verrou.
+
+## 9. Import depuis PokéAPI
 
 Commande : `uv run python manage.py import_pokeapi [--limit N] [--no-media]`.
 
-### Les trois phases ([importer.py](../pokedex/pokeapi/importer.py))
+1. **Récupération et analyse, sans toucher à la base.** Le client lit d'abord le cache disque, et des fonctions pures transforment le JSON.
+2. **Écriture dans une seule transaction**, avec `update_or_create` (l'import est idempotent) et `bulk_create` pour les 5 017 entrées de learnset.
+3. **Médias :** sprites Noir/Blanc (normaux et shiny), cris d'origine, icônes de types et **bonbons par lignée** (objets de *Let's Go*). Un fichier présent n'est jamais retéléchargé.
 
-1. **Récupération et analyse, sans toucher à la base.** Les ressources `pokemon`, `pokemon-species`, `evolution-chain`, `move` et `type` passent par le client, qui lit d'abord le cache disque. Des fonctions pures ([parsers.py](../pokedex/pokeapi/parsers.py)) les transforment en dictionnaires.
-2. **Écriture dans une seule transaction** (`transaction.atomic`). Si une erreur survient, rien n'est enregistré.
-    - Toutes les écritures passent par `update_or_create`, ce qui rend l'import idempotent.
-    - `evolves_from` est rempli dans une seconde passe, une fois toutes les espèces créées.
-    - Le learnset est remplacé en bloc (`bulk_create`), soit 5 017 lignes en une requête.
-3. **Médias :** sprites Noir/Blanc (normal et shiny), cris d'origine (`legacy`) et icônes de types de Let's Go. Un fichier déjà présent n'est jamais retéléchargé.
+Règles : seules les espèces importées comptent pour les stades d'évolution (Pikachu est au stade 1, Pichu étant ignoré). Les attaques viennent de Rouge Feu/Vert Feuille (par niveau ou CT/CS). Les espèces fabuleuses comptent comme légendaires.
 
-### Règles d'interprétation
+Chiffres : 151 espèces, 18 types, 302 attaques, 5 017 entrées de learnset, environ 550 médias (2,3 Mo).
 
-- **Stade d'évolution :** seules les espèces importées sont comptées. Pichu, ajouté en génération 2, est ignoré : Pikachu est donc au stade 1 et Raichu au stade 2. La même règle s'applique à Clefairy, Jigglypuff, Jynx, Electabuzz, Magmar et Hitmonlee.
-- **Attaques :** uniquement celles de Rouge Feu/Vert Feuille, apprises par niveau ou par CT/CS. Les attaques par tuteur ou par œuf sont ignorées. La puissance et le type des attaques viennent des données modernes.
-- **Descriptions :** version Rouge Feu, à défaut Vert Feuille. Les retours à la ligne sont aplatis et « POKéMON » devient « Pokémon ».
+## 10. Interface
 
-### Chiffres
+### Le style
 
-151 espèces, 18 types, 302 attaques, 5 017 entrées de learnset, 471 médias (2,1 Mo). Le premier import prend environ 2 minutes ; avec le cache, une relance prend environ 1 seconde.
+Le style s'inspire des menus de **Pokémon Épée/Bouclier**, avec des polices pixel en clin d'œil aux anciens jeux :
+- un fond rouge coupé en diagonale, des panneaux blancs arrondis ;
+- des **bandeaux de titre en biais** (`.title-band`, `.section-title`) ;
+- des **étiquettes de type** sombres avec l'icône du type (`.type-label`) ;
+- des boutons et des champs en pilule.
 
-## 6. Interface
+**La police « PokeChill »** combine Pixelify Sans pour les lettres et Micro 5 pour les chiffres. Les deux sont libres (OFL) et hébergées dans `static/fonts/`. Le navigateur choisit le fichier caractère par caractère grâce à `unicode-range`, et `size-adjust` aligne les tailles. Sur les écrans de plus de 1 536 px, la taille de base passe à 125 %.
 
-### La page Pokédex
+**Le menu latéral** se compose de disques blancs portant des icônes plates colorées (Tabler, MIT). Les icônes sont des SVG inclus directement dans la page, avec un trait épaissi et colorés en CSS (`currentColor`). Le nom de chaque onglet s'affiche au survol, et un texte invisible le garde lisible pour les lecteurs d'écran.
 
-- **Panneau gauche** (1/3) : recherche par nom, filtre par type (limité aux 17 types portés par au moins une espèce), case « Silhouettes » et liste des espèces avec leurs icônes de types.
-- **Panneau droit** (2/3) : la fiche. Elle comprend le sprite, le genre, les types, la taille et le poids, le cri, la description, les stats, la famille et les attaques par niveau et par CT/CS.
+### Le Pokédex
 
-### Le modèle HTMX
-
-| Action | Requête | Réponse |
-| --- | --- | --- |
-| Ouvrir `/pokedex/25/` directement | GET normal | Page complète |
-| Cliquer sur une espèce | GET avec `HX-Request: true` | Fragment `_entry.html` inséré dans `#entry`, URL mise à jour (`hx-push-url`) |
-| Taper dans la recherche, changer de type | GET `/pokedex/list/` | Fragment `_species_list.html` inséré dans `#species-list` |
-| Bouton Précédent sans cache HTMX | GET avec `HX-History-Restore-Request` | Page complète |
-
-Principes appliqués :
-
-- **Amélioration progressive :** chaque lien a un vrai `href`, donc tout fonctionne sans JavaScript.
-- **JavaScript minimal :** `pokedex.js`, une vingtaine de lignes, ne fait que synchroniser la surbrillance de la liste après une navigation HTMX.
-- **Silhouettes en CSS pur :** une case à cocher, le variant Tailwind `group-has-[#silhouettes:checked]` et le filtre `brightness(0)`.
-- **Peu de requêtes SQL :** la page complète en fait 5 et la fiche seule 3, grâce à `select_related` et `prefetch_related`.
+- **Une espèce possédée** est affichée sur une scène rouge en diagonale, avec son numéro, son nom, ses types, le cri, un encadré joueur (stade, niveau, bonbons avec l'icône de la lignée, natures), la description, les stats et ses **4 attaques actuelles**.
+- **Une espèce inconnue** apparaît en **silhouette noire** avec « ??? ». Si elle n'est pas encore dans le jeu, elle est grisée.
+- **La recherche par nom** ne trouve que les espèces possédées : elle ne révèle rien.
+- **Un visiteur sans partie** voit le catalogue complet.
+- **Le modèle HTMX** : la même vue renvoie la page complète ou un fragment, selon l'en-tête `HX-Request` (en tenant compte de `HX-History-Restore-Request`). Chaque lien reste un vrai lien `href`, donc tout fonctionne sans JavaScript. La page complète fait 5 requêtes SQL.
 
 ### Tailwind
 
-- La source est [assets/css/input.css](../assets/css/input.css). On y trouve :
-    - les couleurs du jeu et des types, déclarées dans `@theme` ;
-    - le variant `portrait-phone:`, qui affiche le message invitant à tourner le téléphone ;
-    - l'utilitaire `pixelated`, qui garde le pixel art net ;
-    - les composants `.tab` et `.type-badge`.
-- **Le scan est limité aux templates** (`source(none)` et `@source`) : un scan automatique du projet prenait des mots du Python pour des classes.
-- **Les classes dynamiques** `bg-type-{{ slug }}` sont déclarées explicitement avec `@source inline(...)`, faute de quoi Tailwind ne les génère pas.
-- **La compilation** passe par `scripts/build_css.py`, avec la version figée (v4.3.3) et un résultat toujours minifié, y compris en `--watch`. Le binaire est fourni par pytailwindcss, sans Node.js.
+- La source est [assets/css/input.css](../assets/css/input.css) : les couleurs dans `@theme`, les composants, les animations de la révélation, le variant `portrait-phone:` et l'utilitaire `pixelated`.
+- Le scan est limité aux templates `.html` et `.svg` (`source(none)` et `@source`).
+- La compilation passe par `scripts/build_css.py`, avec la version figée (v4.3.3) et un résultat toujours minifié.
 
-## 7. Tests et qualité
+## 11. Tests et qualité
 
-**35 tests**, exécutés en environ 0,3 seconde, sans réseau :
+**161 tests**, exécutés en environ 2,7 secondes, sans réseau :
 
-| Fichier | Ce qui est testé |
-| --- | --- |
-| `test_smoke.py` | Redirection de l'accueil, présence de la mention légale |
-| `test_models.py` | Valeurs calculées, contrainte d'unicité du learnset |
-| `test_pokeapi.py` | Parsers, cache du client (`httpx.MockTransport`), import complet avec un faux client : famille, idempotence, médias |
-| `test_views.py` | Page complète ou fragment selon les en-têtes HTMX, 404, filtres, surbrillance, types du filtre, absence de commentaires de template dans la page |
+| Domaine | Fichiers | Tests |
+| --- | --- | --- |
+| Moteur pur | `test_game_clock`, `test_game_conditions`, `test_game_arrivals`, `test_game_collection`, `test_game_moves` | 49 |
+| Catalogue et import | `test_models`, `test_pokeapi`, `test_species_files`, `test_views` | 49 |
+| Joueurs | `test_accounts`, `test_purge_guests`, `test_collection`, `test_player_pokedex` | 30 |
+| Arrivées | `test_catch_up`, `test_reveal`, `test_tutorial` | 23 |
+| Outillage | `test_smoke`, `test_dev_commands`, `test_vercel_build` | 10 |
 
-Les fixtures partagées (types, Bulbasaur, Ivysaur, Charmander) sont dans `tests/conftest.py`.
+Quelques tests notables :
+- le **déterminisme** du rattrapage, qu'il soit fait d'un coup ou en deux visites ;
+- les **proportions** de rareté et de shiny sur des milliers de tirages. Les graines sont fixes, donc ces tests ne peuvent pas échouer au hasard ;
+- la **règle d'architecture**, qui interdit d'importer Django dans `game/` ;
+- les **vrais fichiers d'espèces**, validés à chaque exécution ;
+- les actions de jeu, qui doivent refuser toute requête GET.
 
-**L'intégration continue** ([ci.yml](../.github/workflows/ci.yml)) s'exécute à chaque push. Elle enchaîne : `ruff format --check`, `ruff check`, `manage.py check`, `makemigrations --check`, `pytest`, puis la recompilation du CSS suivie de `git diff --exit-code`. L'action `setup-uv` est figée par l'empreinte de son commit.
+**L'intégration continue** ([ci.yml](../.github/workflows/ci.yml)) enchaîne `ruff format --check`, `ruff check`, `manage.py check`, `makemigrations --check`, `pytest`, puis la recompilation du CSS avec une comparaison au fichier commité.
 
-## 8. Déploiement
-
-Vercel prend Django en charge sans configuration :
-- il repère `manage.py` et utilise `WSGI_APPLICATION` comme point d'entrée ;
-- il lance `collectstatic`, car `STATIC_ROOT` est défini.
+## 12. Déploiement et procédures
 
 | Élément | Où |
 | --- | --- |
-| Migrations à chaque build | `[tool.vercel.scripts] build` dans `pyproject.toml` |
+| Build de production | `scripts/vercel_build.py` : migrations, puis `load_species` (déclaré dans `[tool.vercel.scripts]`) |
+| Fichiers statiques | `collectstatic` lancé par Vercel, servi par son CDN |
 | Région des fonctions | `vercel.json` (`fra1`) |
 | Base de données | Neon (Francfort), créée depuis l'onglet Storage de Vercel |
-| Domaine | `pokechill.bradsavary.dev`, géré par Vercel, certificat Let's Encrypt automatique |
+| Domaine | `pokechill.bradsavary.dev`, certificat Let's Encrypt automatique |
 
 ### Procédures courantes
 
-- **Déployer :** `git push` sur `main`. Vercel construit et déploie, et la CI tourne en parallèle.
-- **Importer ou mettre à jour les données en production :** depuis le poste local, dans PowerShell, avec l'URL **sans pooler** de Neon.
+- **Déployer :** `git push` sur `main`. Vercel construit (migrations et espèces) et déploie, et la CI tourne en parallèle.
+- **Modifier une espèce :** éditer son fichier JSON. En local, lancer `load_species` ; en production, le déploiement suffit.
+- **Relancer l'import PokéAPI en production :** depuis le poste local, dans PowerShell, avec l'URL **sans pooler** de Neon.
   ```
   $env:DATABASE_URL = "postgresql://...(URL sans pooler)..."
   uv run python manage.py import_pokeapi --no-media
   Remove-Item Env:DATABASE_URL
   ```
-  La dernière ligne est importante : tant que la variable existe, toutes les commandes Django du terminal agissent sur la production.
-- **Créer un administrateur en production :** même principe, avec `createsuperuser`.
-- **Après une modification d'une variable d'environnement sur Vercel :** redéployer, car les variables ne sont lues qu'au build.
+  La dernière ligne est importante : tant que la variable existe, toutes les commandes Django du terminal agissent sur la production. Le même principe sert pour `createsuperuser` ou `purge_guests`.
+- **Après une modification d'une variable d'environnement sur Vercel :** redéployer.
+
+### Commandes de développement
+
+| Besoin | Commande |
+| --- | --- |
+| Voir les joueurs locaux | `uv run python manage.py players` |
+| Simuler une absence de 10 h (dernier joueur actif) | `uv run python manage.py rewind_clock 10` |
+| Recommencer une partie (le compte est gardé) | `uv run python manage.py reset_player` |
+| Supprimer les invités inactifs | `uv run python manage.py purge_guests [--days 180] [--dry-run]` |
+
+Astuce : une fenêtre de navigation privée crée un nouvel invité.
 
 ### Performances observées
 
-- Environ 0,2 à 0,3 s par page une fois la fonction chaude.
+- Environ 0,2 à 0,3 s par page une fois la fonction chaude. Le rattrapage d'une absence tient en 7 requêtes SQL, quelle que soit sa durée.
 - Environ 1,2 à 1,4 s après une période sans visite : c'est le démarrage à froid du serverless.
 
-## 9. Pièges rencontrés
+## 13. Pièges rencontrés
 
 | Problème | Cause | Solution retenue |
 | --- | --- | --- |
-| Des commentaires s'affichaient dans la page | `{# … #}` ne fonctionne que sur une seule ligne en Django | `{% comment %}` pour les commentaires multi-lignes, plus un test de non-régression |
-| CSS commité non minifié, à deux reprises | Un `--watch` lancé avec l'ancienne version du script | Minification aussi en `--watch`, plus un contrôle CSS dans la CI |
-| Version de Tailwind pas réellement figée | `pytailwindcss.run()` sans paramètre `version` utilise « latest » | `run(..., version=..., auto_install=True)` |
-| Erreurs fantômes dans VS Code | Analyse périmée de Pylance après une modification du fichier depuis le terminal | « Python: Restart Language Server » |
-| Grand sprite noirci en entier en mode silhouette | Le filtre s'appliquait aussi au fond de l'image | Fond déplacé sur un conteneur |
-| Index SQL inutile | `SlugField` est indexé par défaut | `db_index=False` sur un champ jamais recherché (champ retiré depuis) |
-| Mesure de requêtes à 0 dans le shell | Le client de test utilise l'hôte `testserver`, refusé par `ALLOWED_HOSTS` | `Client(SERVER_NAME="localhost")` |
+| Des commentaires s'affichaient dans la page | `{# … #}` ne fonctionne que sur une seule ligne en Django | `{% comment %}` pour plusieurs lignes, plus un test de non-régression |
+| CSS commité non minifié | Un `--watch` lancé avec l'ancienne version du script | Minification aussi en `--watch`, plus un contrôle dans la CI |
+| Version de Tailwind pas réellement figée | `pytailwindcss.run()` sans `version` utilise « latest » | `run(..., version=..., auto_install=True)` |
+| Migration réécrite après avoir été poussée | Une migration déjà appliquée sur Neon avait été modifiée | La version poussée a été restaurée et le changement placé dans une nouvelle migration. Règle : une migration poussée ne se modifie plus jamais |
+| Pokédex grisé et aucune arrivée en production | `load_species` n'avait jamais été lancé sur Neon | Le build de production charge maintenant les espèces à chaque déploiement |
+| `{% with a=b or c %}` refusé | `with` et `include … with` n'acceptent pas d'expressions | Condition écrite dans le `{% if %}`, ou comparaison faite dans le template inclus |
+| Chiffres illisibles (le 5 ressemble à un S) | Dessin de Pixelify Sans | Micro 5 pour les chiffres, par `unicode-range` |
+| Les deux polices ne se combinaient pas | Des descripteurs différents (graisse) empêchent la combinaison par `unicode-range` | Même plage `font-weight` sur les deux déclarations |
+| Police absente d'une page de test | Une page en `file://` ne peut pas charger une police servie en `http://` (CORS) | Page servie par le serveur de développement |
+| Icône du menu qui glisse au survol | Agrandissement autour d'un centre placé sur un demi-pixel | Anneau au survol, sans changement de taille |
+| Bonbons décalés par rapport au texte | Le dessin est placé 4 px sous le centre de l'image | Recadrage en CSS (`.candy-icon`) |
+| Erreurs fantômes dans VS Code | Analyse périmée de Pylance | « Python: Restart Language Server » |
+| Mesure de requêtes à 0 dans le shell | Hôte `testserver` refusé par `ALLOWED_HOSTS` | `Client(SERVER_NAME="localhost")` |
 
-## 10. Points ouverts pour l'étape 1
+## 14. Points ouverts pour la suite
 
-- **Fichiers de données par espèce :** conditions d'arrivée, défis, rareté et niveau minimal. Le niveau minimal et les conditions inspirées des évolutions pourront être pré-remplis à partir du cache PokéAPI.
-- **Moteur de jeu en Python pur :** créer le module indépendant de Django (conditions, rattrapage horaire avec graine aléatoire).
-- **API du jeu :** choisir entre Django REST Framework et Django Ninja. La recommandation est Ninja.
-- **Comptes :** mode invité, puis conversion en compte, avec l'authentification de Django.
-- **Interface du Pokédex :** réorganisation prévue (trop d'informations, mise en page à revoir), reportée volontairement.
+- **Étape 2 (zones et mangeoire)** : nouvelles conditions (présence d'une espèce, baie, zone), statut unique du Pokémon (libre, en zone), production horaire dans le rattrapage. Les formes évoluées pourront alors exiger leur forme de base.
+- **Passe UX** : mettre en évidence les éléments cliquables et importants (bonbons, attaques, expérience).
+- **Gestion des attaques** : changer les 4 attaques, consulter celles déjà apprises et les CT. Elle viendra avec la montée de niveau.
+- **Automatiser `purge_guests`** avec un Cron Vercel.
+- **API du jeu** (DRF ou Ninja) : décision reportée à l'étape 6.
+- **Relancer l'import en production** pour que Mew y soit marqué légendaire (sans urgence, il n'est pas encore disponible).
