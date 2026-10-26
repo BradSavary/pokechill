@@ -40,6 +40,7 @@ python_files = ["test_*.py"]
 
 # --- Vercel deployment ---
 # Vercel detects Django from manage.py and runs collectstatic by itself.
-# This build step applies pending migrations to the production database.
+# This build step applies pending migrations and loads the species data files
+# into the production database (see the script).
 [tool.vercel.scripts]
-build = "python manage.py migrate --noinput"
+build = "python scripts/vercel_build.py"

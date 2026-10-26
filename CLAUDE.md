@@ -13,7 +13,7 @@ Le concept complet (gameplay, systèmes, interface, feuille de route) est dans `
 
 - Back-end : Django, avec Django REST Framework ou Django Ninja pour l'API du jeu.
 - Base de données : SQLite en local, PostgreSQL (Neon) en production, choisi selon la variable `DATABASE_URL`.
-- Hébergement : Vercel (runtime Python, région `fra1`), fichiers statiques servis par le CDN de Vercel. Production : https://pokechill.bradsavary.dev (domaine géré par Vercel). Les migrations s'appliquent au build (`[tool.vercel.scripts]` dans `pyproject.toml`) ; les données s'importent depuis le poste local avec `DATABASE_URL` pointant vers Neon.
+- Hébergement : Vercel (runtime Python, région `fra1`), fichiers statiques servis par le CDN de Vercel. Production : https://pokechill.bradsavary.dev (domaine géré par Vercel). À chaque build, `scripts/vercel_build.py` (déclaré dans `[tool.vercel.scripts]` de `pyproject.toml`) applique les migrations puis charge les fichiers d'espèces (`load_species`) ; l'import PokéAPI, lui, se lance depuis le poste local avec `DATABASE_URL` pointant vers Neon.
 - Interface : templates Django + HTMX + Tailwind CSS v4 pour les menus. Source CSS dans `assets/css/input.css`, compilée vers `static/css/main.css` (commité, minifié) par `uv run python scripts/build_css.py` (`--watch` en développement). Recompiler après toute modification de classes dans les templates. Phaser (2D) puis Three.js (3D) pour les expéditions, plus tard.
 - Données : importées une fois depuis PokéAPI via une commande Django. Sprites et cris copiés dans les fichiers statiques.
 
