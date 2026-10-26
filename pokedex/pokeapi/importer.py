@@ -131,7 +131,7 @@ def run_import(
 
     # --- Phase 3: media files -------------------------------------------------
     if media_dir is not None:
-        log("Downloading sprites, cries and type icons...")
+        log("Downloading sprites, cries, type icons and candies...")
         for n, pokemon in pokemons.items():
             urls = parsers.media_urls(pokemon)
             targets = {
@@ -146,5 +146,11 @@ def run_import(
             url = parsers.type_icon_url(data)
             if url and client.download(url, media_dir / "types" / f"{slug}.png"):
                 report.media_downloaded += 1
+        # One candy per family, named after its base form (stage 1)
+        for slug, (stage, _previous) in family.items():
+            if stage == 1:
+                destination = media_dir / "candies" / f"{slug}.png"
+                if client.download(parsers.candy_url(slug), destination):
+                    report.media_downloaded += 1
 
     return report

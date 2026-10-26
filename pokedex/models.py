@@ -48,8 +48,18 @@ class EvolutionChain(models.Model):
     pokeapi_id = models.PositiveIntegerField(unique=True)
 
     def __str__(self) -> str:
-        first = self.species.order_by("evolution_stage", "number").first()
-        return f"{first.name} family" if first else f"Chain #{self.pokeapi_id}"
+        base = self.base_species
+        return f"{base.name} family" if base else f"Chain #{self.pokeapi_id}"
+
+    @property
+    def base_species(self) -> "Species | None":
+        """First form of the family among imported species (Pikachu, not Pichu)."""
+        return self.species.order_by("evolution_stage", "number").first()
+
+    @property
+    def candy_url(self) -> str:
+        """Candy icon of the family, named after its base form (see the importer)."""
+        return static(f"pokemon/candies/{self.base_species.slug}.png")
 
 
 class Species(models.Model):

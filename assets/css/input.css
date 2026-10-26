@@ -1,18 +1,61 @@
 /* PokéChill — Tailwind CSS source file.
-   Compiled into static/css/main.css by scripts/build_css.py. */
+   Compiled into static/css/main.css by scripts/build_css.py.
+
+   Visual style: the menus of Pokémon FireRed/LeafGreen (Game Boy Advance):
+   light grid background, white panels with thick dark outlines, red bands,
+   pixel font. */
 
 /* source(none) turns off the automatic scan of the whole project, which
    mistook words in Python files and docs ("static", "table"...) for classes.
    Only Django templates are scanned (paths are relative to this file). */
 @import "tailwindcss" source(none);
 @source "../../**/templates/**/*.html";
+@source "../../**/templates/**/*.svg"; /* inline icons (templates/icons/) */
 
-/* Design tokens: each color becomes utilities such as bg-panel, text-muted... */
+/* The game font, "PokeChill", combines two pixel fonts (SIL Open Font
+   License, see static/fonts/), served by us so the game works offline:
+   - Pixelify Sans for letters (one variable file for weights 400 to 700);
+   - Micro 5 for digits only (unicode-range), as Pixelify's 2 and 5 look like
+     an S. size-adjust scales it to match Pixelify's letters.
+   Both faces declare the same weights: browsers only combine faces by
+   unicode-range when their other descriptors match. */
+@font-face {
+  font-family: "PokeChill";
+  src: url("../fonts/PixelifySans-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PokeChill";
+  src: url("../fonts/Micro5-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  unicode-range: U+0030-0039;
+  size-adjust: 135%;
+  font-display: swap;
+}
+
+/* Design tokens: each color becomes utilities such as bg-surface, text-ink... */
 @theme {
-  --color-night: #1d2330;
-  --color-panel: #2a3242;
-  --color-muted: #8a93a6;
-  --color-accent: #f2c14e;
+  /* The whole app uses the pixel font (font-sans is Tailwind's default family) */
+  --font-sans: "PokeChill", ui-sans-serif, system-ui, sans-serif;
+
+  --color-screen: #e8e8e8; /* page background, under the grid */
+  --color-grid: #c8c8c8; /* grid lines of the background */
+  --color-surface: #f8f8f8; /* panels */
+  --color-sunken: #e0e0e0; /* inputs, inset areas */
+  --color-line: #c0c0c0; /* thin separators */
+  --color-outline: #383838; /* thick outlines of panels and buttons */
+  --color-ink: #484848; /* text: dark grey, like the games */
+  --color-muted: #888888;
+  --color-accent: #e83838; /* Pokédex red */
+  --color-accent-dark: #a01830;
+  --color-accent-light: #f8a8a8;
+
+  /* One colour per menu, like the Sword/Shield main menu: text-menu-ranch... */
+  --color-menu-ranch: #e8833a;
+  --color-menu-zones: #43a047;
+  --color-menu-pokedex: #e3343c;
+  --color-menu-expeditions: #2f80ed;
 
   /* Official-style type colors: bg-type-fire, bg-type-water... */
   --color-type-normal: #a8a77a;
@@ -66,17 +109,83 @@
   image-rendering: pixelated;
 }
 
-/* Small component classes for elements repeated across templates */
-@layer components {
-  /* A tab of the side navigation */
-  .tab {
-    @apply rounded-lg px-2 py-3 text-center no-underline;
+@layer base {
+  /* Large screens: everything is 25% bigger, like a browser zoom at 125%.
+     Sizes are in rem (relative to this font size), so they all follow. */
+  @media (min-width: 1536px) {
+    html {
+      font-size: 125%;
+    }
   }
 
-  /* Inputs rendered by Django inside accounts/_form_field.html */
-  .form-field input {
-    @apply rounded-lg bg-night px-3 py-2 text-slate-100;
+  /* The GBA menu background: light grey with a grid */
+  body {
+    background-color: var(--color-screen);
+    background-image:
+      linear-gradient(var(--color-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
+}
+
+/* Small component classes for elements repeated across templates */
+@layer components {
+  /* A white panel with the thick dark outline of the games */
+  .panel {
+    @apply rounded-xl border-[3px] border-outline bg-surface;
+  }
+
+  /* A red title band, like the top of the GBA Pokédex */
+  .title-band {
+    @apply border-b-[3px] border-outline px-4 py-2 text-xl font-bold text-white;
+    background: linear-gradient(var(--color-accent) 0 70%, var(--color-accent-dark) 70%);
+    text-shadow: 2px 2px 0 var(--color-accent-dark);
+  }
+
+  /* A name plate: white box framed in red (top left of the GBA Pokédex) */
+  .name-plate {
+    @apply rounded-lg border-[3px] border-outline px-1.5 py-1;
+    background: var(--color-accent);
+  }
+  .name-plate > * {
+    @apply rounded border-2 border-accent-light bg-surface px-3 py-1 text-center;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-block rounded-lg border-[3px] border-outline bg-accent px-4 py-1.5 font-bold text-white;
+    text-shadow: 1px 1px 0 var(--color-accent-dark);
+  }
+  .btn:hover {
+    @apply brightness-110;
+  }
+  .btn-secondary {
+    @apply inline-block rounded-lg border-[3px] border-outline bg-surface px-4 py-1.5 text-ink;
+  }
+
+  /* Side menu entry: a white disc holding a coloured icon (Sword/Shield style).
+     The icon is an inline SVG drawn with currentColor: the text-menu-* class
+     of the disc sets its colour. */
+  .menu-disc {
+    @apply grid size-16 place-items-center rounded-full bg-surface p-3.5 transition;
+    box-shadow: 0 4px 0 rgb(0 0 0 / 0.2);
+  }
+  .menu-item:hover .menu-disc {
+    @apply scale-105;
+  }
+  .menu-item.is-active .menu-disc {
+    @apply outline-4 outline-offset-3 outline-outline;
+  }
+  .menu-item.is-locked {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  /* Text inputs and selects */
+  .field,
+  .form-field input {
+    @apply rounded-lg border-2 border-outline bg-surface px-3 py-1.5 text-ink;
+  }
+
 
   /* A Poké Ball drawn in CSS: red top, white bottom, black band and button */
   .pokeball {
@@ -103,27 +212,47 @@
 
   /* Rotating rays behind a revealed Pokémon, colored by rarity */
   [data-rarity] {
-    --rarity: #cbd5e1;
+    --rarity: #9ca3af;
   }
-  [data-rarity="uncommon"] { --rarity: #4ade80; }
-  [data-rarity="rare"] { --rarity: #60a5fa; }
-  [data-rarity="very_rare"] { --rarity: #c084fc; }
-  [data-rarity="legendary"] { --rarity: #fbbf24; }
+  [data-rarity="uncommon"] { --rarity: #22c55e; }
+  [data-rarity="rare"] { --rarity: #3b82f6; }
+  [data-rarity="very_rare"] { --rarity: #a855f7; }
+  [data-rarity="legendary"] { --rarity: #f59e0b; }
   .rarity-rays {
     @apply animate-spin-slow;
     background: repeating-conic-gradient(var(--rarity) 0 10deg, transparent 10deg 30deg);
     /* Fade the rays out towards the edge of the circle */
     mask-image: radial-gradient(circle, black 25%, transparent 70%);
-    opacity: 0.6;
+    opacity: 0.7;
   }
 
   .new-badge {
-    @apply animate-bounce rounded-md bg-accent px-1.5 text-xs font-bold text-night;
+    @apply animate-bounce rounded-md border-2 border-outline bg-accent px-1.5 text-xs font-bold text-white;
+  }
+
+  /* Family candy icon. Every candy sprite (32x32, from Let's Go) draws its
+     candy in a 16x16 area 4 px below the centre (x 8-24, y 12-28): the
+     wrapper shows only that area, so the icon lines up with the text.
+     Image at 200% of the box, shifted by 8/32 and 12/32 of its size. */
+  .candy-icon {
+    @apply relative inline-block size-[1.25em] shrink-0 overflow-hidden align-middle;
+  }
+  .candy-icon > img {
+    @apply absolute max-w-none;
+    width: 200%;
+    left: -50%;
+    top: -75%;
+    image-rendering: pixelated;
+  }
+
+  /* Section title inside a panel: red text over a thin line, no frame */
+  .section-title {
+    @apply mb-1 border-b-2 border-accent-light font-bold text-accent;
   }
 
   /* A colored type label; the color comes from a bg-type-* class */
   .type-badge {
-    @apply inline-block rounded-md px-2 py-0.5 text-xs font-bold text-white uppercase;
-    text-shadow: 0 1px 1px rgb(0 0 0 / 0.5);
+    @apply inline-block rounded-md border-2 border-outline px-2 text-xs font-bold text-white uppercase;
+    text-shadow: 1px 1px 0 rgb(0 0 0 / 0.45);
   }
 }

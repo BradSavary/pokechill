@@ -1,7 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
-{# scheme-dark: native controls (scrollbars, selects) use their dark variant #}
-<html lang="en" class="scheme-dark">
+{# scheme-light: native controls (scrollbars, selects) match the light theme #}
+<html lang="en" class="scheme-light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,51 +14,54 @@
 </head>
 {# h-dvh: the app fills exactly the screen; long panes scroll inside it #}
 {# hx-headers: every HTMX request sends the CSRF token, required by Django for POST #}
-<body class="flex h-dvh flex-col bg-night font-sans text-slate-100"
+<body class="flex h-dvh flex-col font-sans text-ink"
       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {# Shown only on a phone held in portrait #}
   <div class="hidden h-full items-center justify-center p-8 text-center portrait-phone:flex">
-    <p>Please rotate your device to landscape mode.</p>
+    <p class="panel p-4">Please rotate your device to landscape mode.</p>
   </div>
 
   {# min-h-0 lets this flex child shrink, so inner panes can scroll #}
   <div class="flex min-h-0 flex-1 portrait-phone:hidden">
-    <nav class="flex w-28 shrink-0 flex-col gap-1 bg-panel p-2" aria-label="Main navigation">
-      <a class="tab {% if active_tab == 'ranch' %}bg-accent font-bold text-night{% endif %}"
-         href="{% url 'ranch:index' %}">Ranch</a>
-      {# Locked tabs: their content arrives in later steps #}
-      <span class="tab cursor-not-allowed text-muted" title="Coming soon">Zones</span>
-      <a class="tab {% if active_tab == 'pokedex' %}bg-accent font-bold text-night{% endif %}"
-         href="{% url 'pokedex:index' %}">Pokédex</a>
-      <span class="tab cursor-not-allowed text-muted" title="Coming soon">Expeditions</span>
+    {# Side menu, flush with the left edge, styled like the Sword/Shield main menu #}
+    <nav class="flex w-24 shrink-0 flex-col items-center gap-4 border-r-[3px] border-outline bg-accent px-2 py-4" aria-label="Main navigation">
+      {% url "ranch:index" as ranch_url %}
+      {% url "pokedex:index" as pokedex_url %}
+      {% include "_menu_item.html" with name="ranch" label="Ranch" color="text-menu-ranch" url=ranch_url %}
+      {# Zones and Expeditions are locked (no url): their content comes in later steps #}
+      {% include "_menu_item.html" with name="zones" label="Zones" color="text-menu-zones" %}
+      {% include "_menu_item.html" with name="pokedex" icon="pokeball" label="Pokédex" color="text-menu-pokedex" url=pokedex_url %}
+      {% include "_menu_item.html" with name="expeditions" label="Expeditions" color="text-menu-expeditions" %}
 
       {# Account box, pinned to the bottom of the sidebar (mt-auto) #}
       <div class="mt-auto flex flex-col gap-1 text-center text-xs">
         {% if is_guest %}
           {# No log out for guests: their session is their only key to the save #}
-          <span class="text-muted">Guest</span>
-          <a class="rounded-lg bg-night px-2 py-1.5 text-accent" href="{% url 'accounts:sign_up' %}">Save your game</a>
+          <span class="text-white">Guest</span>
+          <a class="btn-secondary px-1 text-xs" href="{% url 'accounts:sign_up' %}" title="Save your game: create an account">Save</a>
         {% elif user.is_authenticated %}
-          <span class="truncate text-muted" title="{{ user.username }}">{{ user.username }}</span>
+          <span class="w-20 truncate text-white" title="{{ user.username }}">{{ user.username }}</span>
           {# Django 5 only logs out with POST (a link could be triggered by any page) #}
           <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
-            <button class="w-full rounded-lg bg-night px-2 py-1.5 text-muted hover:text-slate-100">Log out</button>
+            <button class="btn-secondary w-full px-1 text-xs">Log out</button>
           </form>
         {% else %}
-          <a class="rounded-lg bg-night px-2 py-1.5 text-muted hover:text-slate-100" href="{% url 'accounts:login' %}">Log in</a>
+          <a class="btn-secondary px-1 text-xs" href="{% url 'accounts:login' %}">Log in</a>
         {% endif %}
       </div>
     </nav>
 
-    <main class="min-w-0 flex-1 overflow-y-auto p-4">
-      {% block content %}{% endblock %}
-    </main>
+    {# Right column: the page, then the legal notice (the nav keeps the full height) #}
+    <div class="flex min-w-0 flex-1 flex-col">
+      <main class="min-h-0 flex-1 overflow-y-auto p-3">
+        {% block content %}{% endblock %}
+      </main>
+      <footer class="px-4 pb-2 text-center text-xs text-muted">
+        PokéChill is an unofficial, non-commercial fan game.
+        Not affiliated with Nintendo, Game Freak or The Pokémon Company.
+      </footer>
+    </div>
   </div>
-
-  <footer class="px-4 py-2 text-center text-xs text-muted portrait-phone:hidden">
-    PokéChill is an unofficial, non-commercial fan game.
-    Not affiliated with Nintendo, Game Freak or The Pokémon Company.
-  </footer>
 </body>
 </html>

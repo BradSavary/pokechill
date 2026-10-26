@@ -1,150 +1,119 @@
 {% load ranch_extras %}
 {% comment %}
-  Entry of one species (right pane). Rendered inside the full page, or alone
+  Entry of one species (left pane). Rendered inside the full page, or alone
   when HTMX asks for it after a click in the list.
   known: shown in full (owned by the player, or public catalogue).
   owned: the player's Pokémon of this species, if any.
+  moves: its current moves (computed, see game/moves.py); moves_level: their level.
 {% endcomment %}
 {% if known %}
-<article class="flex flex-col gap-5">
+<article class="flex flex-col gap-3">
 
-  {# --- Header: sprite, name, types, cry --- #}
-  <header class="flex items-center gap-5">
-    {# The background sits on a wrapper: the silhouette filter must only darken the sprite #}
-    <div class="shrink-0 rounded-xl bg-night">
-      <img src="{{ species.sprite_url }}" alt="{{ species.name }}" width="160" height="160"
-           class="pixelated size-40">
-    </div>
+  {# --- Header: name plate and sprite on the Poké Ball watermark --- #}
+  <header class="grid grid-cols-2 gap-3">
     <div class="flex flex-col gap-2">
-      <p class="text-sm text-muted">#{{ species.number|stringformat:"03d" }} · {{ species.genus }}</p>
-      <h1 class="text-3xl font-bold">{{ species.name }}</h1>
-      <div class="flex gap-2">
+      <h2 class="name-plate"><span class="block text-2xl">{{ species.name }}</span></h2>
+      {# Big pale Poké Ball behind the sprite (the menu icon, like the GBA Pokédex) #}
+      <div class="relative mx-auto grid size-52 place-items-center">
+        <span class="absolute inset-0 text-sunken">{% include "icons/pokeball.svg" %}</span>
+        <img src="{{ species.sprite_url }}" alt="{{ species.name }}" width="160" height="160" class="pixelated relative size-40">
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <p class="text-muted">No. {{ species.number|stringformat:"03d" }} · {{ species.genus }}</p>
+      <div class="flex flex-wrap gap-2">
         {% for type in species.types %}
           {% include "pokedex/_type_badge.html" with type=type %}
         {% endfor %}
-        {% if species.is_legendary %}<span class="type-badge bg-accent text-night">Legendary</span>{% endif %}
+        {% if species.is_legendary %}<span class="type-badge bg-accent">Legendary</span>{% endif %}
       </div>
-      <div class="flex items-center gap-4 text-sm text-muted">
-        <span>{{ species.height_m }} m</span>
-        <span>{{ species.weight_kg }} kg</span>
-        {# preload="none": the cry is only downloaded when played #}
-        <button type="button" onclick="this.nextElementSibling.play()"
-                class="rounded-lg bg-night px-3 py-1 text-slate-100 hover:ring-1 hover:ring-accent">
-          ▶ Cry
-        </button>
-        <audio src="{{ species.cry_url }}" preload="none"></audio>
-      </div>
+      <p class="flex gap-4">
+        <span><span class="text-muted">HT</span> {{ species.height_m }} m</span>
+        <span><span class="text-muted">WT</span> {{ species.weight_kg }} kg</span>
+      </p>
+      {# preload="none": the cry is only downloaded when played #}
+      <button type="button" onclick="this.nextElementSibling.play()" class="btn-secondary self-start py-0.5">▶ Cry</button>
+      <audio src="{{ species.cry_url }}" preload="none"></audio>
+
+      {% if owned %}
+        {# Research stage 1: the player owns this species #}
+        <dl class="mt-auto grid grid-cols-[auto_1fr] gap-x-3 rounded-lg bg-sunken px-3 py-2">
+          <dt class="text-muted">Stage</dt><dd class="font-bold text-accent">Encountered</dd>
+          <dt class="text-muted">Level</dt><dd>{{ owned.level }}</dd>
+          <dt class="text-muted">Candies</dt>
+          <dd class="flex items-center gap-1">
+            <span class="candy-icon"><img src="{{ species.evolution_chain.candy_url }}" alt=""></span>
+            {{ candies }}
+          </dd>
+          <dt class="text-muted">Natures</dt>
+          <dd>{% for nature in owned.unlocked_natures %}{{ nature|nature_label }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+          {% if owned.shiny_unlocked %}<dt class="text-muted">Shiny</dt><dd class="text-accent">✦ Unlocked</dd>{% endif %}
+        </dl>
+      {% endif %}
     </div>
   </header>
 
-  {% if owned %}
-    {# Research stage 1: the player owns this species #}
-    <p class="flex flex-wrap gap-x-4 gap-y-1 rounded-lg bg-night px-3 py-2 text-sm">
-      <span class="font-bold text-accent">Encountered</span>
-      <span>Lv. {{ owned.level }}</span>
-      <span>{{ candies }} {{ species.evolution_chain }} candies</span>
-      <span class="text-muted">Natures: {% for nature in owned.unlocked_natures %}{{ nature|nature_label }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-      {% if owned.shiny_unlocked %}<span class="text-accent">✦ Shiny unlocked</span>{% endif %}
-    </p>
-  {% endif %}
-
   {% if species.flavor_text %}
-    <p class="italic text-slate-300">{{ species.flavor_text }}</p>
+    <p>{{ species.flavor_text }}</p>
   {% endif %}
 
-  <div class="grid grid-cols-2 gap-5">
+  <div class="grid grid-cols-2 gap-3">
     {# --- Base stats: bar width = stat / 255 (the highest possible base stat) --- #}
     <section>
-      <h2 class="mb-2 font-bold">Base stats</h2>
-      <dl class="flex flex-col gap-1 text-sm">
+      <h3 class="section-title">Base stats</h3>
+      <dl class="flex flex-col gap-0.5">
         {% for label, value in stats %}
           <div class="flex items-center gap-2">
             <dt class="w-16 text-muted">{{ label }}</dt>
             <dd class="w-8 text-right">{{ value }}</dd>
-            <dd class="h-2 flex-1 rounded-full bg-night">
-              <div class="h-2 rounded-full bg-accent" style="width: {% widthratio value 255 100 %}%"></div>
+            <dd class="h-2.5 flex-1 rounded-full border border-outline bg-sunken">
+              <div class="h-full rounded-full bg-accent" style="width: {% widthratio value 255 100 %}%"></div>
             </dd>
           </div>
         {% endfor %}
-        <div class="flex gap-2 border-t border-night pt-1">
+        <div class="flex gap-2 border-t border-line pt-0.5">
           <dt class="w-16 text-muted">Total</dt>
           <dd class="w-8 text-right font-bold">{{ species.base_stat_total }}</dd>
         </div>
       </dl>
     </section>
 
-    {# --- Evolution family: in this game, each one is caught separately --- #}
+    {# --- Current moves (changing them comes once Pokémon gain levels) --- #}
     <section>
-      <h2 class="mb-2 font-bold">Family</h2>
-      <ol class="flex flex-wrap items-center gap-2">
-        {% for member in family %}
-          <li>
-            <a href="{% url 'pokedex:detail' member.number %}"
-               hx-get="{% url 'pokedex:detail' member.number %}" hx-target="#entry" hx-push-url="true"
-               data-species-link
-               class="flex flex-col items-center rounded-lg p-1 text-xs hover:bg-night {% if member == species %}ring-1 ring-accent{% endif %}">
-              {% if owned_ids is None or member.id in owned_ids %}
-                <img src="{{ member.sprite_url }}" alt="" width="64" height="64" class="pixelated size-16">
-                {{ member.name }}
-              {% else %}
-                <img src="{{ member.sprite_url }}" alt="" width="64" height="64" class="pixelated size-16 brightness-0">
-                ???
-              {% endif %}
-            </a>
+      <h3 class="section-title">Moves <span class="font-normal text-muted">(Lv. {{ moves_level }})</span></h3>
+      <ul class="flex flex-col gap-1">
+        {% for move in moves %}
+          <li class="flex items-center gap-2">
+            <span class="flex-1 truncate">{{ move.name }}</span>
+            {% include "pokedex/_type_badge.html" with type=move.type %}
+            <span class="w-12 text-right text-muted" title="Power">{{ move.power|default:"—" }}</span>
           </li>
-        {% endfor %}
-      </ol>
-      {% if family|length == 1 %}<p class="text-sm text-muted">This species has no family in Kanto.</p>{% endif %}
-    </section>
-  </div>
-
-  {# --- Moves learned by level (FireRed/LeafGreen) --- #}
-  <section>
-    <h2 class="mb-2 font-bold">Moves by level</h2>
-    <table class="w-full text-left text-sm">
-      <thead class="text-muted">
-        <tr><th class="w-12 py-1">Lv.</th><th>Move</th><th>Type</th><th>Category</th><th>Power</th><th>Acc.</th><th>PP</th></tr>
-      </thead>
-      <tbody>
-        {% for entry in level_up_moves %}
-          <tr class="border-t border-night">
-            <td class="py-1">{{ entry.level }}</td>
-            <td>{{ entry.move.name }}</td>
-            <td>{% include "pokedex/_type_badge.html" with type=entry.move.type %}</td>
-            <td>{{ entry.move.get_damage_class_display }}</td>
-            <td>{{ entry.move.power|default:"—" }}</td>
-            <td>{{ entry.move.accuracy|default:"—" }}</td>
-            <td>{{ entry.move.pp }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
-
-  {% if machine_moves %}
-    <section>
-      <h2 class="mb-2 font-bold">TM / HM moves</h2>
-      <ul class="flex flex-wrap gap-1.5 text-sm">
-        {% for entry in machine_moves %}
-          <li class="rounded-lg bg-night px-2 py-0.5">{{ entry.move.name }}</li>
+        {% empty %}
+          <li class="text-muted">No move yet.</li>
         {% endfor %}
       </ul>
     </section>
-  {% endif %}
+  </div>
 </article>
 {% else %}
   {# Research stage 0: the player hasn't met this species yet #}
-  <article class="flex flex-col items-center gap-4 py-10 text-center">
-    {# The background sits on a wrapper: the filter must only darken the sprite #}
-    <div class="rounded-xl bg-night">
-      <img src="{{ species.sprite_url }}" alt="Unknown Pokémon" width="160" height="160" class="pixelated size-40 brightness-0">
+  <article class="grid grid-cols-2 gap-3">
+    <div class="flex flex-col gap-2">
+      <h2 class="name-plate"><span class="block text-2xl text-muted">???</span></h2>
+      {# The Poké Ball sits behind: the filter only darkens the sprite #}
+      <div class="relative mx-auto grid size-52 place-items-center">
+        <span class="absolute inset-0 text-sunken">{% include "icons/pokeball.svg" %}</span>
+        <img src="{{ species.sprite_url }}" alt="Unknown Pokémon" width="160" height="160" class="pixelated relative size-40 brightness-0">
+      </div>
     </div>
-    <p class="text-sm text-muted">#{{ species.number|stringformat:"03d" }}</p>
-    <h1 class="text-3xl font-bold">???</h1>
-    {% if species.is_available %}
-      <p class="text-muted">You haven't met this Pokémon yet.</p>
-    {% else %}
-      <p class="text-muted">This Pokémon is not in the game yet.</p>
-    {% endif %}
+    <div class="flex flex-col gap-2">
+      <p class="text-muted">No. {{ species.number|stringformat:"03d" }}</p>
+      {% if species.is_available %}
+        <p>You haven't met this Pokémon yet.</p>
+      {% else %}
+        <p>This Pokémon is not in the game yet.</p>
+      {% endif %}
+    </div>
   </article>
 {% endif %}

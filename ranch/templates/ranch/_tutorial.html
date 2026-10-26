@@ -3,7 +3,7 @@
   Variable: tutorial_step. Buttons post the step they complete, so a double
   click can never skip a step.
 {% endcomment %}
-<aside class="flex flex-col gap-3 rounded-xl border-2 border-accent bg-panel p-5" aria-label="Tutorial">
+<aside class="flex flex-col gap-3 panel p-5" aria-label="Tutorial">
   {% if tutorial_step == 0 %}
     <h2 class="text-lg font-bold">Welcome to your ranch!</h2>
     <p>You just took over an abandoned Pokémon ranch. Three Pokémon came along with you: Bulbasaur, Charmander and Squirtle.</p>
@@ -22,12 +22,12 @@
     {# Opens the reveal dialog and asks the server for the gift (HTMX) #}
     <button type="button" data-open-dialog
             hx-post="{% url 'ranch:tutorial_gift' %}" hx-target="#reveal-content"
-            class="self-start rounded-lg bg-accent px-4 py-2 font-bold text-night">Go and see</button>
+            class="self-start btn">Go and see</button>
   {% else %}
     <form method="post" action="{% url 'ranch:tutorial_next' %}">
       {% csrf_token %}
       <input type="hidden" name="step" value="{{ tutorial_step }}">
-      <button class="rounded-lg bg-accent px-4 py-2 font-bold text-night">
+      <button class="btn">
         {% if tutorial_step == 1 %}Open the Pokédex{% elif tutorial_step == 2 %}Back to the ranch{% else %}Next{% endif %}
       </button>
     </form>

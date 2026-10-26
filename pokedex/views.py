@@ -17,6 +17,7 @@ the pokedex models never depend on ranch (no circular dependency).
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, render
 
+from game.moves import default_moves
 from ranch import tutorial
 from ranch.services import candies_of, collection_of, player_for
 
@@ -86,8 +87,17 @@ def dex_context(request) -> dict:
 
 def entry_context(species: Species, dex: dict) -> dict:
     """Template values of a species entry."""
-    learnset = list(species.learnset.all())
     owned = dex["collection"].get(species.id) if dex["player"] else None
+    # The player's Pokémon knows the moves of its level; the public catalogue
+    # shows the moves a species has when it arrives at the ranch
+    level = owned.level if owned else species.min_level
+    level_up = [
+        entry
+        for entry in species.learnset.all()
+        if entry.learn_method == SpeciesMove.LearnMethod.LEVEL_UP
+    ]
+    move_by_slug = {entry.move.slug: entry.move for entry in level_up}
+    known_moves = default_moves([(entry.level, entry.move.slug) for entry in level_up], level)
     return {
         "species": species,
         # Shown in full for its owner, or in the public catalogue
@@ -95,11 +105,8 @@ def entry_context(species: Species, dex: dict) -> dict:
         "owned": owned,
         "candies": candies_of(dex["player"], species.evolution_chain) if owned else 0,
         "owned_ids": dex["owned_ids"],
-        "family": species.evolution_chain.species.order_by("evolution_stage", "number"),
-        "level_up_moves": [
-            m for m in learnset if m.learn_method == SpeciesMove.LearnMethod.LEVEL_UP
-        ],
-        "machine_moves": [m for m in learnset if m.learn_method == SpeciesMove.LearnMethod.MACHINE],
+        "moves": [move_by_slug[slug] for slug in known_moves],
+        "moves_level": level,
         "stats": [
             ("HP", species.hp),
             ("Attack", species.attack),

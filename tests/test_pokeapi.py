@@ -257,8 +257,9 @@ def test_import_is_idempotent(fake_client):
 def test_import_downloads_media(fake_client, tmp_path):
     report = run_import(fake_client, limit=2, media_dir=tmp_path, log=lambda message: None)
 
-    # 2 species x (sprite, shiny sprite, cry) + 3 type icons
-    assert report.media_downloaded == 9
+    # 2 species x (sprite, shiny sprite, cry) + 3 type icons + 1 family candy
+    assert report.media_downloaded == 10
+    assert (tmp_path / "candies" / "bulbasaur.png").exists()
     assert (tmp_path / "types" / "poison.png").exists()
     assert (tmp_path / "sprites" / "shiny" / "2.png").exists()
     assert (tmp_path / "cries" / "1.ogg").exists()

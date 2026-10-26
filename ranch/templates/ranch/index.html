@@ -8,18 +8,18 @@
 {% endblock %}
 
 {% block content %}
-  <div class="flex flex-col gap-4">
-    <header class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">Your ranch</h1>
-      {# ranch.js counts down to the next full hour, then reloads the page #}
-      <p class="text-sm text-muted">Next arrival in
-        <time data-next-arrival="{{ next_arrival.isoformat }}" class="font-bold text-slate-100">--:--</time>
-      </p>
-    </header>
-
+  <div class="flex flex-col gap-3">
     {% if tutorial_step is not None %}{% include "ranch/_tutorial.html" %}{% endif %}
 
-    <section class="flex flex-col gap-3 rounded-xl bg-panel p-5" aria-label="Welcome area">
+    <section class="panel overflow-hidden" aria-label="Welcome area">
+      <header class="title-band flex items-baseline justify-between">
+        <h1>Your ranch</h1>
+        {# ranch.js counts down to the next full hour, then reloads the page #}
+        <p class="text-base font-normal">Next arrival in
+          <time data-next-arrival="{{ next_arrival.isoformat }}" class="font-bold">--:--</time>
+        </p>
+      </header>
+      <div class="flex flex-col gap-3 p-5">
       <h2 class="font-bold">Welcome area <span class="text-muted">{{ waiting }}/{{ request.player.welcome_capacity }}</span></h2>
       <div class="flex flex-wrap gap-2">
         {# Arrivals stay hidden: one closed Poké Ball per waiting Pokémon #}
@@ -27,8 +27,9 @@
         {% if not waiting %}<p class="text-sm text-muted">Nobody yet: a wild Pokémon shows up every hour.</p>{% endif %}
       </div>
       {% if waiting %}
-        <button type="button" data-open-dialog class="self-start rounded-lg bg-accent px-4 py-2 font-bold text-night">See who came</button>
+        <button type="button" data-open-dialog class="self-start btn">See who came</button>
       {% endif %}
+      </div>
     </section>
   </div>
 
@@ -38,7 +39,7 @@
     by HTMX at each reveal, and by the tutorial gift.
   {% endcomment %}
   <dialog id="reveal-dialog" {% if auto_open %}data-auto-open{% endif %}
-          class="m-auto w-full max-w-lg rounded-2xl bg-panel p-6 text-slate-100 backdrop:bg-black/70">
+          class="m-auto w-full max-w-lg panel p-6 text-ink backdrop:bg-black/50">
     <div id="reveal-content" class="flex flex-col items-center gap-4 text-center">
       {% if waiting %}
         <h2 class="text-xl font-bold">Welcome back!</h2>
@@ -55,7 +56,7 @@
         </div>
         {# This click also allows the browser to play the cries afterwards #}
         <button hx-post="{% url 'ranch:reveal' %}" hx-target="#reveal-content"
-                class="rounded-lg bg-accent px-6 py-2 font-bold text-night">Reveal</button>
+                class="btn px-6">Reveal</button>
       {% endif %}
     </div>
   </dialog>

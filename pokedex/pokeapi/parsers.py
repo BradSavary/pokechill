@@ -119,6 +119,11 @@ def type_icon_url(type_data: dict) -> str | None:
     return lets_go["symbol_icon"] if lets_go else None
 
 
+def candy_url(base_slug: str) -> str:
+    """Candy of an evolution family (Let's Go Pikachu/Eevee item), named after its base form."""
+    return f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/{base_slug}-candy.png"
+
+
 def media_urls(pokemon: dict) -> dict[str, str | None]:
     """Black/White sprites (normal and shiny) and the original cry."""
     black_white = pokemon["sprites"]["versions"]["generation-v"]["black-white"]

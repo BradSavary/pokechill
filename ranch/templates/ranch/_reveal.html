@@ -11,10 +11,10 @@
 <div class="flex gap-2">
   {% if remaining %}
     <button hx-post="{% url 'ranch:reveal' %}" hx-target="#reveal-content"
-            class="rounded-lg bg-accent px-4 py-2 font-bold text-night">Next ({{ remaining }} left)</button>
+            class="btn">Next ({{ remaining }} left)</button>
     <button hx-post="{% url 'ranch:reveal_all' %}" hx-target="#reveal-content"
-            class="rounded-lg bg-night px-4 py-2 text-muted">Skip: reveal all</button>
+            class="btn-secondary">Skip: reveal all</button>
   {% else %}
-    <button type="button" data-close-dialog class="rounded-lg bg-accent px-4 py-2 font-bold text-night">Done</button>
+    <button type="button" data-close-dialog class="btn">Done</button>
   {% endif %}
 </div>

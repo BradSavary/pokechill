@@ -31,7 +31,7 @@ def test_the_list_hides_unknown_species(player_client):
     assert "Bulbasaur" in html
     assert "Ivysaur" not in html
     assert "???" in html
-    assert "1/3" in html  # owned / total
+    assert "1 / 3" in html  # owned / total
 
 
 def test_unknown_entry_shows_a_silhouette(player_client):

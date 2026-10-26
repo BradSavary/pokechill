@@ -1,10 +1,14 @@
+{% load static %}
 {% comment %}
-  One row per species. Also returned alone by the `list` view (HTMX filtering).
-  owned_ids is None in the public catalogue (everything shown), otherwise
-  species the player doesn't own appear as silhouettes named "???".
+  One row per species, like the GBA Pokédex list: a red stripe holding a
+  Poké Ball when the species is owned, then its number and name.
+  Also returned alone by the `list` view (HTMX filtering).
+  owned_ids is None in the public catalogue (everything shown); otherwise
+  species the player doesn't own are named "???".
 {% endcomment %}
 {% for s in species_list %}
-  <li {% if not s.is_available and owned_ids is not None %}class="opacity-40" title="Not in the game yet"{% endif %}>
+  <li class="border-b border-line last:border-b-0 {% if not s.is_available and owned_ids is not None %}opacity-50{% endif %}"
+      {% if not s.is_available and owned_ids is not None %}title="Not in the game yet"{% endif %}>
     {% comment %}
       A real link (works without JavaScript) enhanced by HTMX: hx-get loads only
       the entry fragment into #entry, hx-push-url updates the address bar.
@@ -13,22 +17,22 @@
        hx-get="{% url 'pokedex:detail' s.number %}" hx-target="#entry" hx-push-url="true"
        data-species-link
        {% if s.number == selected %}aria-current="page"{% endif %}
-       class="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-night aria-[current=page]:bg-night aria-[current=page]:ring-1 aria-[current=page]:ring-accent">
+       class="flex items-center gap-3 pr-2 hover:bg-sunken aria-[current=page]:bg-accent-light/40 aria-[current=page]:outline-2 aria-[current=page]:-outline-offset-2 aria-[current=page]:outline-accent">
+      <span class="flex w-9 shrink-0 justify-center self-stretch border-r-2 border-accent-light bg-accent py-1">
+        {% if owned_ids is not None and s.id in owned_ids %}
+          <img src="{% static 'pokemon/poke-ball.png' %}" alt="Owned" width="20" height="20" class="pixelated size-5">
+        {% endif %}
+      </span>
+      <span class="text-muted">{{ s.number|stringformat:"03d" }}</span>
       {% if owned_ids is None or s.id in owned_ids %}
-        <img src="{{ s.sprite_url }}" alt="" width="48" height="48" loading="lazy" class="pixelated size-12">
-        <span class="w-10 text-xs text-muted">#{{ s.number|stringformat:"03d" }}</span>
-        <span class="flex-1 truncate">{{ s.name }}</span>
+        <span class="flex-1 truncate text-lg">{{ s.name }}</span>
         <span class="flex gap-1">
           {% for type in s.types %}
-            <img src="{{ type.icon_url }}" alt="{{ type.name }}" title="{{ type.name }}"
-                 width="20" height="20" class="size-5">
+            <img src="{{ type.icon_url }}" alt="{{ type.name }}" title="{{ type.name }}" width="18" height="18" class="size-[18px]">
           {% endfor %}
         </span>
       {% else %}
-        {# Unknown species: black silhouette (CSS filter), no name, no types #}
-        <img src="{{ s.sprite_url }}" alt="" width="48" height="48" loading="lazy" class="pixelated size-12 brightness-0">
-        <span class="w-10 text-xs text-muted">#{{ s.number|stringformat:"03d" }}</span>
-        <span class="flex-1 truncate text-muted">???</span>
+        <span class="flex-1 truncate text-lg text-muted">???</span>
       {% endif %}
     </a>
   </li>
