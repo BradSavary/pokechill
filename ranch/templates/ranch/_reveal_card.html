@@ -1,0 +1,26 @@
+{% load ranch_extras %}
+{% comment %}
+  One revealed Pokémon. Variables: reveal (ranch.services.Reveal), size ("big" or "small").
+  data-rarity sets the color of the rotating rays (see assets/css/input.css).
+{% endcomment %}
+<div class="flex flex-col items-center gap-1" data-rarity="{{ reveal.species.rarity }}">
+  <div class="relative grid place-items-center {% if size == 'big' %}size-48{% else %}size-24{% endif %}">
+    <div class="rarity-rays absolute inset-0 rounded-full"></div>
+    <img src="{% if reveal.is_shiny %}{{ reveal.species.shiny_sprite_url }}{% else %}{{ reveal.species.sprite_url }}{% endif %}"
+         alt="{{ reveal.species.name }}" class="pixelated relative {% if size == 'big' %}size-40{% else %}size-20{% endif %}">
+    {% if reveal.outcome.is_new %}<span class="new-badge absolute -top-1 -right-1">NEW!</span>{% endif %}
+  </div>
+  <p class="font-bold">{{ reveal.species.name }}{% if reveal.is_shiny %} <span class="text-accent">✦ Shiny</span>{% endif %}</p>
+  <p class="text-xs uppercase text-muted">{{ reveal.species.get_rarity_display }}</p>
+  {% if size == 'big' %}
+    <p class="text-sm">Nature: {{ reveal.nature|nature_label }}</p>
+    {% if not reveal.outcome.is_new %}
+      <p class="text-sm text-muted">Already caught: +{{ reveal.outcome.candies }} {{ reveal.species.evolution_chain }} candies</p>
+      {% if reveal.outcome.new_nature %}<p class="text-sm text-accent">New nature unlocked!</p>{% endif %}
+      {% if reveal.outcome.new_shiny %}<p class="text-sm text-accent">Shiny look unlocked!</p>{% endif %}
+    {% endif %}
+    <audio src="{{ reveal.species.cry_url }}" data-cry preload="auto"></audio>
+  {% elif not reveal.outcome.is_new %}
+    <p class="text-xs text-muted">+{{ reveal.outcome.candies }} candies</p>
+  {% endif %}
+</div>

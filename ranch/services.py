@@ -1,6 +1,7 @@
 """Operations on the player's game state, used by the views."""
 
 import random
+from dataclasses import dataclass
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -132,3 +133,35 @@ def inactive_guests(days: int):
         password__startswith=UNUSABLE_PASSWORD_PREFIX,
         is_staff=False,
     )
+
+
+@dataclass(frozen=True)
+class Reveal:
+    """A Pokémon taken from the Welcome area, and what its catch brought."""
+
+    species: Species
+    nature: str
+    is_shiny: bool
+    outcome: Obtention
+
+
+def _reveal(player: Player, arrival: Arrival) -> Reveal:
+    outcome = receive_pokemon(
+        player, arrival.species, nature=arrival.nature, is_shiny=arrival.is_shiny
+    )
+    arrival.delete()
+    return Reveal(arrival.species, arrival.nature, arrival.is_shiny, outcome)
+
+
+@transaction.atomic
+def reveal_next(player: Player) -> Reveal | None:
+    """Reveal the oldest waiting arrival (None if the Welcome area is empty)."""
+    arrival = player.arrivals.select_for_update().select_related("species__evolution_chain").first()
+    return _reveal(player, arrival) if arrival else None
+
+
+@transaction.atomic
+def reveal_all(player: Player) -> list[Reveal]:
+    """Reveal every waiting arrival at once, oldest first."""
+    arrivals = player.arrivals.select_for_update().select_related("species__evolution_chain")
+    return [_reveal(player, arrival) for arrival in arrivals]

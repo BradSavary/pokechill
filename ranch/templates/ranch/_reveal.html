@@ -1,0 +1,20 @@
+{% comment %}
+  One-by-one reveal, swapped into #reveal-content: the Poké Ball shakes,
+  then the Pokémon pops out (CSS animations with delays) and its cry plays.
+{% endcomment %}
+{% if reveal %}
+  <div class="grid place-items-center">
+    <span class="pokeball reveal-ball size-20 [grid-area:1/1]"></span>
+    <div class="reveal-pop [grid-area:1/1]">{% include "ranch/_reveal_card.html" with size="big" %}</div>
+  </div>
+{% endif %}
+<div class="flex gap-2">
+  {% if remaining %}
+    <button hx-post="{% url 'ranch:reveal' %}" hx-target="#reveal-content"
+            class="rounded-lg bg-accent px-4 py-2 font-bold text-night">Next ({{ remaining }} left)</button>
+    <button hx-post="{% url 'ranch:reveal_all' %}" hx-target="#reveal-content"
+            class="rounded-lg bg-night px-4 py-2 text-muted">Skip: reveal all</button>
+  {% else %}
+    <button type="button" data-close-dialog class="rounded-lg bg-accent px-4 py-2 font-bold text-night">Done</button>
+  {% endif %}
+</div>

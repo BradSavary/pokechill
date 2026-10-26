@@ -13,7 +13,9 @@
   {% block scripts %}{% endblock %}
 </head>
 {# h-dvh: the app fills exactly the screen; long panes scroll inside it #}
-<body class="flex h-dvh flex-col bg-night font-sans text-slate-100">
+{# hx-headers: every HTMX request sends the CSRF token, required by Django for POST #}
+<body class="flex h-dvh flex-col bg-night font-sans text-slate-100"
+      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   {# Shown only on a phone held in portrait #}
   <div class="hidden h-full items-center justify-center p-8 text-center portrait-phone:flex">
     <p>Please rotate your device to landscape mode.</p>

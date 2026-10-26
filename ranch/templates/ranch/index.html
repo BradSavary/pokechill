@@ -1,21 +1,59 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Ranch · PokéChill{% endblock %}
 
+{% block scripts %}
+  <script src="{% static 'js/ranch.js' %}" defer></script>
+{% endblock %}
+
 {% block content %}
-  {# Temporary page: the real Ranch (absence summary, reveal) arrives in step 1.6 #}
-  <section class="flex flex-col gap-3 rounded-xl bg-panel p-6">
-    <h1 class="text-2xl font-bold">Your ranch</h1>
-    <p class="text-muted">Welcome area: {{ arrivals|length }}/{{ request.player.welcome_capacity }}</p>
-    <ul class="flex flex-wrap gap-2">
-      {% for arrival in arrivals %}
-        <li class="flex flex-col items-center rounded-lg bg-night p-2 text-xs">
-          <img src="{{ arrival.species.sprite_url }}" alt="" width="64" height="64" class="pixelated size-16">
-          {{ arrival.species.name }}{% if arrival.is_shiny %} ✦{% endif %}
-        </li>
-      {% empty %}
-        <li class="text-sm text-muted">Nobody yet: a wild Pokémon shows up every hour.</li>
-      {% endfor %}
-    </ul>
-  </section>
+  <div class="flex flex-col gap-4">
+    <header class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Your ranch</h1>
+      {# ranch.js counts down to the next full hour, then reloads the page #}
+      <p class="text-sm text-muted">Next arrival in
+        <time data-next-arrival="{{ next_arrival.isoformat }}" class="font-bold text-slate-100">--:--</time>
+      </p>
+    </header>
+
+    <section class="flex flex-col gap-3 rounded-xl bg-panel p-5" aria-label="Welcome area">
+      <h2 class="font-bold">Welcome area <span class="text-muted">{{ waiting }}/{{ request.player.welcome_capacity }}</span></h2>
+      <div class="flex flex-wrap gap-2">
+        {# Arrivals stay hidden: one closed Poké Ball per waiting Pokémon #}
+        {% for _ in waiting_range %}<span class="pokeball size-10"></span>{% endfor %}
+        {% if not waiting %}<p class="text-sm text-muted">Nobody yet: a wild Pokémon shows up every hour.</p>{% endif %}
+      </div>
+      {% if waiting %}
+        <button type="button" data-open-dialog class="self-start rounded-lg bg-accent px-4 py-2 font-bold text-night">See who came</button>
+      {% endif %}
+    </section>
+  </div>
+
+  {% if waiting %}
+    {% comment %}
+      The reveal dialog (native <dialog>). It opens by itself on arrival
+      (data-auto-open). Its content is replaced by HTMX at each reveal.
+    {% endcomment %}
+    <dialog id="reveal-dialog" data-auto-open
+            class="m-auto w-full max-w-lg rounded-2xl bg-panel p-6 text-slate-100 backdrop:bg-black/70">
+      <div id="reveal-content" class="flex flex-col items-center gap-4 text-center">
+        <h2 class="text-xl font-bold">Welcome back!</h2>
+        {% if catch_up.arrivals %}
+          <p>While you were away, <strong>{{ catch_up.arrivals|length }}</strong> Pokémon came to your ranch.</p>
+        {% else %}
+          <p><strong>{{ waiting }}</strong> Pokémon {{ waiting|pluralize:"is,are" }} waiting at the Welcome area.</p>
+        {% endif %}
+        {% if catch_up.hours_while_full %}
+          <p class="text-sm text-muted">The Welcome area was full for {{ catch_up.hours_while_full }} h: arrivals during that time were lost.</p>
+        {% endif %}
+        <div class="flex gap-2">
+          {% for _ in waiting_range %}<span class="pokeball size-8"></span>{% endfor %}
+        </div>
+        {# This click also allows the browser to play the cries afterwards #}
+        <button hx-post="{% url 'ranch:reveal' %}" hx-target="#reveal-content"
+                class="rounded-lg bg-accent px-6 py-2 font-bold text-night">Reveal</button>
+      </div>
+    </dialog>
+  {% endif %}
 {% endblock %}

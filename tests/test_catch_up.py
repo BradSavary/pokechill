@@ -92,4 +92,4 @@ def test_visiting_the_ranch_runs_the_catch_up(client, always, monkeypatch):
     html = client.get(reverse("ranch:index")).content.decode()
 
     assert Arrival.objects.count() == 2
-    assert f"Welcome area: 2/{balance.WELCOME_CAPACITY_BASE}" in html
+    assert f"2/{balance.WELCOME_CAPACITY_BASE}" in html
