@@ -116,7 +116,7 @@ Une condition combinée donne les espèces les plus satisfaisantes à trouver. P
 | Peu commun | 40 | Abo, Psykokwak, Caninos |
 | Rare | 12 | Évoli, Tauros, Kangourex |
 | Très rare | 3 | Lokhlass, Minidraco, Ronflex |
-| Mythique | 0,2 | Mew, lors d'un événement très rare |
+| Légendaire | 0,2 | Mew, lors d'un événement très rare (Mew est considéré comme légendaire dans ce jeu) |
 
 Les espèces évoluées ne s'obtiennent que par capture, avec des conditions plus exigeantes que leur forme de base, souvent liées à celle-ci (son niveau, une pierre placée à la pension). Voir la progression des Pokémon.
 
@@ -228,7 +228,7 @@ Les Pokémon n'évoluent pas. La seule façon d'obtenir une nouvelle espèce est
 
 Il existe 6 natures, une par statistique : PV, Attaque, Défense, Attaque Spéciale, Défense Spéciale et Vitesse. Chaque obtention tire une nature au hasard. La première fois qu'une nature est obtenue pour une espèce, elle débloque un bonus permanent sur la statistique correspondante. Obtenir de nouveau la même nature n'apporte rien de plus : chaque espèce a donc au maximum 6 bonus, un par statistique, que la fiche Pokédex affiche.
 
-La chance de shiny est de 1 sur 512 en arrivée passive. Obtenir une espèce en shiny débloque sur sa fiche Pokédex un interrupteur pour l'afficher en shiny ou non dans tout le jeu. Le charme chroma, débloqué lorsque 100 espèces atteignent le stade 2, augmente le taux d'apparition des shiny.
+La chance de shiny est de 1 sur 1024 en arrivée passive (1 sur 512 avec le charme chroma). Obtenir une espèce en shiny débloque sur sa fiche Pokédex un interrupteur pour l'afficher en shiny ou non dans tout le jeu. Le charme chroma, débloqué lorsque 100 espèces atteignent le stade 2, double le taux d'apparition des shiny. Seules certaines espèces ont un défi « l'obtenir en shiny » : un shiny doit rester rare.
 
 ## Les expéditions roguelike
 

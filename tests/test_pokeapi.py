@@ -262,3 +262,10 @@ def test_import_downloads_media(fake_client, tmp_path):
     assert (tmp_path / "types" / "poison.png").exists()
     assert (tmp_path / "sprites" / "shiny" / "2.png").exists()
     assert (tmp_path / "cries" / "1.ogg").exists()
+
+
+def test_mythical_species_count_as_legendary():
+    species = fake_species(151, "mew", "Mew")
+    species["is_mythical"] = True
+    data = parsers.parse_species(fake_pokemon(151, "mew", ["psychic"]), species)
+    assert data["is_legendary"] is True

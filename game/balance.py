@@ -9,20 +9,24 @@ this file, never the logic that uses these values.
 
 # Relative weight of each rarity in the hourly draw: among eligible species,
 # a common one is 100 / 12 ≈ 8 times more likely than a rare one.
+# Rarity is a gameplay setting. In this game Mew counts as a legendary too:
+# a separate "mythical" tier would only ever contain one species.
 RARITY_WEIGHTS = {
     "common": 100,
     "uncommon": 40,
     "rare": 12,
     "very_rare": 3,
-    "mythical": 0.2,
+    "legendary": 0.2,
 }
 
-# Number of arrivals that can wait at the Welcome area. Once full, new
-# arrivals are lost: this is the game's offline cap.
-WELCOME_CAPACITY = 8
+# Places of the Welcome area at the start of the game. Once full, new
+# arrivals are lost: this is the game's offline cap. Research (skill tree,
+# step 3) will add places on top of this base value.
+WELCOME_CAPACITY_BASE = 8
 
-# One arrival in SHINY_ODDS is shiny (1 in 512 for passive arrivals).
-SHINY_ODDS = 512
+# One passive arrival in SHINY_ODDS is shiny. The Shiny Charm (step 5) will
+# halve these odds, to 1 in 512.
+SHINY_ODDS = 1024
 
 # --- Duplicates ------------------------------------------------------------
 
@@ -32,7 +36,7 @@ CANDIES_PER_DUPLICATE = {
     "uncommon": 5,
     "rare": 10,
     "very_rare": 20,
-    "mythical": 50,
+    "legendary": 50,
 }
 
 # --- Time ------------------------------------------------------------------

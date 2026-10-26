@@ -56,8 +56,8 @@ class Species(models.Model):
     name = models.CharField(max_length=30)  # "Bulbasaur"
     genus = models.CharField(max_length=40)  # "Seed Pokémon"
     flavor_text = models.TextField(blank=True)
+    # Mew is officially "mythical": this game counts it as a legendary
     is_legendary = models.BooleanField(default=False)
-    is_mythical = models.BooleanField(default=False)
 
     # --- Types ------------------------------------------------------------
     # Two foreign keys rather than a many-to-many: a species has at most two

@@ -45,10 +45,11 @@ def test_rarity_weights_shape_the_draw():
     assert abs(common_share - expected) < 0.03
 
 
-def test_shiny_rate_is_about_one_in_512():
-    draws = [draw_arrival([RATTATA], NOON, random.Random(i)) for i in range(51_200)]
+def test_shiny_rate_matches_the_balance_odds():
+    draws_count = 100 * balance.SHINY_ODDS  # about 100 shinies expected
+    draws = [draw_arrival([RATTATA], NOON, random.Random(i)) for i in range(draws_count)]
     shinies = sum(a.is_shiny for a in draws)
-    assert 70 <= shinies <= 130  # about 100 expected
+    assert 70 <= shinies <= 130
 
 
 def test_catch_up_replays_each_hour():

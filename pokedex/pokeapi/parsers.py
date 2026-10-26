@@ -58,8 +58,8 @@ def parse_species(pokemon: dict, species: dict) -> dict:
         "name": english(species["names"]),
         "genus": english(species["genera"], field="genus"),
         "flavor_text": pick_flavor_text(species),
-        "is_legendary": species["is_legendary"],
-        "is_mythical": species["is_mythical"],
+        # Mythical species (Mew) are legendaries in this game
+        "is_legendary": species["is_legendary"] or species["is_mythical"],
         "primary_type": types[0]["type"]["name"],
         "secondary_type": types[1]["type"]["name"] if len(types) > 1 else None,
         "height_dm": pokemon["height"],

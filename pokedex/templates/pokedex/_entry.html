@@ -19,7 +19,6 @@
           {% include "pokedex/_type_badge.html" with type=type %}
         {% endfor %}
         {% if species.is_legendary %}<span class="type-badge bg-accent text-night">Legendary</span>{% endif %}
-        {% if species.is_mythical %}<span class="type-badge bg-accent text-night">Mythical</span>{% endif %}
       </div>
       <div class="flex items-center gap-4 text-sm text-muted">
         <span>{{ species.height_m }} m</span>

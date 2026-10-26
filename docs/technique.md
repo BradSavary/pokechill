@@ -109,7 +109,7 @@ Type ◀──── primary_type / secondary_type ──── Species ──�
 | --- | --- | --- |
 | `Type` | `slug` (`"fire"`), `name` | 18 types modernes. Ténèbres n'existe que par les attaques. Propriété `icon_url` |
 | `EvolutionChain` | `pokeapi_id` | Une famille. Sert aux bonbons partagés |
-| `Species` | `number`, `slug`, `name`, `genus`, `flavor_text`, 2 types, 6 stats, `height_dm`, `weight_hg`, `evolution_chain`, `evolution_stage`, `evolves_from`, `is_legendary`, `is_mythical` | Propriétés : `types`, `base_stat_total`, `height_m`, `weight_kg`, `sprite_url`, `shiny_sprite_url`, `cry_url` |
+| `Species` | `number`, `slug`, `name`, `genus`, `flavor_text`, 2 types, 6 stats, `height_dm`, `weight_hg`, `evolution_chain`, `evolution_stage`, `evolves_from`, `is_legendary` (Mew inclus) | Propriétés : `types`, `base_stat_total`, `height_m`, `weight_kg`, `sprite_url`, `shiny_sprite_url`, `cry_url` |
 | `Move` | `slug`, `name`, `type`, `damage_class`, `power`, `accuracy`, `pp` | `power` et `accuracy` peuvent être vides (attaques de statut, attaques qui ne ratent jamais) |
 | `SpeciesMove` | `species`, `move`, `learn_method` (`level-up` ou `machine`), `level` | Table d'association explicite. Contrainte d'unicité sur les 4 champs |
 
