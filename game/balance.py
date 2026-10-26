@@ -28,6 +28,11 @@ WELCOME_CAPACITY_BASE = 8
 # halve these odds, to 1 in 512.
 SHINY_ODDS = 1024
 
+# --- Start of the game ---------------------------------------------------
+
+# Species owned by every new player
+STARTER_SPECIES = ("bulbasaur", "charmander", "squirtle")
+
 # --- Duplicates ------------------------------------------------------------
 
 # Candies of the evolution family given when an owned species arrives again
