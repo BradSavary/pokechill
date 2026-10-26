@@ -27,7 +27,11 @@ Le concept complet (gameplay, systèmes, interface, feuille de route) est dans `
 - Chaque créneau horaire utilise une graine aléatoire dérivée de l'identifiant du joueur et de l'heure : le résultat doit être identique quel que soit le moment du recalcul.
 - Dates stockées en UTC. L'heure de Paris ne sert qu'au cycle jour/nuit et à la remise à zéro des quêtes.
 - Un Pokémon a un seul statut à la fois : libre, en zone, en expédition, en soins. Tout changement passe par une fonction unique, dans une transaction.
-- Les espèces sont pilotées par les données : un fichier par espèce (conditions, défis, rareté, niveau minimal), chargé par une commande Django. Ajouter une espèce ne doit demander aucun code.
+- Les espèces sont pilotées par les données : un fichier JSON par espèce dans `data/species/` (conditions, défis, rareté, niveau minimal ; champ `notes` libre pour les commentaires), chargé par une commande Django. Ajouter une espèce ne doit demander aucun code.
+- Le moteur de jeu pur est le package `game/` (aucun import Django) ; les valeurs d'équilibrage sont dans `game/balance.py`.
+- Moment de la journée : deux périodes à l'heure de Paris, jour (6 h – 21 h) et nuit (21 h – 6 h).
+- Mode invité : un utilisateur Django invité est créé à la première visite (gardé par la session) ; créer un compte convertit ce même utilisateur, la partie est conservée.
+- API du jeu (DRF ou Ninja) : décision reportée à l'étape 6 (expéditions). D'ici là, tout passe par templates + HTMX.
 - Les valeurs d'équilibrage (production, coûts, plafonds) sont regroupées dans un seul fichier de configuration.
 
 ## Règles de gameplay à respecter

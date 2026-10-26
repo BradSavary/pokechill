@@ -7,6 +7,7 @@ dependencies = [
     "django>=5.2,<6",
     "httpx>=0.28.1",
     "psycopg[binary]>=3.2",
+    "tzdata>=2026.5",
 ]
 
 [dependency-groups]

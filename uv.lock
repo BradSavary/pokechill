@@ -150,6 +150,7 @@ dependencies = [
     { name = "django" },
     { name = "httpx" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "tzdata" },
 ]
 
 [package.dev-dependencies]
@@ -166,6 +167,7 @@ requires-dist = [
     { name = "django", specifier = ">=5.2,<6" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
+    { name = "tzdata", specifier = ">=2026.5" },
 ]
 
 [package.metadata.requires-dev]
