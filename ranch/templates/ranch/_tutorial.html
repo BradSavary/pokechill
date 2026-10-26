@@ -6,6 +6,7 @@
   - Intro and gift: centred popup over a dimmed page.
   - Guided steps: a "spotlight" dims everything except the element explained
     (data-spot: a CSS selector), placed by tutorial.js; the popup sits aside.
+    The Welcome area sits at the bottom of the ranch map: the popup goes on top.
 
   Buttons post the step they complete, so a double click never skips a step.
   The intro has two pages (story, then the starters): the browser switches
@@ -22,7 +23,7 @@
   {% endif %}
 
   <aside id="tutorial-content" aria-label="Tutorial" role="dialog" aria-modal="true"
-         class="panel fixed z-50 flex w-[min(34rem,90vw)] flex-col gap-3 p-6 {% if tutorial_step == 1 %}bottom-8 left-1/2 -translate-x-1/2{% elif tutorial_step == 2 %}bottom-8 left-36{% else %}inset-0 m-auto h-fit{% endif %}">
+         class="panel fixed z-50 flex w-[min(34rem,90vw)] flex-col gap-3 p-6 {% if tutorial_step == 1 %}top-8 left-1/2 -translate-x-1/2{% elif tutorial_step == 2 %}bottom-8 left-36{% else %}inset-0 m-auto h-fit{% endif %}">
 
     {% if tutorial_step == 0 %}
       {# Page 1: the story #}

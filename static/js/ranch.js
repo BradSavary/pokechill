@@ -19,9 +19,14 @@ if (countdown) {
 const dialog = document.querySelector("#reveal-dialog");
 if (dialog) {
   if (dialog.hasAttribute("data-auto-open")) dialog.showModal();
-  // Any [data-open-dialog] button opens it ("See who came", the tutorial gift)
+  // Any [data-open-dialog] element opens it ("See who came", the door on the
+  // map, the tutorial gift). preventDefault: the door is a link to #welcome-area,
+  // only followed when nobody is waiting.
   document.body.addEventListener("click", (event) => {
-    if (event.target.closest("[data-open-dialog]")) dialog.showModal();
+    if (event.target.closest("[data-open-dialog]")) {
+      event.preventDefault();
+      dialog.showModal();
+    }
   });
 
   // Closing refreshes the page, so the Welcome area shows the right count

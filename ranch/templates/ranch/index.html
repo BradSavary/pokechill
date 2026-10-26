@@ -7,31 +7,57 @@
   <script src="{% static 'js/ranch.js' %}" defer></script>
 {% endblock %}
 
-{% block content %}
-  <div class="flex flex-col gap-3">
-    {% if tutorial_step is not None %}{% include "ranch/_tutorial.html" %}{% endif %}
+{# The map fills the whole page (no padding); the legal notice lies over its bottom edge #}
+{% block main_class %}relative min-h-0 flex-1 overflow-hidden{% endblock %}
 
-    <section id="welcome-area" class="panel overflow-hidden" aria-label="Welcome area">
-      <header class="flex items-center justify-between pt-3 pr-5">
-        <h1 class="title-band">Your ranch</h1>
-        {# ranch.js counts down to the next full hour, then reloads the page #}
-        <p><span class="text-muted">Next arrival in</span>
-          <time data-next-arrival="{{ next_arrival.isoformat }}" class="text-xl font-bold">--:--</time>
-        </p>
-      </header>
-      <div class="flex flex-col gap-3 p-5">
-      <h2 class="section-title self-start">Welcome area <span class="font-normal text-white/70">{{ waiting }}/{{ request.player.welcome_capacity }}</span></h2>
-      <div class="flex flex-wrap gap-2">
-        {# Arrivals stay hidden: one closed Poké Ball per waiting Pokémon #}
-        {% for _ in waiting_range %}<span class="pokeball size-10"></span>{% endfor %}
-        {% if not waiting %}<p class="text-sm text-muted">Nobody yet: a wild Pokémon shows up every hour.</p>{% endif %}
-      </div>
-      {% if waiting %}
-        <button type="button" data-open-dialog class="self-start btn">See who came</button>
-      {% endif %}
-      </div>
-    </section>
+{% block content %}
+  {% if tutorial_step is not None %}{% include "ranch/_tutorial.html" %}{% endif %}
+
+  {% comment %}
+    The ranch map, drawn by scripts/build_ranch_map.py on a grid of 40 x 23
+    tiles (640 x 368 px). It covers the page like a wallpaper (see
+    .ranch-view in input.css): the stage keeps the map's proportions and its
+    overflow is cropped, in the thick borders of firs on the sides. Clickable
+    spots live inside the stage, placed in percentages of the grid, so they
+    stay on their tile at any size: the Day Care door is the tile (31, 6),
+    hence left 31/40 = 77.5 % and top 6/23 = 26.1 %; it is 1/40 = 2.5 %
+    wide and spans 2 rows (8.7 %) with the doorstep below it.
+  {% endcomment %}
+  <div class="ranch-view">
+    <div class="ranch-stage">
+      <img src="{% static 'img/ranch-map.png' %}" width="640" height="368" draggable="false"
+           alt="The ranch: a clearing surrounded by firs, with ponds, tall grass and the Day Care"
+           class="pixelated block size-full select-none">
+      {# The door leads to the Welcome area: it opens the reveal dialog when Pokémon are waiting #}
+      <a href="#welcome-area" {% if waiting %}data-open-dialog{% endif %}
+         title="Welcome area{% if waiting %}: {{ waiting }} waiting{% endif %}"
+         class="map-spot" style="left: 77.5%; top: 26.1%; width: 2.5%; height: 8.7%;">
+        {% if waiting %}<span class="map-badge animate-hop">{{ waiting }}</span>{% endif %}
+      </a>
+    </div>
   </div>
+
+  {# --- Interface laid over the scenery --- #}
+  <h1 class="title-band absolute top-3 left-0 z-10">Your ranch</h1>
+
+  {# ranch.js counts down to the next full hour, then reloads the page #}
+  <p class="panel absolute top-3 right-3 z-10 px-4 py-1.5">
+    <span class="text-muted">Next arrival in</span>
+    <time data-next-arrival="{{ next_arrival.isoformat }}" class="text-xl font-bold">--:--</time>
+  </p>
+
+  <section id="welcome-area" class="panel absolute bottom-8 left-3 z-10 flex w-72 flex-col gap-3 p-4"
+           aria-label="Welcome area">
+    <h2 class="section-title -ml-4 self-start">Welcome area <span class="font-normal text-white/70">{{ waiting }}/{{ request.player.welcome_capacity }}</span></h2>
+    <div class="flex flex-wrap gap-2">
+      {# Arrivals stay hidden: one closed Poké Ball per waiting Pokémon #}
+      {% for _ in waiting_range %}<span class="pokeball size-8"></span>{% endfor %}
+      {% if not waiting %}<p class="text-sm text-muted">Nobody yet: a wild Pokémon shows up every hour.</p>{% endif %}
+    </div>
+    {% if waiting %}
+      <button type="button" data-open-dialog class="self-start btn">See who came</button>
+    {% endif %}
+  </section>
 
   {% comment %}
     The reveal dialog (native <dialog>). It opens by itself when Pokémon are

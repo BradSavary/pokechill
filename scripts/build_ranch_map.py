@@ -26,6 +26,10 @@ OUTPUT = ROOT / "static" / "img" / "ranch-map.png"
 
 T = 16  # tile size in pixels
 COLS, ROWS = 40, 23  # 640 x 368: a landscape map
+# The border of firs is 2 firs thick on the left and right (4 tiles): the page
+# crops the sides of the map on screens narrower than it, and this crops trees
+# instead of the scenery.
+SIDE = 4
 rng = random.Random(4)  # fixed seed: the same map at every build
 
 # The three sources share the same grass colour, so their tiles blend seamlessly
@@ -107,50 +111,56 @@ POND = {
 
 # --- Layout -------------------------------------------------------------------------
 ENTRANCE_ROWS = (12, 13)  # the path enters on the left edge
-HOUSE = (32, 3)  # top-left tile of the ranch (4 x 4 tiles)
+# The clearing spans cols 4 to 35, between the two thick borders of firs
+HOUSE = (30, 3)  # top-left tile of the ranch (4 x 4 tiles)
 DOOR_COL = HOUSE[0] + 1
-POND_BOX = (15, 4, 21, 7)  # col0, row0, col1, row1 (inclusive)
-TALL_GRASS_BOXES = [(3, 3, 8, 6), (4, 16, 10, 18), (16, 16, 21, 18)]
+POND_BOX = (16, 4, 21, 7)  # col0, row0, col1, row1 (inclusive)
+TALL_GRASS_BOXES = [(5, 3, 9, 6), (6, 16, 11, 18), (16, 16, 20, 18)]
 FLOWER_SPOTS = [
-    (11, 4),
-    (12, 5),
-    (10, 9),
-    (23, 9),
-    (24, 4),
-    (28, 19),
-    (13, 17),
-    (29, 10),
-    (8, 10),
-    (22, 15),
+    (12, 4),
+    (13, 5),
+    (12, 9),
+    (22, 9),
+    (21, 2),
+    (26, 19),
+    (14, 17),
+    (27, 10),
+    (10, 10),
+    (20, 14),
 ]
-SMALL_POND_AT = (24, 15)  # top-left tile of the second, smaller pond
+SMALL_POND_AT = (22, 15)  # top-left tile of the second, smaller pond
 # Firs: (col, row, count) = a stack of `count` firs whose top tile is at (col, row)
 FIRS = [
-    (27, 3, 1),  # outside the yard, on the left of the house
-    (23, 5, 1),  # next to the big pond
-    (12, 14, 1),
-    (26, 15, 1),  # next to the small pond
+    (25, 3, 1),  # outside the yard, on the left of the house
+    (22, 5, 1),  # next to the big pond
+    (13, 14, 1),
+    (24, 15, 1),  # next to the small pond
     # a grove: three stacks side by side, at staggered heights
-    (30, 16, 1),
-    (32, 14, 2),
-    (34, 15, 2),
+    (27, 16, 1),
+    (29, 14, 2),
+    (31, 15, 2),
 ]
-BUSH_SPOTS = [(9, 3), (9, 4), (2, 14), (2, 15), (25, 11), (36, 12), (37, 12), (37, 13), (14, 9)]
-PLANT_SPOTS = [(14, 5), (22, 6), (27, 9), (11, 19)]
+BUSH_SPOTS = [(10, 3), (10, 4), (4, 14), (4, 15), (24, 11), (34, 12), (35, 12), (35, 13), (14, 9)]
+PLANT_SPOTS = [(14, 6), (25, 9), (12, 19)]
 # Yard of the ranch: a fence on its left and bottom, open where the path comes in
-YARD_FENCE_COL, YARD_FENCE_ROW = 29, HOUSE[1] + 6
+YARD_FENCE_COL, YARD_FENCE_ROW = HOUSE[0] - 3, HOUSE[1] + 6
 YARD_GATE = range(DOOR_COL - 1, DOOR_COL + 2)  # the path goes through here
 MAILBOX_AT = (HOUSE[0] - 1, HOUSE[1] + 2)  # top tile, on the left of the front wall
 SIGN_AT = (HOUSE[0] + 4, HOUSE[1] + 3)  # on the right of the front wall
-# Border columns: (first row, last row) of each run of stacked firs. A run that
-# starts below the top corner begins with a fir top; one that ends above the
-# bottom corner ends with a trunk. The rows in between alternate between the two
-# middle rows, and the row next to a corner must be the first one (FIR_MIDDLE[0]):
-# that is why the right column is cut in two runs, like the left one.
-BORDER_RUNS = {
-    "left": [(2, ENTRANCE_ROWS[0] - 1), (ENTRANCE_ROWS[1] + 1, ROWS - 4)],  # around the entrance
-    "right": [(2, 11), (12, ROWS - 4)],
-}
+# Border columns, two per side (the outer one, then the inner one):
+# (map column, side, runs). A run is (first row, last row) of stacked firs: a
+# run that starts below the top corner begins with a fir top; one that ends
+# above the bottom corner ends with a trunk. The rows in between alternate
+# between the two middle rows, and the row next to a corner must be the first
+# one (FIR_MIDDLE[0]): that is why the right columns are cut in two runs too,
+# at different rows so the two cuts don't line up.
+AROUND_ENTRANCE = [(2, ENTRANCE_ROWS[0] - 1), (ENTRANCE_ROWS[1] + 1, ROWS - 4)]
+BORDER_COLUMNS = [
+    (0, "left", AROUND_ENTRANCE),
+    (2, "left", AROUND_ENTRANCE),
+    (COLS - 4, "right", [(2, 11), (12, ROWS - 4)]),
+    (COLS - 2, "right", [(2, 7), (8, ROWS - 4)]),
+]
 
 
 def in_path(col, row):
@@ -247,7 +257,7 @@ put(tile(*SIGN), *SIGN_AT)
 for row in range(2, YARD_FENCE_ROW):
     put(tile(*FENCE["v"]), YARD_FENCE_COL, row)
 put(tile(*FENCE["corner"]), YARD_FENCE_COL, YARD_FENCE_ROW)
-for col in range(YARD_FENCE_COL + 1, COLS - 2):
+for col in range(YARD_FENCE_COL + 1, COLS - SIDE):
     if col not in YARD_GATE:
         put(tile(*FENCE["h"]), col, YARD_FENCE_ROW)
 
@@ -264,13 +274,12 @@ for fir in FIRS:
     fir_stack(*fir)
 
 # --- Border of firs, with the entrance on the left ---------------------------------
-for col in range(2, COLS - 2):
+for col in range(SIDE, COLS - SIDE):
     for dy in range(2):
         put(tile("r1", 2 + col % 2, dy), col, dy)  # top: bottoms of the trees
     for dy in range(3):
         put(tile("r1", 2 + col % 2, 37 + dy), col, ROWS - 3 + dy)  # bottom: tree tops
-for side, runs in BORDER_RUNS.items():
-    map_col = 0 if side == "left" else COLS - 2
+for map_col, side, runs in BORDER_COLUMNS:
     for first, last in runs:
         for row in range(first, last + 1):
             if row == first and first != 2:  # a new run: fir top, free-standing
@@ -282,13 +291,12 @@ for side, runs in BORDER_RUNS.items():
                 spec = ("r1", BORDER_COLS[side], FIR_MIDDLE[(row - start) % 2])
             for dx in range(2):
                 put(tile(spec[0], spec[1] + dx, spec[2]), map_col + dx, row)
-for dx in range(2):
-    for dy in range(2):
-        put(tile("r1", dx, dy), dx, dy)  # top-left corner
-        put(tile("r1", 22 + dx, dy), COLS - 2 + dx, dy)  # top-right corner
-    for dy in range(3):
-        put(tile("r1", dx, 37 + dy), dx, ROWS - 3 + dy)  # bottom-left corner
-        put(tile("r1", 22 + dx, 37 + dy), COLS - 2 + dx, ROWS - 3 + dy)  # bottom-right
+    # Corners: the column of firs goes on behind the top and bottom bands
+    for dx in range(2):
+        for dy in range(2):
+            put(tile("r1", BORDER_COLS[side] + dx, dy), map_col + dx, dy)
+        for dy in range(3):
+            put(tile("r1", BORDER_COLS[side] + dx, 37 + dy), map_col + dx, ROWS - 3 + dy)
 
 
 # --- HeartGold/SoulSilver-like palette (the default look) --------------------------

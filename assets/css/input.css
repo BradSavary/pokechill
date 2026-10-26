@@ -105,6 +105,9 @@
 /* The game is designed for landscape. On a phone held in portrait we hide the
    app and show a "rotate your device" hint instead: `portrait-phone:hidden`. */
 @custom-variant portrait-phone (@media (orientation: portrait) and (max-width: 600px));
+/* A phone held in landscape: short rather than narrow (some are over 900 px
+   wide, but none is over ~430 px tall). `phone:` makes the side menu smaller. */
+@custom-variant phone (@media (max-height: 500px));
 
 /* Keep pixel art sharp when sprites are scaled up (no blurry smoothing) */
 @utility pixelated {
@@ -168,17 +171,29 @@
   .menu-disc {
     @apply grid size-16 place-items-center rounded-full bg-surface p-3.5 transition;
     box-shadow: 0 4px 0 rgb(0 0 0 / 0.2);
+    /* Phone: 44 px, still a comfortable touch target */
+    @variant phone {
+      @apply size-11 p-2.5;
+      box-shadow: 0 3px 0 rgb(0 0 0 / 0.2);
+    }
   }
   /* Hover: a white ring, no scaling. Growing the disc made the icon seem to
      slide sideways, as its centre falls on a half pixel. */
   .menu-item:hover:not(.is-active):not(.is-locked) .menu-disc {
-    @apply outline-4 outline-offset-3 outline-white/80;
+    @apply outline-4 outline-offset-3 outline-white/80 phone:outline-3 phone:outline-offset-2;
   }
   .menu-item.is-active .menu-disc {
-    @apply outline-4 outline-offset-3 outline-outline;
+    @apply outline-4 outline-offset-3 outline-outline phone:outline-3 phone:outline-offset-2;
   }
   .menu-item.is-locked {
     @apply cursor-not-allowed opacity-50;
+  }
+
+  /* Legal notice in the footer: a dark pill blurring what lies behind it,
+     readable over any page (and over the ranch map). Centred by auto margins
+     with a width that fits its text. */
+  .legal-notice {
+    @apply mx-auto w-fit max-w-[calc(100%-1rem)] rounded-full bg-black/45 px-4 py-0.5 text-center text-xs text-white backdrop-blur-sm;
   }
 
   /* Text inputs and selects */
@@ -209,6 +224,39 @@
     background:
       radial-gradient(circle, #fff 0 12%, #000 12% 18%, transparent 18%),
       linear-gradient(#e3350d 0 45%, #000 45% 55%, #fff 55%);
+  }
+
+  /* Ranch map, covering the whole page like a wallpaper (object-fit: cover
+     can't be used: the clickable spots must follow the map, so the map and
+     its spots share a "stage" box that we size ourselves).
+     The view is a size container: inside it, 100cqw and 100cqh are its width
+     and height. The stage keeps the map's 640:368 ratio and is as wide as the
+     view, or wider when the view is taller than the map's ratio. */
+  .ranch-view {
+    @apply absolute inset-0 overflow-hidden bg-[#2f8a3c];
+    container-type: size;
+  }
+  .ranch-stage {
+    --stage-width: max(100cqw, 100cqh * 640 / 368);
+    position: absolute;
+    width: var(--stage-width);
+    aspect-ratio: 640 / 368;
+    /* Centred: what overflows is cropped equally on both sides, in the border
+       of firs, 2 firs thick there (see SIDE in scripts/build_ranch_map.py) */
+    left: calc((100cqw - var(--stage-width)) / 2);
+    top: calc((100cqh - var(--stage-width) * 368 / 640) / 2);
+  }
+
+  /* Ranch map: a clickable spot over a tile (placed by an inline style in %),
+     outlined on hover and keyboard focus so the player sees it is clickable */
+  .map-spot {
+    @apply absolute rounded-sm outline-white/90 hover:outline-3 focus-visible:outline-3;
+  }
+  /* Notification badge over a spot. Centred with auto margins, not with a
+     translate: the hop animation already uses the transform property. */
+  .map-badge {
+    @apply absolute inset-x-0 -top-7 mx-auto grid h-6 w-fit min-w-6 place-items-center rounded-full bg-accent px-1.5 text-sm font-bold text-white;
+    box-shadow: 0 2px 0 var(--color-accent-dark);
   }
 
   /* Reveal sequence: the ball shakes 0.9 s then vanishes, the Pokémon pops at 1 s */

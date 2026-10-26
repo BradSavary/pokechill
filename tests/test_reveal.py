@@ -94,6 +94,13 @@ def test_the_ranch_hides_arrivals_and_opens_the_reveal_dialog(guest_with_arrival
     assert "Ivysaur" not in html  # hidden until revealed
 
 
+def test_the_door_on_the_map_shows_the_waiting_count(guest_with_arrivals):
+    html = guest_with_arrivals.get(reverse("ranch:index")).content.decode()
+    assert "img/ranch-map.png" in html
+    assert 'title="Welcome area: 3 waiting"' in html
+    assert '<span class="map-badge animate-hop">3</span>' in html
+
+
 def test_revealing_one_pokemon(guest_with_arrivals):
     html = guest_with_arrivals.post(reverse("ranch:reveal")).content.decode()
     assert "Ivysaur" in html
@@ -118,3 +125,6 @@ def test_the_dialog_stays_closed_when_nobody_is_waiting(client):
     html = client.get(reverse("ranch:index")).content.decode()
     assert "data-auto-open" not in html
     assert "Welcome back" not in html
+    # The door is then a plain link to the Welcome area, without a badge
+    assert 'title="Welcome area"' in html
+    assert "map-badge" not in html

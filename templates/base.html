@@ -10,9 +10,7 @@
   <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
   {# Compiled by Tailwind from assets/css/input.css #}
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
-  {# HTMX 2.0.4, served from our static files (works offline, no third-party CDN) #}
-  <script src="{% static 'js/htmx.min.js' %}" defer></script>
-  {% block scripts %}{% endblock %}
+ 
 </head>
 {# h-dvh: the app fills exactly the screen; long panes scroll inside it #}
 {# hx-headers: every HTMX request sends the CSRF token, required by Django for POST #}
@@ -26,7 +24,8 @@
   {# min-h-0 lets this flex child shrink, so inner panes can scroll #}
   <div class="flex min-h-0 flex-1 portrait-phone:hidden">
     {# Side menu, flush with the left edge, styled like the Sword/Shield main menu #}
-    <nav class="flex w-24 shrink-0 flex-col items-center gap-4 border-r-4 border-accent-dark bg-accent px-2 py-4" aria-label="Main navigation">
+    {# phone: smaller on a phone held in landscape (see the variant in input.css) #}
+    <nav class="flex w-24 shrink-0 flex-col items-center gap-4 border-r-4 border-accent-dark bg-accent px-2 py-4 phone:w-16 phone:gap-2.5 phone:px-1 phone:py-2.5" aria-label="Main navigation">
       {% url "ranch:index" as ranch_url %}
       {% url "pokedex:index" as pokedex_url %}
       {% include "_menu_item.html" with name="ranch" label="Ranch" color="text-menu-ranch" url=ranch_url %}
@@ -42,7 +41,7 @@
           <span class="text-white">Guest</span>
           <a class="btn-secondary px-1 text-xs" href="{% url 'accounts:sign_up' %}" title="Save your game: create an account">Save</a>
         {% elif user.is_authenticated %}
-          <span class="w-20 truncate text-white" title="{{ user.username }}">{{ user.username }}</span>
+          <span class="w-20 truncate text-white phone:w-14" title="{{ user.username }}">{{ user.username }}</span>
           {# Django 5 only logs out with POST (a link could be triggered by any page) #}
           <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
@@ -54,12 +53,20 @@
       </div>
     </nav>
 
-    {# Right column: the page, then the legal notice (the nav keeps the full height) #}
-    <div class="flex min-w-0 flex-1 flex-col">
-      <main class="min-h-0 flex-1 overflow-y-auto p-3">
+    {% comment %}
+      Right column: the page, then the legal notice (the nav keeps the full
+      height). The notice lies over the bottom of the page: <main> keeps a
+      40 px bottom padding for it, which also leaves room for the panels'
+      shadow (8 px offset + 24 px blur), otherwise cut by the scrolling
+      <main>. A page can change the layout of <main> through the main_class
+      block: the Ranch fills it with its map, the notice over the scenery.
+    {% endcomment %}
+    <div class="relative flex min-w-0 flex-1 flex-col">
+      <main class="{% block main_class %}min-h-0 flex-1 overflow-y-auto p-3 pb-10{% endblock %}">
         {% block content %}{% endblock %}
       </main>
-      <footer class="px-4 pb-2 text-center text-xs text-muted">
+      {# inset-x-0 + auto margins centre it; left-1/2 would halve the width it can take #}
+      <footer class="legal-notice absolute inset-x-0 bottom-2 z-10">
         PokéChill is an unofficial, non-commercial fan game.
         Not affiliated with Nintendo, Game Freak or The Pokémon Company.
       </footer>
