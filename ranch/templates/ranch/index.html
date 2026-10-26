@@ -3,8 +3,19 @@
 {% block title %}Ranch · PokéChill{% endblock %}
 
 {% block content %}
-  <section class="flex flex-col gap-2 rounded-xl bg-panel p-6">
+  {# Temporary page: the real Ranch (absence summary, reveal) arrives in step 1.6 #}
+  <section class="flex flex-col gap-3 rounded-xl bg-panel p-6">
     <h1 class="text-2xl font-bold">Your ranch</h1>
-    <p class="text-muted">Your ranch opened on {{ request.player.created_at|date:"F j, Y" }}. Wild Pokémon will soon start showing up every hour.</p>
+    <p class="text-muted">Welcome area: {{ arrivals|length }}/{{ request.player.welcome_capacity }}</p>
+    <ul class="flex flex-wrap gap-2">
+      {% for arrival in arrivals %}
+        <li class="flex flex-col items-center rounded-lg bg-night p-2 text-xs">
+          <img src="{{ arrival.species.sprite_url }}" alt="" width="64" height="64" class="pixelated size-16">
+          {{ arrival.species.name }}{% if arrival.is_shiny %} ✦{% endif %}
+        </li>
+      {% empty %}
+        <li class="text-sm text-muted">Nobody yet: a wild Pokémon shows up every hour.</li>
+      {% endfor %}
+    </ul>
   </section>
 {% endblock %}

@@ -10,12 +10,12 @@ from django.db.models import F, Q
 from django.utils import timezone
 
 from game import balance
-from game.arrivals import NATURES
+from game.arrivals import NATURES, CatchUp, catch_up
 from game.clock import floor_to_hour
 from game.collection import Obtention, OwnedState, resolve_obtention
 from pokedex.models import Species
 
-from .models import CandyStock, OwnedPokemon, Player
+from .models import Arrival, CandyStock, OwnedPokemon, Player
 
 
 def ensure_player(user) -> Player:
@@ -73,6 +73,43 @@ def receive_pokemon(player: Player, species: Species, *, nature: str, is_shiny: 
     # F() makes the database do the addition: no lost update if two requests race
     CandyStock.objects.filter(pk=stock.pk).update(amount=F("amount") + outcome.candies)
     return outcome
+
+
+def catch_up_player(player: Player, now=None) -> CatchUp:
+    """
+    Replay the hours elapsed since the player's last visit.
+
+    The game rules run in game.arrivals.catch_up (pure Python); this function
+    loads what they need, then saves the new arrivals and the new clock.
+    """
+    now = now or timezone.now()
+    with transaction.atomic():
+        # Lock the player's row: a second request arriving at the same moment
+        # waits here, then finds the clock already moved and replays nothing
+        locked = Player.objects.select_for_update().get(pk=player.pk)
+        available = list(Species.objects.filter(is_available=True))
+        result = catch_up(
+            player_id=locked.pk,
+            rules=[species.to_rule() for species in available],
+            last_slot=locked.last_slot,
+            now=now,
+            free_places=max(locked.welcome_capacity - locked.arrivals.count(), 0),
+        )
+        species_by_slug = {species.slug: species for species in available}
+        Arrival.objects.bulk_create(
+            Arrival(
+                player=locked,
+                species=species_by_slug[arrival.slug],
+                slot=arrival.slot,
+                nature=arrival.nature,
+                is_shiny=arrival.is_shiny,
+            )
+            for arrival in result.arrivals
+        )
+        locked.last_slot = result.last_slot
+        locked.save(update_fields=["last_slot"])
+    player.last_slot = result.last_slot  # keep the caller's object in sync
+    return result
 
 
 def mark_seen(player: Player) -> None:

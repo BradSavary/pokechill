@@ -61,6 +61,7 @@ def test_catch_up_replays_each_hour():
 def test_catch_up_stops_when_the_welcome_area_is_full():
     result = catch_up(1, [RATTATA], START, START + timedelta(days=3), free_places=2)
     assert len(result.arrivals) == 2
+    assert result.hours_while_full == 72 - 2  # every hour after the 2 arrivals
     # Lost arrivals still count as processed: the clock moves to the current hour
     assert result.last_slot == START + timedelta(days=3)
 

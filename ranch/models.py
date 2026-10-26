@@ -9,6 +9,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from game import balance
+
 
 class Player(models.Model):
     # One user has at most one game save, and a save belongs to one user.
@@ -25,6 +27,11 @@ class Player(models.Model):
 
     def __str__(self) -> str:
         return f"Player of {self.user.username}"
+
+    @property
+    def welcome_capacity(self) -> int:
+        """Places of the Welcome area (research bonuses will be added in step 3)."""
+        return balance.WELCOME_CAPACITY_BASE
 
 
 class OwnedPokemon(models.Model):
@@ -69,3 +76,29 @@ class CandyStock(models.Model):
 
     def __str__(self) -> str:
         return f"{self.amount} {self.family} candies"
+
+
+class Arrival(models.Model):
+    """
+    A Pokémon waiting at the Welcome area, until the player reveals it.
+
+    Created by the hourly catch-up (see ranch.services.catch_up_player).
+    """
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="arrivals")
+    species = models.ForeignKey("pokedex.Species", on_delete=models.PROTECT)
+    # The hourly slot it arrived at (UTC, on the hour)
+    slot = models.DateTimeField()
+    nature = models.CharField(max_length=20)
+    is_shiny = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["slot"]
+        constraints = [
+            # One arrival per hour and per player: even if two catch-ups ran at
+            # the same time, the database would refuse the duplicate
+            models.UniqueConstraint(fields=["player", "slot"], name="one_arrival_per_slot")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.species.name} for {self.player.user.username} at {self.slot:%Y-%m-%d %H:00}"

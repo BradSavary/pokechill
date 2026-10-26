@@ -65,10 +65,12 @@ def draw_arrival(
 
 @dataclass(frozen=True)
 class CatchUp:
-    """Result of a catch-up: the new arrivals and the last slot processed."""
+    """Result of a catch-up."""
 
     arrivals: list[Arrival]
-    last_slot: datetime
+    last_slot: datetime  # the current hour: the next catch-up starts after it
+    # Hours replayed while the Welcome area was full: their arrivals are lost
+    hours_while_full: int = 0
 
 
 def catch_up(
@@ -83,14 +85,21 @@ def catch_up(
 
     Arrivals fill the free places of the Welcome area. Once it is full, the
     following arrivals are lost (the offline cap): nothing else can change
-    while the player is away, so the loop can stop early. The last processed
-    slot is always the current hour, lost arrivals included.
+    while the player is away, so the loop stops and only counts the hours
+    left. The last processed slot is always the current hour.
     """
+    slots = list(clock.slots_after(last_slot, now))
     arrivals: list[Arrival] = []
-    for slot in clock.slots_after(last_slot, now):
+    hours_while_full = 0
+    for index, slot in enumerate(slots):
         if len(arrivals) >= free_places:
+            hours_while_full = len(slots) - index
             break
         arrival = draw_arrival(rules, GameContext(slot=slot), clock.slot_rng(player_id, slot))
         if arrival is not None:
             arrivals.append(arrival)
-    return CatchUp(arrivals=arrivals, last_slot=max(clock.floor_to_hour(now), last_slot))
+    return CatchUp(
+        arrivals=arrivals,
+        last_slot=max(clock.floor_to_hour(now), last_slot),
+        hours_while_full=hours_while_full,
+    )

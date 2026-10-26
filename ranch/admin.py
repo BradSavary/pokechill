@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import CandyStock, OwnedPokemon, Player
+from .models import Arrival, CandyStock, OwnedPokemon, Player
 
 
 class OwnedPokemonInline(admin.TabularInline):
@@ -15,9 +15,16 @@ class CandyStockInline(admin.TabularInline):
     extra = 0
 
 
+class ArrivalInline(admin.TabularInline):
+    """The Welcome area: Pokémon waiting to be revealed."""
+
+    model = Arrival
+    extra = 0
+
+
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
     list_display = ["user", "created_at", "last_seen_at", "last_slot"]
     search_fields = ["user__username"]
     list_select_related = ["user"]
-    inlines = [OwnedPokemonInline, CandyStockInline]
+    inlines = [ArrivalInline, OwnedPokemonInline, CandyStockInline]

@@ -5,39 +5,82 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('pokedex', '0003_species_game_data'),
-        ('ranch', '0001_initial'),
+        ("pokedex", "0003_species_game_data"),
+        ("ranch", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='CandyStock',
+            name="CandyStock",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.PositiveIntegerField(default=0)),
-                ('family', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='pokedex.evolutionchain')),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='candies', to='ranch.player')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("amount", models.PositiveIntegerField(default=0)),
+                (
+                    "family",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="pokedex.evolutionchain"
+                    ),
+                ),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="candies",
+                        to="ranch.player",
+                    ),
+                ),
             ],
             options={
-                'constraints': [models.UniqueConstraint(fields=('player', 'family'), name='one_stock_per_family')],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("player", "family"), name="one_stock_per_family"
+                    )
+                ],
             },
         ),
         migrations.CreateModel(
-            name='OwnedPokemon',
+            name="OwnedPokemon",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('level', models.PositiveSmallIntegerField(default=1)),
-                ('unlocked_natures', models.JSONField(default=list)),
-                ('shiny_unlocked', models.BooleanField(default=False)),
-                ('obtained_at', models.DateTimeField(auto_now_add=True)),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='pokemon', to='ranch.player')),
-                ('species', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='owners', to='pokedex.species')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("level", models.PositiveSmallIntegerField(default=1)),
+                ("unlocked_natures", models.JSONField(default=list)),
+                ("shiny_unlocked", models.BooleanField(default=False)),
+                ("obtained_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="pokemon",
+                        to="ranch.player",
+                    ),
+                ),
+                (
+                    "species",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="owners",
+                        to="pokedex.species",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['species__number'],
-                'constraints': [models.UniqueConstraint(fields=('player', 'species'), name='one_pokemon_per_species')],
+                "ordering": ["species__number"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("player", "species"), name="one_pokemon_per_species"
+                    )
+                ],
             },
         ),
     ]
