@@ -1,0 +1,9 @@
+{% load ranch_extras %}
+{% comment %}
+  A waiting Pokémon's ball, which tells its rarity (see RARITY_BALLS in
+  ranch/templatetags/ranch_extras.py). Variables: rarity, size (a Tailwind
+  size class), extra (more classes, optional). The .pokeball class gives the
+  framing and the pixel rendering; the inline style picks the sprite.
+{% endcomment %}
+<span class="pokeball {{ size }} {{ extra }}" style="background-image: url('{{ rarity|ball_sprite }}')"
+      role="img" aria-label="{{ rarity|ball_name }}" title="{{ rarity|ball_name }}"></span>

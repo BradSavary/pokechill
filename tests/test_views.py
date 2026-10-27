@@ -1,5 +1,7 @@
 """Tests of the Pokédex pages: full pages, HTMX fragments and filters."""
 
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -107,3 +109,11 @@ def test_pages_load_htmx_and_their_own_script(client, bulbasaur, page, script):
     html = client.get(reverse(page)).content.decode()
     assert "js/htmx.min.js" in html
     assert script in html
+
+
+def test_css_and_scripts_are_versioned(client, bulbasaur):
+    # ?v=<last change>: after a CSS rebuild, browsers fetch the new file
+    # instead of mixing new templates with a stylesheet kept in their cache
+    html = client.get(reverse("pokedex:index")).content.decode()
+    assert re.search(r"css/main\.css\?v=\d+", html)
+    assert re.search(r"js/pokedex\.js\?v=\d+", html)

@@ -1,20 +1,27 @@
 {% comment %}
-  One-by-one reveal, swapped into #reveal-content: the Poké Ball shakes,
-  then the Pokémon pops out (CSS animations with delays) and its cry plays.
+  One-by-one reveal, swapped into #reveal-content (or into the tutorial
+  popup for the gift). Variables: reveal (ranch.services.Reveal), remaining
+  (Pokémon still waiting), position and total: "2 / 3", shown when the
+  series has more than one Pokémon (the tutorial gift has none).
+  After the last one, a series of several ends with its summary.
 {% endcomment %}
 {% if reveal %}
-  <div class="grid place-items-center">
-    <span class="pokeball reveal-ball size-20 [grid-area:1/1]"></span>
-    <div class="reveal-pop [grid-area:1/1]">{% include "ranch/_reveal_card.html" with size="big" %}</div>
-  </div>
+  <header class="flex items-center justify-between gap-4">
+    {# Neutral title: the species stays a surprise until the ball opens #}
+    <h2 class="title-band -ml-6">A Pokémon came!</h2>
+    {% if total > 1 %}<p class="text-xl font-bold">{{ position }} <span class="text-muted">/ {{ total }}</span></p>{% endif %}
+  </header>
+  {% include "ranch/_reveal_card.html" %}
 {% endif %}
-<div class="flex gap-2">
+<footer class="flex justify-end gap-2">
   {% if remaining %}
-    <button hx-post="{% url 'ranch:reveal' %}" hx-target="#reveal-content"
-            class="btn">Next ({{ remaining }} left)</button>
     <button hx-post="{% url 'ranch:reveal_all' %}" hx-target="#reveal-content"
-            class="btn-secondary">Skip: reveal all</button>
+            class="btn-secondary">Skip to the summary</button>
+    <button hx-post="{% url 'ranch:reveal' %}" hx-target="#reveal-content" class="btn">Next</button>
+  {% elif total > 1 %}
+    <button hx-post="{% url 'ranch:reveal_summary' %}" hx-target="#reveal-content"
+            class="btn">See the summary</button>
   {% else %}
     <button type="button" data-close-dialog class="btn">Done</button>
   {% endif %}
-</div>
+</footer>

@@ -1,26 +1,55 @@
 {% load ranch_extras %}
 {% comment %}
-  One revealed Pokémon. Variables: reveal (ranch.services.Reveal), size ("big" or "small").
-  data-rarity sets the color of the rotating rays (see assets/css/input.css).
+  One revealed Pokémon, laid out like a Pokédex entry: the red stage on the
+  left, the details on the right. Variable: reveal (ranch.services.Reveal).
+
+  The sequence is pure CSS (see input.css): the Poké Ball shakes on the
+  stage, vanishes in a white flash at 0.9 s, then the Pokémon, the rays and
+  the details pop at 1 s (reveal-pop), and ranch.js plays the cry.
+  Elements with their own animation (rays, NEW! badge) sit in a reveal-pop
+  wrapper: one element can only run one animation property.
+  data-rarity sets the colour of the rays.
 {% endcomment %}
-<div class="flex flex-col items-center gap-1" data-rarity="{{ reveal.species.rarity }}">
-  <div class="relative grid place-items-center {% if size == 'big' %}size-48{% else %}size-24{% endif %}">
-    <div class="rarity-rays absolute inset-0 rounded-full"></div>
-    <img src="{% if reveal.is_shiny %}{{ reveal.species.shiny_sprite_url }}{% else %}{{ reveal.species.sprite_url }}{% endif %}"
-         alt="{{ reveal.species.name }}" class="pixelated relative {% if size == 'big' %}size-40{% else %}size-20{% endif %}">
-    {% if reveal.outcome.is_new %}<span class="new-badge absolute -top-1 -right-1">NEW!</span>{% endif %}
-  </div>
-  <p class="font-bold">{{ reveal.species.name }}{% if reveal.is_shiny %} <span class="text-accent">✦ Shiny</span>{% endif %}</p>
-  <p class="text-xs uppercase text-muted">{{ reveal.species.get_rarity_display }}</p>
-  {% if size == 'big' %}
-    <p class="text-sm">Nature: {{ reveal.nature|nature_label }}</p>
-    {% if not reveal.outcome.is_new %}
-      <p class="text-sm text-muted">Already caught: +{{ reveal.outcome.candies }} {{ reveal.species.evolution_chain }} candies</p>
-      {% if reveal.outcome.new_nature %}<p class="text-sm text-accent">New nature unlocked!</p>{% endif %}
-      {% if reveal.outcome.new_shiny %}<p class="text-sm text-accent">Shiny look unlocked!</p>{% endif %}
+{% with species=reveal.species outcome=reveal.outcome %}
+<div class="grid grid-cols-2 gap-4 phone:grid-cols-[10rem_1fr] phone:gap-3" data-rarity="{{ species.rarity }}">
+  <div class="dex-stage aspect-square">
+    <span class="absolute size-56 text-white/20 phone:size-36">{% include "icons/pokeball.svg" %}</span>
+    {# The rays spin in a disc that fades out before its edge: no square corners on the stage #}
+    <div class="reveal-pop absolute inset-0 grid place-items-center">
+      <div class="rarity-rays aspect-square w-[85%] rounded-full"></div>
+    </div>
+    {% include "ranch/_ball.html" with rarity=species.rarity size="size-27 phone:size-18" extra="reveal-ball relative [grid-area:1/1]" %}
+    <img src="{% if reveal.is_shiny %}{{ species.shiny_sprite_url }}{% else %}{{ species.sprite_url }}{% endif %}"
+         alt="{{ species.name }}" width="192" height="192"
+         class="pixelated reveal-pop relative size-48 [grid-area:1/1] phone:size-36">
+    {% if outcome.is_new %}
+      <span class="reveal-pop absolute top-3 right-3"><span class="new-badge inline-block">NEW!</span></span>
     {% endif %}
-    <audio src="{{ reveal.species.cry_url }}" data-cry preload="auto"></audio>
-  {% elif not reveal.outcome.is_new %}
-    <p class="text-xs text-muted">+{{ reveal.outcome.candies }} candies</p>
-  {% endif %}
+    <div class="reveal-flash"></div>
+  </div>
+
+  <div class="reveal-pop flex flex-col gap-2">
+    <p class="section-title self-start">No. {{ species.number|stringformat:"03d" }}</p>
+    <h3 class="text-3xl font-bold phone:text-2xl">{{ species.name }}{% if reveal.is_shiny %} <span class="text-accent" title="Shiny">✦</span>{% endif %}</h3>
+    <div class="flex flex-wrap gap-2">
+      {% for type in species.types %}{% include "pokedex/_type_badge.html" with type=type %}{% endfor %}
+    </div>
+    <dl class="mt-auto grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5 rounded-xl bg-sky px-4 py-2">
+      <dt class="text-muted">Rarity</dt><dd>{{ species.get_rarity_display }}</dd>
+      <dt class="text-muted">Nature</dt>
+      <dd>{{ reveal.nature|nature_label }}{% if outcome.new_nature and not outcome.is_new %} <span class="font-bold text-accent">New!</span>{% endif %}</dd>
+      {% if not outcome.is_new %}
+        {# Already caught: the catch turns into candies of its family #}
+        <dt class="text-muted">Candies</dt>
+        <dd class="flex items-center gap-1">
+          <span class="candy-icon"><img src="{{ species.evolution_chain.candy_url }}" alt=""></span>+{{ outcome.candies }}
+        </dd>
+      {% endif %}
+      {% if outcome.new_shiny and not outcome.is_new %}
+        <dt class="text-muted">Shiny</dt><dd class="font-bold text-accent">Look unlocked!</dd>
+      {% endif %}
+    </dl>
+    <audio src="{{ species.cry_url }}" data-cry preload="auto"></audio>
+  </div>
 </div>
+{% endwith %}

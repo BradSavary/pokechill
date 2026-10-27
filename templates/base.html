@@ -1,4 +1,4 @@
-{% load static %}
+{% load static assets %}
 <!DOCTYPE html>
 {# scheme-light: native controls (scrollbars, selects) match the light theme #}
 <html lang="en" class="scheme-light">
@@ -9,9 +9,9 @@
   {# Favicon: the Mystery Egg item sprite from PokéAPI #}
   <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
   {# Compiled by Tailwind from assets/css/input.css #}
-  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% asset 'css/main.css' %}">
   {# HTMX 2.0.4, served from our static files (works offline, no third-party CDN) #}
-  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+  <script src="{% asset 'js/htmx.min.js' %}" defer></script>
   {# A game, not a web page: images (map, sprites, icons) can't be dragged away #}
   <script>
     document.addEventListener("dragstart", (event) => {

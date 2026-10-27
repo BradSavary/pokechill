@@ -81,6 +81,8 @@ TEMPLATES = [
                 # Adds `is_guest` to every template (account box of the sidebar)
                 "accounts.context_processors.account",
             ],
+            # {% load assets %}: versioned URLs of the CSS and scripts (config/assets.py)
+            "libraries": {"assets": "config.assets"},
         },
     },
 ]

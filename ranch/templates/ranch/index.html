@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static assets %}
 
 {% block title %}Ranch · PokéChill{% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'js/ranch.js' %}" defer></script>
+  <script src="{% asset 'js/ranch.js' %}" defer></script>
 {% endblock %}
 
 {# The map fills the whole page (no padding); the legal notice lies over its bottom edge #}
@@ -50,8 +50,8 @@
            aria-label="Welcome area">
     <h2 class="section-title -ml-4 self-start">Welcome area <span class="font-normal text-white/70">{{ waiting }}/{{ request.player.welcome_capacity }}</span></h2>
     <div class="flex flex-wrap gap-2">
-      {# Arrivals stay hidden: one closed Poké Ball per waiting Pokémon #}
-      {% for _ in waiting_range %}<span class="pokeball size-8"></span>{% endfor %}
+      {# Arrivals stay hidden: one ball per waiting Pokémon, which tells its rarity #}
+      {% for rarity in rarities %}{% include "ranch/_ball.html" with rarity=rarity size="size-9" %}{% endfor %}
       {% if not waiting %}<p class="text-sm text-muted">Nobody yet: a wild Pokémon shows up every hour.</p>{% endif %}
     </div>
     {% if waiting %}
@@ -62,13 +62,20 @@
   {% comment %}
     The reveal dialog (native <dialog>). It opens by itself when Pokémon are
     waiting (data-auto-open, not during the tutorial). Its content is replaced
-    by HTMX at each reveal, and by the tutorial gift.
+    by HTMX at each reveal (ranch/_reveal.html), then by the summary of the
+    series (ranch/_reveal_summary.html); also by the tutorial gift.
+  {% endcomment %}
+  {% comment %}
+    Never taller than the screen: the dialog is a flex column (open: only,
+    or the closed dialog would show), and its content may shrink, so the
+    long part (the cards of the summary) scrolls while the title and the
+    buttons stay in view. phone: tighter on a phone held in landscape.
   {% endcomment %}
   <dialog id="reveal-dialog" {% if auto_open %}data-auto-open{% endif %}
-          class="m-auto w-full max-w-lg panel p-6 text-ink backdrop:bg-black/50">
-    <div id="reveal-content" class="flex flex-col items-center gap-4 text-center">
+          class="m-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-xl panel p-6 text-ink backdrop:bg-black/50 open:flex open:flex-col phone:p-4">
+    <div id="reveal-content" class="flex min-h-0 flex-col gap-4 phone:gap-3">
       {% if waiting %}
-        <h2 class="text-xl font-bold">Welcome back!</h2>
+        <h2 class="title-band -ml-6 self-start">Welcome back!</h2>
         {% if catch_up.arrivals %}
           <p>While you were away, <strong>{{ catch_up.arrivals|length }}</strong> Pokémon came to your ranch.</p>
         {% else %}
@@ -77,12 +84,18 @@
         {% if catch_up.hours_while_full %}
           <p class="text-sm text-muted">The Welcome area was full for {{ catch_up.hours_while_full }} h: arrivals during that time were lost.</p>
         {% endif %}
-        <div class="flex gap-2">
-          {% for _ in waiting_range %}<span class="pokeball size-8"></span>{% endfor %}
+        <div class="flex flex-wrap justify-center gap-3 rounded-2xl bg-sky p-4">
+          {% for rarity in rarities %}{% include "ranch/_ball.html" with rarity=rarity size="size-9" %}{% endfor %}
         </div>
-        {# This click also allows the browser to play the cries afterwards #}
-        <button hx-post="{% url 'ranch:reveal' %}" hx-target="#reveal-content"
-                class="btn px-6">Reveal</button>
+        <footer class="flex justify-end gap-2">
+          {% if waiting > 1 %}
+            <button hx-post="{% url 'ranch:reveal_all' %}" hx-target="#reveal-content"
+                    class="btn-secondary">Skip to the summary</button>
+          {% endif %}
+          {# This click also allows the browser to play the cries afterwards #}
+          <button hx-post="{% url 'ranch:reveal' %}" hx-target="#reveal-content"
+                  class="btn px-6">Reveal</button>
+        </footer>
       {% endif %}
     </div>
   </dialog>

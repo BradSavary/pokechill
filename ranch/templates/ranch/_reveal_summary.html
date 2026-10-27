@@ -1,0 +1,46 @@
+{% load ranch_extras %}
+{% comment %}
+  Summary of a series of reveals (more than one Pokémon), swapped into
+  #reveal-content: after the last one-by-one reveal, or right away when the
+  player skips. Variables: reveals (list of ranch.services.Reveal),
+  new_count (species new to the Pokédex), candies (total earned).
+  The cards pop one after the other (inline animation-delay, 120 ms apart).
+{% endcomment %}
+<h2 class="title-band -ml-6 self-start">Your new arrivals</h2>
+
+{% if reveals %}
+  <dl class="grid grid-cols-3 gap-2 text-center">
+    <div class="rounded-xl bg-sky py-1.5"><dt class="text-sm text-muted">Pokémon</dt><dd class="text-2xl font-bold">{{ reveals|length }}</dd></div>
+    <div class="rounded-xl bg-sky py-1.5"><dt class="text-sm text-muted">New species</dt><dd class="text-2xl font-bold">{{ new_count }}</dd></div>
+    <div class="rounded-xl bg-sky py-1.5"><dt class="text-sm text-muted">Candies</dt><dd class="text-2xl font-bold">+{{ candies }}</dd></div>
+  </dl>
+
+  {# min-h-0 + overflow: only the cards scroll when the dialog reaches the screen height #}
+  <ul class="grid min-h-0 grid-cols-4 gap-2 overflow-y-auto">
+    {% for reveal in reveals %}
+      {% with species=reveal.species outcome=reveal.outcome %}
+      <li class="summary-card reveal-pop-fast" style="animation-delay: {% widthratio forloop.counter0 1 120 %}ms">
+        <div class="dex-stage size-24">
+          <img src="{% if reveal.is_shiny %}{{ species.shiny_sprite_url }}{% else %}{{ species.sprite_url }}{% endif %}"
+               alt="" width="96" height="96" class="pixelated relative size-24">
+          {% if outcome.is_new %}<span class="new-badge absolute top-1 right-1">NEW!</span>{% endif %}
+        </div>
+        <p class="text-sm font-bold">{{ species.name }}{% if reveal.is_shiny %} <span class="text-accent" title="Shiny">✦</span>{% endif %}</p>
+        {% if not outcome.is_new %}
+          <p class="flex items-center gap-1 text-xs">
+            <span class="candy-icon"><img src="{{ species.evolution_chain.candy_url }}" alt="Candies"></span>+{{ outcome.candies }}
+          </p>
+          {% if outcome.new_nature %}<p class="text-xs font-bold text-accent">{{ outcome.new_nature|nature_label }} nature</p>{% endif %}
+          {% if outcome.new_shiny %}<p class="text-xs font-bold text-accent">Shiny look</p>{% endif %}
+        {% endif %}
+      </li>
+      {% endwith %}
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="text-muted">Nothing new this time.</p>
+{% endif %}
+
+<footer class="flex justify-end">
+  <button type="button" data-close-dialog class="btn">Done</button>
+</footer>

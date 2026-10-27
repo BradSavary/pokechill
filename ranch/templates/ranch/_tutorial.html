@@ -1,4 +1,4 @@
-{% load static %}
+{% load static assets %}
 {% comment %}
   The tutorial, shown as a popup over the page of the current step (see
   ranch/tutorial.py). Variables: tutorial_step, starters (step 0 only).
@@ -82,4 +82,4 @@
     {% endif %}
   </aside>
 </div>
-<script src="{% static 'js/tutorial.js' %}" defer></script>
+<script src="{% asset 'js/tutorial.js' %}" defer></script>

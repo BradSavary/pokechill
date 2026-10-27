@@ -10,6 +10,7 @@ from pokedex.models import Species
 from ranch import tutorial
 from ranch.models import Arrival, CandyStock, OwnedPokemon, Player
 from ranch.services import reveal_all, reveal_next
+from ranch.templatetags.ranch_extras import ball_name, ball_sprite
 
 pytestmark = pytest.mark.django_db
 
@@ -94,6 +95,40 @@ def test_the_ranch_hides_arrivals_and_opens_the_reveal_dialog(guest_with_arrival
     assert "Ivysaur" not in html  # hidden until revealed
 
 
+def test_each_waiting_pokemon_shows_the_ball_of_its_rarity(guest_with_arrivals, common):
+    html = guest_with_arrivals.get(reverse("ranch:index")).content.decode()
+    # 3 common arrivals: Poké Balls, in the Welcome area and in the dialog
+    assert html.count('aria-label="Poké Ball"') == 6
+
+    Species.objects.filter(pk=common.pk).update(rarity="very_rare")
+    html = guest_with_arrivals.get(reverse("ranch:index")).content.decode()
+    assert html.count('aria-label="Cherish Ball"') == 6
+    assert "pokemon/cherish-ball.png" in html
+    assert "Ivysaur" not in html  # the ball tells the rarity, not the species
+
+
+def test_the_reveal_opens_the_ball_of_the_rarity(guest_with_arrivals, common):
+    Species.objects.filter(pk=common.pk).update(rarity="legendary")
+    html = guest_with_arrivals.post(reverse("ranch:reveal")).content.decode()
+    assert 'aria-label="Master Ball"' in html
+
+
+@pytest.mark.parametrize(
+    ("rarity", "ball"),
+    [
+        ("common", "Poké Ball"),
+        ("uncommon", "Great Ball"),
+        ("rare", "Ultra Ball"),
+        ("very_rare", "Cherish Ball"),
+        ("legendary", "Master Ball"),
+        ("", "Poké Ball"),  # a species without rarity yet
+    ],
+)
+def test_every_rarity_has_its_ball(rarity, ball):
+    assert ball_name(rarity) == ball
+    assert ball_sprite(rarity).endswith(ball.lower().replace("é", "e").replace(" ", "-") + ".png")
+
+
 def test_the_door_on_the_map_shows_the_waiting_count(guest_with_arrivals):
     html = guest_with_arrivals.get(reverse("ranch:index")).content.decode()
     assert "img/ranch-map.png" in html
@@ -105,20 +140,61 @@ def test_revealing_one_pokemon(guest_with_arrivals):
     html = guest_with_arrivals.post(reverse("ranch:reveal")).content.decode()
     assert "Ivysaur" in html
     assert "NEW!" in html
-    assert "Next (2 left)" in html
+    assert '1 <span class="text-muted">/ 3</span>' in html  # its rank in the series
+    assert ">Next</button>" in html
+    assert "Skip to the summary" in html
 
 
-def test_skipping_reveals_everything(guest_with_arrivals):
-    guest_with_arrivals.post(reverse("ranch:reveal"))
+def summary_cards(html):
+    """Number of Pokémon cards in the summary."""
+    return html.count('class="summary-card')
+
+
+def test_the_last_reveal_of_a_series_leads_to_its_summary(guest_with_arrivals):
+    for _ in range(2):
+        guest_with_arrivals.post(reverse("ranch:reveal"))
+    last = guest_with_arrivals.post(reverse("ranch:reveal")).content.decode()
+    assert "See the summary" in last
+    assert "Next" not in last
+
+    html = guest_with_arrivals.post(reverse("ranch:reveal_summary")).content.decode()
+    assert "Your new arrivals" in html
+    assert summary_cards(html) == 3  # every Pokémon of the series, not just the last
+    # The first Ivysaur is new, the two others turn into candies
+    assert html.count("NEW!") == 1
+    # The series is over: asking again shows an empty summary
+    again = guest_with_arrivals.post(reverse("ranch:reveal_summary")).content.decode()
+    assert summary_cards(again) == 0
+
+
+def test_skipping_goes_to_the_summary_of_the_whole_series(guest_with_arrivals):
+    guest_with_arrivals.post(reverse("ranch:reveal"))  # one revealed before skipping
     html = guest_with_arrivals.post(reverse("ranch:reveal_all")).content.decode()
-    assert html.count("Ivysaur") >= 2
+    assert "Your new arrivals" in html
+    assert summary_cards(html) == 3
     assert not Arrival.objects.exists()
+
+
+def test_a_single_arrival_ends_without_summary(client, common, monkeypatch):
+    now = START + timedelta(minutes=5)
+    monkeypatch.setattr("django.utils.timezone.now", lambda: now)
+    client.get(reverse("ranch:index"))
+    Player.objects.update(tutorial_step=tutorial.DONE)
+    monkeypatch.setattr("django.utils.timezone.now", lambda: now + timedelta(hours=1))
+    client.get(reverse("ranch:index"))  # the catch-up brings one arrival
+
+    html = client.post(reverse("ranch:reveal")).content.decode()
+    assert "data-close-dialog" in html  # "Done"
+    assert "See the summary" not in html
+    assert "/ 1" not in html  # no "1 / 1" counter
+    assert "reveal_series" not in client.session  # nothing left to summarise
 
 
 def test_reveals_require_post(guest_with_arrivals):
     # A GET must never change the game state (links, prefetching, crawlers...)
     assert guest_with_arrivals.get(reverse("ranch:reveal")).status_code == 405
     assert guest_with_arrivals.get(reverse("ranch:reveal_all")).status_code == 405
+    assert guest_with_arrivals.get(reverse("ranch:reveal_summary")).status_code == 405
 
 
 def test_the_dialog_stays_closed_when_nobody_is_waiting(client):

@@ -20,7 +20,7 @@
 | Interface | Templates Django, HTMX 2.0.4, Tailwind CSS v4.3.3 | Pages rendues côté serveur, mises à jour partielles sans framework JavaScript |
 | Base de données | SQLite (local), PostgreSQL Neon (production) | Choisie par la variable `DATABASE_URL` |
 | Hébergement | Vercel, région `fra1` (Francfort) | Une fonction serverless Python, fichiers statiques sur le CDN |
-| Qualité | Ruff, pytest, GitHub Actions | Formatage, lint, 161 tests, intégration continue |
+| Qualité | Ruff, pytest, GitHub Actions | Formatage, lint, 176 tests, intégration continue |
 
 ### Les trois couches
 
@@ -73,7 +73,7 @@ templates/               base.html, _menu_item.html, icons/ (SVG Tabler, MIT)
 assets/css/input.css     Source Tailwind (non servie)
 static/                  CSS compilé, HTMX, JS, polices, sprites, cris, icônes, bonbons
 scripts/                 build_css.py (Tailwind), vercel_build.py (build de production)
-tests/                   161 tests pytest
+tests/                   176 tests pytest
 data/pokeapi_cache/      Cache des réponses PokéAPI (66 Mo, non commité)
 ```
 
@@ -190,15 +190,21 @@ Visite d'une page de jeu
         ├─ bulk_create des Arrival       ← contrainte (joueur, heure) unique
         └─ last_slot = heure actuelle    (même si l'Accueil était plein)
 
-Clic sur « Reveal » (POST, HTMX)
-  └─▶ reveal_next / reveal_all                             [transaction]
-        └─ receive_pokemon()  ← unique porte d'entrée pour obtenir un Pokémon
-              └─ game.collection.resolve_obtention()
+Clic sur « Reveal » / « Next » / « Skip » (POST, HTMX)
+  ├─▶ reveal_next / reveal_all                             [transaction]
+  │     └─ receive_pokemon()  ← unique porte d'entrée pour obtenir un Pokémon
+  │           └─ game.collection.resolve_obtention()
+  └─▶ la série en cours est notée dans la session (remember)
+        └─ fin de série à plusieurs → compte rendu (end_series)
 ```
 
 - **Deux protections contre les visites simultanées**, par exemple deux onglets ouverts : le verrou sur le joueur, puis la contrainte d'unicité en dernier recours. SQLite ignore `select_for_update`, donc en local seule la contrainte joue.
 - **L'Accueil plein arrête le rattrapage.** Le moteur compte alors les heures perdues (`hours_while_full`), que le résumé d'absence affiche.
-- **La révélation** se fait une par une (la Poké Ball tremble, le Pokémon apparaît devant des rayons de la couleur de sa rareté, son cri est joué) ou tout d'un coup (« Skip »). Les actions qui modifient l'état n'acceptent que POST, et HTMX envoie le jeton CSRF sur toutes ses requêtes (`hx-headers` sur `<body>`).
+- **La révélation** se fait une par une, présentée comme une fiche du Pokédex : sur la scène rouge, la Ball (sprite d'objet de PokéAPI) tremble puis disparaît dans un flash, le Pokémon apparaît devant des rayons de la couleur de sa rareté, et son cri est joué. Les détails (types, nature, bonbons) n'apparaissent qu'à ce moment, pour ne rien dévoiler avant.
+- **La Ball annonce la rareté** avant la révélation : Poké Ball (commune), Super Ball (peu commune), Hyper Ball (rare), Mémoire Ball (très rare, la Ball des Pokémon d'événement dans les jeux) et Master Ball (légendaire). La correspondance est dans [ranch_extras.py](../ranch/templatetags/ranch_extras.py) ; la page ne reçoit que les raretés des arrivées, jamais leurs espèces.
+- **Le compte rendu** termine toute série de plus d'un Pokémon, et « Skip » y mène directement. Chaque révélation étant une requête séparée, la série en cours est gardée dans la session Django (identifiants et valeurs simples, la session étant enregistrée en JSON), puis oubliée quand le compte rendu s'affiche. Elle survit ainsi à un rechargement de page entre deux révélations.
+- **Verrou et PostgreSQL** : la révélation charge les types de l'espèce dans la même requête que l'arrivée verrouillée. Le type secondaire étant facultatif, cette jointure est externe, et PostgreSQL refuse `FOR UPDATE` sur son côté nullable : le verrou se limite donc aux arrivées (`select_for_update(of=("self",))`).
+- Les actions qui modifient l'état n'acceptent que POST, et HTMX envoie le jeton CSRF sur toutes ses requêtes (`hx-headers` sur `<body>`).
 - **Le tutoriel** ([tutorial.py](../ranch/tutorial.py)) a 4 étapes (Pension, Pokédex, puis retour). Chaque bouton envoie le numéro de l'étape qu'il termine, si bien qu'un double clic ne peut pas en sauter une. Le cadeau (Pikachu) n'est donné qu'une fois, sous verrou.
 
 ## 9. Import depuis PokéAPI
@@ -237,20 +243,21 @@ Le style s'inspire des menus de **Pokémon Épée/Bouclier**, avec des polices p
 
 ### Tailwind
 
-- La source est [assets/css/input.css](../assets/css/input.css) : les couleurs dans `@theme`, les composants, les animations de la révélation, le variant `portrait-phone:` et l'utilitaire `pixelated`.
+- La source est [assets/css/input.css](../assets/css/input.css) : les couleurs dans `@theme`, les composants, les animations de la révélation, les variants `portrait-phone:` et `phone:` (téléphone tenu en paysage, repéré à sa faible hauteur) et l'utilitaire `pixelated`.
 - Le scan est limité aux templates `.html` et `.svg` (`source(none)` et `@source`).
 - La compilation passe par `scripts/build_css.py`, avec la version figée (v4.3.3) et un résultat toujours minifié.
+- **Versionnement** : la balise `{% asset %}` ([config/assets.py](../config/assets.py)) ajoute `?v=<date de modification>` aux URL du CSS et des scripts. Sans elle, un navigateur peut garder l'ancien `main.css` en cache après une recompilation : les nouveaux templates s'affichent alors avec d'anciennes classes. En production, Vercel fait déjà revalider chaque fichier (`max-age=0, must-revalidate`) ; le problème touchait surtout le serveur de développement, qui n'envoie aucun en-tête de cache.
 
 ## 11. Tests et qualité
 
-**161 tests**, exécutés en environ 2,7 secondes, sans réseau :
+**176 tests**, exécutés en environ 2,7 secondes, sans réseau :
 
 | Domaine | Fichiers | Tests |
 | --- | --- | --- |
 | Moteur pur | `test_game_clock`, `test_game_conditions`, `test_game_arrivals`, `test_game_collection`, `test_game_moves` | 49 |
-| Catalogue et import | `test_models`, `test_pokeapi`, `test_species_files`, `test_views` | 49 |
+| Catalogue et import | `test_models`, `test_pokeapi`, `test_species_files`, `test_views` | 52 |
 | Joueurs | `test_accounts`, `test_purge_guests`, `test_collection`, `test_player_pokedex` | 30 |
-| Arrivées | `test_catch_up`, `test_reveal`, `test_tutorial` | 23 |
+| Arrivées | `test_catch_up`, `test_reveal`, `test_tutorial` | 35 |
 | Outillage | `test_smoke`, `test_dev_commands`, `test_vercel_build` | 10 |
 
 Quelques tests notables :

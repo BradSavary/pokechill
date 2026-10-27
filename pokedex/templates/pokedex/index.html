@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static assets %}
 
 {% block title %}Pokédex · PokéChill{% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'js/pokedex.js' %}" defer></script>
+  <script src="{% asset 'js/pokedex.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}

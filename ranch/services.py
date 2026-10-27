@@ -158,17 +158,30 @@ def _reveal(player: Player, arrival: Arrival) -> Reveal:
     return Reveal(arrival.species, arrival.nature, arrival.is_shiny, outcome)
 
 
+# What a reveal shows of a species (its types, its family for the candies), loaded
+# in the same query as the arrival. The lock only takes the arrival rows
+# (of=("self",)): PostgreSQL refuses FOR UPDATE on the nullable side of an
+# outer join, which the optional secondary type needs.
+REVEAL_RELATED = (
+    "species__evolution_chain",
+    "species__primary_type",
+    "species__secondary_type",
+)
+
+
 @transaction.atomic
 def reveal_next(player: Player) -> Reveal | None:
     """Reveal the oldest waiting arrival (None if the Welcome area is empty)."""
-    arrival = player.arrivals.select_for_update().select_related("species__evolution_chain").first()
+    arrival = (
+        player.arrivals.select_for_update(of=("self",)).select_related(*REVEAL_RELATED).first()
+    )
     return _reveal(player, arrival) if arrival else None
 
 
 @transaction.atomic
 def reveal_all(player: Player) -> list[Reveal]:
     """Reveal every waiting arrival at once, oldest first."""
-    arrivals = player.arrivals.select_for_update().select_related("species__evolution_chain")
+    arrivals = player.arrivals.select_for_update(of=("self",)).select_related(*REVEAL_RELATED)
     return [_reveal(player, arrival) for arrival in arrivals]
 
 

@@ -96,6 +96,10 @@
   @keyframes vanish {
     to { opacity: 0; transform: scale(0); }
   }
+  @keyframes flash {
+    20% { opacity: 0.9; }
+    to { opacity: 0; }
+  }
   @keyframes hop {
     0%, 60%, 100% { transform: translateY(0); }
     30% { transform: translateY(-14px); }
@@ -218,12 +222,16 @@
   }
 
 
-  /* A Poké Ball drawn in CSS: red top, white bottom, black band and button */
+  /* A Poké Ball: the pixel-art item sprite of PokéAPI, like the map and the
+     Pokémon. The 30x30 sprite draws its ball in the centred 18x18 area: the
+     background is scaled to 30/18 = 166.67 % so the ball fills the box. Best
+     at multiples of 18 px (size-9 = 36 px, size-27 = 108 px): even pixels.
+     Every ball sprite shares this framing: ranch/_ball.html swaps the image
+     (background-image) to show the ball of the Pokémon's rarity. */
   .pokeball {
-    @apply inline-block rounded-full border-2 border-black;
-    background:
-      radial-gradient(circle, #fff 0 12%, #000 12% 18%, transparent 18%),
-      linear-gradient(#e3350d 0 45%, #000 45% 55%, #fff 55%);
+    @apply inline-block shrink-0;
+    background: url("../pokemon/poke-ball.png") center / 166.667% no-repeat;
+    image-rendering: pixelated;
   }
 
   /* Ranch map, covering the whole page like a wallpaper (object-fit: cover
@@ -259,19 +267,29 @@
     box-shadow: 0 2px 0 var(--color-accent-dark);
   }
 
-  /* Reveal sequence: the ball shakes 0.9 s then vanishes, the Pokémon pops at 1 s */
+  /* Reveal sequence: the ball shakes 0.9 s then vanishes in a white flash,
+     the Pokémon and its details pop at 1 s */
   .reveal-ball {
     animation:
       var(--animate-shake),
       vanish 0.1s 0.9s forwards;
   }
+  .reveal-flash {
+    @apply pointer-events-none absolute inset-0 bg-white opacity-0;
+    animation: flash 0.5s 0.85s ease-out;
+  }
   .reveal-pop {
     animation: var(--animate-pop);
     animation-delay: 1s;
   }
-  /* "Reveal all": no ball, cards pop one after another (inline animation-delay) */
+  /* Summary: no ball, cards pop one after another (inline animation-delay) */
   .reveal-pop-fast {
     animation: var(--animate-pop);
+  }
+
+  /* One Pokémon of the summary: a small red stage, then its name and gains */
+  .summary-card {
+    @apply flex flex-col items-center gap-1 rounded-2xl bg-sky p-2 text-center;
   }
 
   /* Rotating rays behind a revealed Pokémon, colored by rarity */
@@ -285,13 +303,17 @@
   .rarity-rays {
     @apply animate-spin-slow;
     background: repeating-conic-gradient(var(--rarity) 0 10deg, transparent 10deg 30deg);
-    /* Fade the rays out towards the edge of the circle */
-    mask-image: radial-gradient(circle, black 25%, transparent 70%);
+    /* Fade the rays out towards the edge of their disc: closest-side makes
+       the gradient end on the disc's edge, not in the corners of its box */
+    mask-image: radial-gradient(circle closest-side, black 35%, transparent 100%);
     opacity: 0.7;
   }
 
+  /* "NEW!" over a red stage: a white pill with red text (red on red was
+     unreadable), lifted by a dark shadow like the buttons */
   .new-badge {
-    @apply animate-bounce rounded-full bg-accent px-2 text-xs font-bold text-white shadow;
+    @apply animate-bounce rounded-full bg-surface px-2 text-xs font-bold text-accent;
+    box-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
   }
 
   /* Tutorial spotlight: a transparent box over the explained element (placed
