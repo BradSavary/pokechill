@@ -11,6 +11,7 @@ from game.zones import ZONES, Worker, experience_per_hour, production_per_hour
 from pokedex.models import Species
 from ranch.models import OwnedPokemon, Player, ResourceStock
 from ranch.services import catch_up_player, ensure_player
+from ranch.zone_maps import ZONE_SPOTS
 from ranch.zones import ZoneError, collect, fill_feeder, give_starting_zones, move_pokemon
 from tests.conftest import make_species
 
@@ -211,3 +212,42 @@ def test_arrival_conditions_see_the_occupied_zones(player, bulbasaur, bulbasaur_
     move_pokemon(bulbasaur_owned, zone(player, "orchard"))
     catch_up_player(player, now=START + timedelta(hours=4))
     assert player.arrivals.count() == 2
+
+
+# --- Spots on the map ------------------------------------------------------------------
+
+
+def test_pokemon_keep_their_spot_when_others_come_and_go(player, bulbasaur, charmander):
+    meadow = zone(player, "meadow")
+    charmander_owned = move_pokemon(
+        OwnedPokemon.objects.create(player=player, species=charmander), meadow
+    )
+    bulbasaur_owned = move_pokemon(
+        OwnedPokemon.objects.create(player=player, species=bulbasaur), meadow
+    )
+    # Bulbasaur (#1) came second: it takes the next spot, Charmander (#4) stays first
+    assert (charmander_owned.spot, bulbasaur_owned.spot) == (0, 1)
+
+    move_pokemon(charmander_owned, None)
+    bulbasaur_owned.refresh_from_db()
+    assert bulbasaur_owned.spot == 1  # still there, not moved up
+    assert move_pokemon(charmander_owned, meadow).spot == 0  # the first free spot again
+
+
+def test_the_chosen_spot_is_used_if_free(player, bulbasaur, charmander):
+    meadow = zone(player, "meadow")
+    first = move_pokemon(OwnedPokemon.objects.create(player=player, species=bulbasaur), meadow, 2)
+    assert first.spot == 2
+    # Spot 2 is taken: the next one goes to the first free spot
+    second = move_pokemon(OwnedPokemon.objects.create(player=player, species=charmander), meadow, 2)
+    assert second.spot == 0
+
+
+def test_a_freed_pokemon_has_no_spot(bulbasaur_owned, player):
+    pokemon = move_pokemon(move_pokemon(bulbasaur_owned, zone(player, "orchard")), None)
+    assert (pokemon.zone, pokemon.spot) == (None, None)
+
+
+def test_the_maps_have_a_spot_for_each_place_of_a_zone():
+    for slug in ZONES:
+        assert len(ZONE_SPOTS[slug]) >= balance.ZONE_SLOTS_BASE

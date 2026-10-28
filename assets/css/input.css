@@ -83,6 +83,8 @@
   --animate-spin-slow: spin 6s linear infinite;
   /* The starters hop in the tutorial: animate-hop */
   --animate-hop: hop 1.2s ease-in-out infinite;
+  /* Pokémon at work on a zone map: small hops, in percent of their own size */
+  --animate-bob: bob 1.6s ease-in-out infinite;
 
   @keyframes shake {
     0%, 100% { transform: rotate(0deg); }
@@ -99,6 +101,10 @@
   @keyframes flash {
     20% { opacity: 0.9; }
     to { opacity: 0; }
+  }
+  @keyframes bob {
+    0%, 55%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-14%); }
   }
   @keyframes hop {
     0%, 60%, 100% { transform: translateY(0); }
@@ -234,17 +240,17 @@
     image-rendering: pixelated;
   }
 
-  /* Ranch map, covering the whole page like a wallpaper (object-fit: cover
+  /* Game map (Ranch, zones), covering the whole page like a wallpaper (object-fit: cover
      can't be used: the clickable spots must follow the map, so the map and
      its spots share a "stage" box that we size ourselves).
      The view is a size container: inside it, 100cqw and 100cqh are its width
      and height. The stage keeps the map's 640:368 ratio and is as wide as the
      view, or wider when the view is taller than the map's ratio. */
-  .ranch-view {
+  .map-view {
     @apply absolute inset-0 overflow-hidden bg-[#2f8a3c];
     container-type: size;
   }
-  .ranch-stage {
+  .map-stage {
     --stage-width: max(100cqw, 100cqh * 640 / 368);
     position: absolute;
     width: var(--stage-width);
@@ -253,6 +259,116 @@
        of firs, 2 firs thick there (see SIDE in scripts/build_ranch_map.py) */
     left: calc((100cqw - var(--stage-width)) / 2);
     top: calc((100cqh - var(--stage-width) * 368 / 640) / 2);
+  }
+
+  /* A Pokémon on a zone map (placed by an inline style in %, see
+     ranch/zone_maps.py), with a soft shadow under its feet */
+  .map-pokemon {
+    @apply absolute cursor-pointer rounded-md outline-white/90 hover:outline-3 focus-visible:outline-3;
+  }
+  .map-pokemon::before {
+    content: "";
+    @apply absolute inset-x-[20%] bottom-[2%] h-[18%] rounded-[50%] bg-black/25;
+  }
+  /* An empty spot of a zone: a dashed circle with a "+", to send a Pokémon
+     there. The spot's box has an icon's shape (40 x 30), so the circle is
+     its inner <span>, as tall as the box and square. */
+  .map-slot {
+    @apply absolute grid cursor-pointer place-items-center;
+  }
+  .map-slot > span {
+    @apply grid aspect-square h-full place-items-center rounded-full border-2 border-dashed border-white/90 bg-white/25 text-2xl font-bold text-white transition;
+    text-shadow: 0 1px 0 rgb(0 0 0 / 0.35);
+  }
+  .map-slot:hover > span {
+    @apply bg-white/45;
+  }
+
+  /* A zone in the list: the whole card is a button that opens (and collects)
+     it, its banner on top */
+  .zone-card {
+    @apply flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-sky text-left transition hover:outline-3 hover:outline-menu-zones;
+  }
+
+  /* The banner of a zone card: its 256 x 32 strip of landscape shown at
+     exactly x2 (even pixels) in a band of 64 px, centred */
+  .zone-banner {
+    @apply relative h-16 w-full overflow-hidden bg-repeat-x;
+    background-size: 512px 64px;
+    background-position: center;
+    image-rendering: pixelated;
+  }
+
+  /* A thin progress bar (storage of a zone, experience); its <span> is the fill */
+  .gauge {
+    @apply h-2.5 w-full overflow-hidden rounded-full bg-sunken;
+  }
+  .gauge > span {
+    @apply block h-full rounded-full;
+  }
+
+  /* A dialog of the game: a white panel over a dimmed page, never taller than
+     the screen (only open:, or a closed dialog would show) */
+  .dialog-panel {
+    @apply m-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-lg gap-4 rounded-2xl bg-surface p-6 text-ink shadow-[0_8px_24px_rgb(0_0_0/0.18)] backdrop:bg-black/50 open:flex open:flex-col phone:p-4;
+  }
+  /* Details on demand: a circled "i" whose bubble shows on hover, or on tap
+     on a phone (app.js toggles .is-open; tabindex="0" lets the keyboard
+     reach it). Its text is in data-tip, and in aria-label for screen readers.
+     The bubble is fixed to the screen, where app.js places it (--tip-left,
+     --tip-top / --tip-bottom): unlike a bubble placed next to the "i", it can
+     never overflow its dialog and make it scroll. */
+  .info-tip {
+    @apply inline-grid size-5 shrink-0 cursor-help place-items-center rounded-full border-2 border-current align-middle text-xs leading-none font-bold text-muted normal-case;
+  }
+  .info-tip::after {
+    content: attr(data-tip);
+    position: fixed;
+    left: var(--tip-left, 0);
+    top: var(--tip-top, auto);
+    bottom: var(--tip-bottom, auto);
+    @apply pointer-events-none z-50 hidden w-64 rounded-xl bg-label p-2.5 text-left text-xs leading-snug font-normal whitespace-normal text-white shadow-lg;
+  }
+  /* Shown on hover (only where there is a mouse: a tap must not leave it
+     stuck open), or when app.js marks it open after a click or a tap */
+  @media (hover: hover) {
+    .info-tip:hover::after {
+      @apply block;
+    }
+  }
+  .info-tip.is-open::after {
+    @apply block;
+  }
+
+  /* Small badge of a Pokémon whose type is favoured: its experience bonus */
+  .xp-badge {
+    @apply rounded-full bg-menu-zones px-2 py-0.5 text-xs font-bold text-white;
+  }
+
+  /* A table of Pokémon to pick from: the header and the rows share their
+     columns (name, level, production) */
+  .picker-cols {
+    @apply grid grid-cols-[1fr_3rem_8rem] items-center gap-3;
+  }
+  .picker-head {
+    @apply rounded-lg bg-sunken px-2 py-1.5 text-xs font-bold whitespace-nowrap text-muted;
+  }
+  /* A column title that sorts the table when clicked (zones.js): its arrow
+     (⇅, or ▲/▼ for the current column) shows that it can be clicked */
+  .sort-button {
+    @apply inline-flex cursor-pointer items-center gap-1 hover:text-ink;
+  }
+  .sort-button [data-arrow] {
+    @apply text-muted/70;
+  }
+  .sort-button[data-direction],
+  .sort-button[data-direction] [data-arrow] {
+    @apply text-ink;
+  }
+
+  /* A row of a list to pick from (the Pokémon to send to a zone) */
+  .picker-row {
+    @apply w-full cursor-pointer rounded-xl bg-sky px-2 py-1 text-left hover:bg-accent-light/40;
   }
 
   /* Ranch map: a clickable spot over a tile (placed by an inline style in %),

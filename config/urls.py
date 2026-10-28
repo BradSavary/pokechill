@@ -10,6 +10,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("pokedex/", include("pokedex.urls")),
     path("ranch/", include("ranch.urls")),
+    path("zones/", include("ranch.zone_urls")),
     # The Ranch is the main page of the game
     path("", RedirectView.as_view(pattern_name="ranch:index"), name="home"),
     # Some browsers ask for /favicon.ico whatever the page says: point them to

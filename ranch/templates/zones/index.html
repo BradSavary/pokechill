@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static ranch_extras %}
+
+{% block title %}Zones · PokéChill{% endblock %}
+
+{% block content %}
+  <div class="panel flex flex-col">
+    <div class="flex items-center justify-between gap-4 pt-3 pr-5">
+      <h1 class="title-band">Your zones</h1>
+      <p class="text-sm text-muted">Open a zone to collect it and see its Pokémon</p>
+    </div>
+
+    <div class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
+      {% for card in zones %}
+        {% with zone=card.zone %}
+        {% comment %}
+          The whole card is the button: opening a zone collects it (POST),
+          then shows its map. On top, the zone's banner (a small picture of
+          its landscape, scripts/build_zone_maps.py) with its Pokémon.
+        {% endcomment %}
+        <form method="post" action="{% url 'zones:open' zone.zone %}">
+          {% csrf_token %}
+          <button class="zone-card">
+            {# The banner, as a 64 px strip: its landscape shown at x2, its Pokémon standing on it #}
+            <div class="zone-banner" style="background-image: url('{% static 'img/zone-'|add:zone.zone|add:'-banner.png' %}')">
+              <h2 class="title-band absolute bottom-2 left-0 py-1 text-base">{{ zone.spec.name }}</h2>
+              {% if card.workers %}
+                {# A dark shade on the right, so the Pokémon stand out from the landscape #}
+                <span class="absolute inset-y-0 right-0 w-3/5 bg-linear-to-l from-black/60 via-black/35 to-transparent"></span>
+                {# Icons at x2 (80 x 60): their transparent margins let them overlap a little #}
+                <div class="absolute right-1 bottom-0 flex -space-x-5">
+                  {% for pokemon in card.workers %}
+                    <img src="{{ pokemon.species.icon_url }}" alt="{{ pokemon.species.name }}"
+                         title="{{ pokemon.species.name }} · Lv. {{ pokemon.level }}" class="pixelated h-[60px] w-[80px]">
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% if zone.is_full %}
+                <span class="absolute top-1.5 right-2 rounded-full bg-accent px-3 py-0.5 text-sm font-bold text-white">Full</span>
+              {% endif %}
+            </div>
+
+            <div class="flex flex-col gap-2 p-3">
+              <div class="flex flex-wrap items-center gap-1.5">
+                {% for type in card.types %}{% include "pokedex/_type_badge.html" with type=type %}{% endfor %}
+                <span class="ml-auto text-sm text-muted">{{ card.workers|length }}/{{ zone.capacity }} Pokémon</span>
+              </div>
+              <p class="flex items-center gap-3">
+                <span class="flex items-center gap-1 font-bold" title="Ready to collect">
+                  <img src="{{ zone.spec.resource|resource_icon }}" alt="" class="pixelated size-6">
+                  {{ zone.stock }} <span class="font-normal text-muted">{{ zone.stock|resource_word:zone.spec.resource }}</span>
+                </span>
+                <span class="font-bold" title="Production">{{ card.per_hour|floatformat:"-2" }}<span class="font-normal text-muted"> / h</span></span>
+                <span class="ml-auto text-xs {% if zone.is_full %}font-bold text-accent{% else %}text-muted{% endif %}">
+                  {% if zone.is_full %}Collect it!{% elif card.hours_left is not None %}Full in {{ card.hours_left }} h{% else %}Nobody works here{% endif %}
+                </span>
+              </p>
+              {# Storage: hours of work stored out of the cap; once full, they stop #}
+              <div class="gauge" title="{{ zone.hours_worked }} of {{ work_cap }} hours of work stored">
+                <span style="width: {% widthratio zone.hours_worked work_cap 100 %}%"
+                      class="{% if zone.is_full %}bg-accent{% else %}bg-menu-zones{% endif %}"></span>
+              </div>
+            </div>
+          </button>
+        </form>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

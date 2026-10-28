@@ -131,13 +131,14 @@ def run_import(
 
     # --- Phase 3: media files -------------------------------------------------
     if media_dir is not None:
-        log("Downloading sprites, cries, type icons and candies...")
+        log("Downloading sprites, icons, cries, type icons and candies...")
         for n, pokemon in pokemons.items():
             urls = parsers.media_urls(pokemon)
             targets = {
                 "sprite": media_dir / "sprites" / f"{n}.png",
                 "shiny_sprite": media_dir / "sprites" / "shiny" / f"{n}.png",
                 "cry": media_dir / "cries" / f"{n}.ogg",
+                "icon": media_dir / "icons" / f"{n}.png",
             }
             for kind, destination in targets.items():
                 if urls[kind] and client.download(urls[kind], destination):

@@ -16,15 +16,15 @@
   {% comment %}
     The ranch map, drawn by scripts/build_ranch_map.py on a grid of 40 x 23
     tiles (640 x 368 px). It covers the page like a wallpaper (see
-    .ranch-view in input.css): the stage keeps the map's proportions and its
+    .map-view in input.css): the stage keeps the map's proportions and its
     overflow is cropped, in the thick borders of firs on the sides. Clickable
     spots live inside the stage, placed in percentages of the grid, so they
     stay on their tile at any size: the Day Care door is the tile (31, 6),
     hence left 31/40 = 77.5 % and top 6/23 = 26.1 %; it is 1/40 = 2.5 %
     wide and spans 2 rows (8.7 %) with the doorstep below it.
   {% endcomment %}
-  <div class="ranch-view">
-    <div class="ranch-stage">
+  <div class="map-view">
+    <div class="map-stage">
       <img src="{% static 'img/ranch-map.png' %}" width="640" height="368" draggable="false"
            alt="The ranch: a clearing surrounded by firs, with ponds, tall grass and the Day Care"
            class="pixelated block size-full select-none">

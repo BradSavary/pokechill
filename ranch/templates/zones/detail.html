@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% load static assets ranch_extras %}
+
+{% block title %}{{ zone.spec.name }} · PokéChill{% endblock %}
+
+{% block scripts %}
+  <script src="{% asset 'js/zones.js' %}" defer></script>
+{% endblock %}
+
+{# Like the Ranch: the map fills the page, the interface lies over it #}
+{% block main_class %}relative min-h-0 flex-1 overflow-hidden{% endblock %}
+
+{% block content %}
+  {% comment %}
+    The zone's map (scripts/build_zone_maps.py), covering the page. Its
+    Pokémon stand on their spots (ranch/zone_maps.py), hopping; the next
+    empty spots show a "+" to send a free Pokémon there.
+  {% endcomment %}
+  <div class="map-view">
+    <div class="map-stage">
+      <img src="{% static 'img/zone-'|add:zone.zone|add:'.png' %}" width="640" height="368" draggable="false"
+           alt="The {{ zone.spec.name }}" class="pixelated block size-full select-none">
+      {% for worker in workers %}
+        <button type="button" class="map-pokemon" style="{{ worker.style }}" data-open="#worker-{{ worker.pokemon.pk }}"
+                title="{{ worker.pokemon.species.name }} · Lv. {{ worker.pokemon.level }}">
+          {# Staggered hops: the Pokémon don't jump all at once #}
+          <img src="{{ worker.pokemon.species.icon_url }}" alt="{{ worker.pokemon.species.name }}"
+               class="pixelated size-full animate-bob" style="animation-delay: -{% widthratio forloop.counter0 1 400 %}ms">
+        </button>
+      {% endfor %}
+      {% for spot, style in empty_spots %}
+        {# data-spot: zones.js passes this spot to the picker's forms #}
+        <button type="button" class="map-slot" style="{{ style }}" data-open="#picker" data-spot="{{ spot }}"
+                title="Send a Pokémon to work here"><span>+</span></button>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# --- Interface laid over the scenery --- #}
+  <a href="{% url 'zones:index' %}" class="title-band absolute top-3 left-0 z-10" title="Back to your zones">‹ {{ zone.spec.name }}</a>
+
+  <div class="panel absolute top-3 right-3 z-10 flex w-64 flex-col gap-2 px-4 py-3">
+    <p class="flex items-center gap-2">
+      <img src="{{ zone.spec.resource|resource_icon }}" alt="" class="pixelated size-8">
+      <span class="text-xl font-bold">{{ zone.stock }}</span>
+      <span class="text-muted">{{ zone.stock|resource_word:zone.spec.resource }} ready</span>
+    </p>
+    <div class="gauge" title="{{ zone.hours_worked }} of {{ work_cap }} hours of work stored">
+      <span style="width: {% widthratio zone.hours_worked work_cap 100 %}%"
+            class="{% if zone.is_full %}bg-accent{% else %}bg-menu-zones{% endif %}"></span>
+    </div>
+    <p class="flex items-center justify-between gap-2 text-xs text-muted">
+      {% if zone.is_full %}Storage full: they stopped working.{% else %}{{ zone.hours_worked }}/{{ work_cap }} h of work stored{% endif %}
+      {% include "_info_tip.html" with text=tips.storage %}
+    </p>
+    {% if zone.stock or zone.hours_worked %}
+      <form method="post" action="{% url 'zones:open' zone.zone %}">
+        {% csrf_token %}
+        <button class="btn w-full">Collect</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <section class="panel absolute bottom-8 left-3 z-10 flex w-72 flex-col gap-2 p-4" aria-label="About this zone">
+    <div class="flex items-center justify-between">
+      <h2 class="section-title -ml-4 mb-0">Favoured types</h2>
+      {% include "_info_tip.html" with text=tips.types %}
+    </div>
+    <div class="flex flex-wrap gap-1.5">
+      {% for type in zone_types %}{% include "pokedex/_type_badge.html" with type=type %}{% endfor %}
+    </div>
+    <p class="text-sm">
+      <span class="text-muted">Pokémon</span> {{ workers|length }}/{{ zone.capacity }}
+      · <span class="text-muted">Together</span> {{ per_hour|floatformat:"-2" }} {{ per_hour|resource_word:zone.spec.resource }} an hour
+    </p>
+  </section>
+
+  {% if messages %}
+    <div class="absolute top-20 left-1/2 z-20 -translate-x-1/2">
+      {% for message in messages %}<p class="panel px-4 py-2 font-bold text-accent">{{ message }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  {# --- Dialogs (zones.js opens [data-open] targets, [data-close] closes). autofocus: the dialog itself takes the focus on opening, not its first "i" --- #}
+
+  {% if harvest %}
+    {# The summary of the collection that just happened: shown once #}
+    <dialog id="harvest" data-auto-open autofocus class="dialog-panel">
+      <h2 class="title-band -ml-6 self-start">Harvest</h2>
+      <p class="flex items-center gap-2">
+        <img src="{{ harvest.resource_slug|resource_icon }}" alt="" class="pixelated size-10">
+        <span class="text-2xl font-bold">+{{ harvest.resource }}</span>
+        <span>{{ harvest.resource|resource_word:harvest.resource_slug }}</span>
+        <span class="ml-auto text-sm text-muted">{{ harvest.hours }} h of work</span>
+      </p>
+      {% if harvest.growths %}
+        <ul class="flex flex-col gap-1.5">
+          {% for growth in harvest.growths %}
+            <li class="flex items-center gap-2 rounded-xl bg-sky px-2 py-1">
+              <img src="{{ growth.icon }}" alt="" class="pixelated h-[30px] w-[40px]">
+              <span class="font-bold">{{ growth.name }}</span>
+              <span class="text-sm text-muted">+{{ growth.experience }} XP</span>
+              <span class="ml-auto">Lv. {{ growth.level }}
+                {% if growth.levels %}<span class="font-bold text-accent">▲ +{{ growth.levels }}</span>{% endif %}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <footer class="flex justify-end"><button type="button" data-close class="btn">OK</button></footer>
+    </dialog>
+  {% endif %}
+
+  <dialog id="picker" autofocus class="dialog-panel">
+    <h2 class="title-band -ml-6 self-start">Send a Pokémon</h2>
+    {% if candidates %}
+      {% comment %}
+        A table: the header's columns line up with the rows' (.picker-cols).
+        A click on a column title sorts the rows by it (zones.js), a second
+        click reverses the order; ⇅ marks the sortable columns, ▲/▼ the
+        current one. At first: the best production first (▼ on Per hour).
+      {% endcomment %}
+      <div class="picker-cols picker-head">
+        <button type="button" class="sort-button" data-sort="name" data-list="#picker-list">Pokémon<span data-arrow>⇅</span></button>
+        <button type="button" class="sort-button justify-end" data-sort="level" data-list="#picker-list">Lv.<span data-arrow>⇅</span></button>
+        <span class="flex items-center justify-end gap-1">
+          <button type="button" class="sort-button" data-sort="rate" data-list="#picker-list" data-direction="desc">
+            <img src="{{ zone.spec.resource|resource_icon }}" alt="" class="pixelated size-5">Per hour<span data-arrow>▼</span>
+          </button>
+          {% include "_info_tip.html" with text=tips.per_hour %}
+        </span>
+      </div>
+      <ul id="picker-list" class="flex min-h-0 flex-col gap-1 overflow-y-auto">
+        {% for candidate in candidates %}
+          <li data-name="{{ candidate.pokemon.species.name }}" data-level="{{ candidate.pokemon.level }}"
+              data-rate="{{ candidate.per_hour }}" data-order="{{ forloop.counter0 }}">
+            <form method="post" action="{% url 'zones:assign' zone.zone %}">
+              {% csrf_token %}
+              <input type="hidden" name="pokemon" value="{{ candidate.pokemon.pk }}">
+              <input type="hidden" name="spot" value="" data-spot-input>
+              <button class="picker-cols picker-row">
+                <span class="flex min-w-0 items-center gap-2">
+                  <img src="{{ candidate.pokemon.species.icon_url }}" alt="" class="pixelated h-[30px] w-[40px] shrink-0">
+                  <span class="truncate font-bold">{{ candidate.pokemon.species.name }}</span>
+                  {% if candidate.efficient %}<span class="xp-badge shrink-0">+{{ xp_bonus }} % XP</span>{% endif %}
+                </span>
+                <span class="text-right text-sm text-muted">{{ candidate.pokemon.level }}</span>
+                <span class="text-right font-bold">{{ candidate.per_hour|floatformat:"-2" }}</span>
+              </button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted">All your Pokémon are already at work.</p>
+    {% endif %}
+    <footer class="flex justify-end"><button type="button" data-close class="btn-secondary">Cancel</button></footer>
+  </dialog>
+
+  {% for worker in workers %}
+    {% with pokemon=worker.pokemon %}
+    <dialog id="worker-{{ pokemon.pk }}" autofocus class="dialog-panel max-w-sm">
+      <h2 class="title-band -ml-6 self-start">{{ pokemon.species.name }}</h2>
+      <div class="flex items-center gap-4">
+        <img src="{{ pokemon.species.icon_url }}" alt="" class="pixelated h-[60px] w-[80px]">
+        <div class="flex flex-1 flex-col gap-1">
+          <p><span class="text-muted">Level</span> <span class="font-bold">{{ pokemon.level }}</span></p>
+          {# Experience towards the next level (the blue bar of the games) #}
+          <div class="gauge" title="Experience towards the next level">
+            <span class="bg-type-water" style="width: {{ worker.progress }}%"></span>
+          </div>
+          <p class="text-xs text-muted">
+            {% if worker.xp_span %}{{ pokemon.experience }} / {{ worker.xp_span }} XP to level {{ pokemon.level|add:1 }}
+            {% else %}Max level{% endif %}
+          </p>
+          {% if pokemon.pending_experience %}
+            <p class="text-xs text-muted">+{{ pokemon.pending_experience }} XP waiting to be collected</p>
+          {% endif %}
+        </div>
+      </div>
+      <dl class="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1 rounded-xl bg-sky px-4 py-2 text-sm">
+        <dt class="text-muted">Per hour</dt>
+        <dd class="flex items-center gap-1">
+          <img src="{{ zone.spec.resource|resource_icon }}" alt="" class="pixelated size-5">
+          <span class="font-bold">{{ worker.per_hour|floatformat:"-2" }}</span>
+          <span class="ml-auto">{% include "_info_tip.html" with text=tips.per_hour %}</span>
+        </dd>
+        <dt class="text-muted">Experience</dt>
+        <dd class="flex items-center gap-2">
+          {{ worker.xp_per_hour }} XP an hour
+          {% if worker.efficient %}<span class="xp-badge">+{{ xp_bonus }} %</span>{% endif %}
+        </dd>
+      </dl>
+      <footer class="flex justify-end gap-2">
+        <button type="button" data-close class="btn-secondary">Close</button>
+        <form method="post" action="{% url 'zones:remove' zone.zone %}">
+          {% csrf_token %}
+          <input type="hidden" name="pokemon" value="{{ pokemon.pk }}">
+          <button class="btn">Back to the ranch</button>
+        </form>
+      </footer>
+    </dialog>
+    {% endwith %}
+  {% endfor %}
+{% endblock %}

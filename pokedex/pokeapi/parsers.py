@@ -126,11 +126,16 @@ def candy_url(base_slug: str) -> str:
 
 
 def media_urls(pokemon: dict) -> dict[str, str | None]:
-    """Black/White sprites (normal and shiny) and the original cry."""
-    black_white = pokemon["sprites"]["versions"]["generation-v"]["black-white"]
+    """
+    Black/White sprites (normal and shiny), the original cry, and the small
+    menu icon of Sun/Moon (40x30 pixel art, used on the maps of the game).
+    """
+    versions = pokemon["sprites"]["versions"]
+    black_white = versions["generation-v"]["black-white"]
     cries = pokemon["cries"]
     return {
         "sprite": black_white["front_default"],
         "shiny_sprite": black_white["front_shiny"],
         "cry": cries["legacy"] or cries["latest"],
+        "icon": versions.get("generation-vii", {}).get("icons", {}).get("front_default"),
     }

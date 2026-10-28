@@ -188,6 +188,11 @@ class Species(models.Model):
         return static(f"pokemon/sprites/shiny/{self.number}.png")
 
     @property
+    def icon_url(self) -> str:
+        """Small menu icon (Sun/Moon, 40x30): how the Pokémon appears on the maps."""
+        return static(f"pokemon/icons/{self.number}.png")
+
+    @property
     def cry_url(self) -> str:
         return static(f"pokemon/cries/{self.number}.ogg")
 

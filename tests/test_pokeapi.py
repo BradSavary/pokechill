@@ -63,7 +63,8 @@ def fake_pokemon(number, slug, types, moves=()):
                         "front_default": f"https://img/{number}.png",
                         "front_shiny": f"https://img/shiny/{number}.png",
                     }
-                }
+                },
+                "generation-vii": {"icons": {"front_default": f"https://icon/{number}.png"}},
             }
         },
         "cries": {"legacy": f"https://cry/{number}.ogg", "latest": None},
@@ -259,12 +260,13 @@ def test_import_is_idempotent(fake_client):
 def test_import_downloads_media(fake_client, tmp_path):
     report = run_import(fake_client, limit=2, media_dir=tmp_path, log=lambda message: None)
 
-    # 2 species x (sprite, shiny sprite, cry) + 3 type icons + 1 family candy
-    assert report.media_downloaded == 10
+    # 2 species x (sprite, shiny sprite, cry, icon) + 3 type icons + 1 family candy
+    assert report.media_downloaded == 12
     assert (tmp_path / "candies" / "bulbasaur.png").exists()
     assert (tmp_path / "types" / "poison.png").exists()
     assert (tmp_path / "sprites" / "shiny" / "2.png").exists()
     assert (tmp_path / "cries" / "1.ogg").exists()
+    assert (tmp_path / "icons" / "2.png").exists()
 
 
 def test_mythical_species_count_as_legendary():

@@ -121,6 +121,9 @@ class OwnedPokemon(models.Model):
     zone = models.ForeignKey(
         PlayerZone, on_delete=models.PROTECT, null=True, blank=True, related_name="workers"
     )
+    # Its spot on the zone's map (0, 1, 2... see ranch/zone_maps.py): kept as
+    # long as it works there, so the others never move when one comes or goes
+    spot = models.PositiveSmallIntegerField(null=True, blank=True)
 
     # Natures obtained at least once for this species (e.g. ["attack", "speed"]).
     # Their stat bonuses arrive with step 5; they are recorded from the start.
@@ -133,14 +136,18 @@ class OwnedPokemon(models.Model):
         constraints = [
             # The database itself forbids a second Pokémon of the same species
             models.UniqueConstraint(fields=["player", "species"], name="one_pokemon_per_species"),
-            # A zone if and only if the status says so: no half-assigned Pokémon
+            # A zone and a spot if and only if the status says so: no
+            # half-assigned Pokémon
             models.CheckConstraint(
                 condition=(
-                    models.Q(status="zone", zone__isnull=False)
-                    | (~models.Q(status="zone") & models.Q(zone__isnull=True))
+                    models.Q(status="zone", zone__isnull=False, spot__isnull=False)
+                    | (~models.Q(status="zone") & models.Q(zone__isnull=True, spot__isnull=True))
                 ),
-                name="zone_matches_status",
+                name="zone_and_spot_match_status",
             ),
+            # One Pokémon per spot of a zone (free Pokémon have no zone: NULLs
+            # never collide in a unique constraint)
+            models.UniqueConstraint(fields=["zone", "spot"], name="one_pokemon_per_spot"),
         ]
 
     def __str__(self) -> str:

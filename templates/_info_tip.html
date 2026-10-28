@@ -1,0 +1,5 @@
+{% comment %}
+  A circled "i" showing `text` on hover, or on tap on a phone (see .info-tip
+  in input.css and static/js/app.js). Usage: {% include "_info_tip.html" with text="..." %}
+{% endcomment %}
+<span class="info-tip" tabindex="0" role="note" aria-label="{{ text }}" data-tip="{{ text }}">i</span>

@@ -3,6 +3,8 @@
 from django import template
 from django.templatetags.static import static
 
+from game.zones import ZONE_OF_RESOURCE
+
 register = template.Library()
 
 # The ball an arrival waits in tells its rarity before the reveal, from the
@@ -46,3 +48,16 @@ NATURE_LABELS = {
 def nature_label(nature: str) -> str:
     """{{ "special_attack"|nature_label }} -> "Sp. Atk"."""
     return NATURE_LABELS.get(nature, nature)
+
+
+@register.filter
+def resource_word(count, resource: str) -> str:
+    """{{ 3|resource_word:"berry" }} -> "berries", {{ 1|resource_word:"berry" }} -> "berry"."""
+    zone = ZONE_OF_RESOURCE[resource]
+    return (zone.resource_name if count == 1 else zone.resource_plural).lower()
+
+
+@register.filter
+def resource_icon(resource: str) -> str:
+    """{{ "berry"|resource_icon }} -> URL of its item sprite (static/pokemon/resources/)."""
+    return static(f"pokemon/resources/{resource}.png")

@@ -21,15 +21,25 @@ class Zone:
     name: str
     types: frozenset[str]  # types working at full rate (PokéAPI slugs)
     resource: str  # slug of the resource it produces
-    resource_name: str
+    resource_name: str  # "Berry"
+    resource_plural: str  # "Berries": not always the name + "s"
 
 
 # The two zones of the start. The other six come with the skill tree.
 ZONES = {
     zone.slug: zone
     for zone in (
-        Zone("meadow", "Meadow", frozenset({"normal", "flying", "fairy"}), "berry", "Berry"),
-        Zone("orchard", "Orchard", frozenset({"grass", "bug"}), "apricorn", "Apricorn"),
+        Zone(
+            "meadow",
+            "Meadow",
+            frozenset({"normal", "flying", "fairy"}),
+            "berry",
+            "Berry",
+            "Berries",
+        ),
+        Zone(
+            "orchard", "Orchard", frozenset({"grass", "bug"}), "apricorn", "Apricorn", "Apricorns"
+        ),
     )
 }
 # Resource slug -> its zone (the feeder looks up a resource's types this way)

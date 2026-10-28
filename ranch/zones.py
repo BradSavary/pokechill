@@ -36,10 +36,10 @@ def as_worker(pokemon: OwnedPokemon) -> Worker:
 
 
 def workers_of(zone: PlayerZone) -> list[OwnedPokemon]:
-    """The Pokémon working in a zone, in a stable order (by Pokédex number)."""
+    """The Pokémon working in a zone, by spot."""
     return list(
         zone.workers.select_related("species__primary_type", "species__secondary_type").order_by(
-            "species__number"
+            "spot"
         )
     )
 
@@ -138,9 +138,12 @@ def collect(zone: PlayerZone) -> Harvest:
 
 
 @transaction.atomic
-def move_pokemon(pokemon: OwnedPokemon, zone: PlayerZone | None) -> OwnedPokemon:
+def move_pokemon(
+    pokemon: OwnedPokemon, zone: PlayerZone | None, spot: int | None = None
+) -> OwnedPokemon:
     """
-    Send a Pokémon to work in `zone`, or free it (zone=None).
+    Send a Pokémon to work in `zone`, on `spot` if it is free (else the
+    first free one), or free it (zone=None).
 
     The only function that changes a Pokémon's status. The zones it leaves
     and joins are collected first: what was earned at the old rate is paid
@@ -154,16 +157,21 @@ def move_pokemon(pokemon: OwnedPokemon, zone: PlayerZone | None) -> OwnedPokemon
 
     if zone is not None:
         zone = PlayerZone.objects.select_for_update().get(pk=zone.pk)
-        if zone.workers.count() >= zone.capacity:
+        taken = set(zone.workers.values_list("spot", flat=True))
+        free_spots = [s for s in range(zone.capacity) if s not in taken]
+        if not free_spots:
             raise ZoneError(f"The {zone.spec.name} is full.")
+        if spot not in free_spots:
+            spot = free_spots[0]
         collect(zone)
     if pokemon.zone_id is not None:
         collect(pokemon.zone)
         pokemon.refresh_from_db()  # the collection may have changed its level
 
     pokemon.zone = zone
+    pokemon.spot = spot if zone else None
     pokemon.status = OwnedPokemon.IN_ZONE if zone else OwnedPokemon.FREE
-    pokemon.save(update_fields=["zone", "status"])
+    pokemon.save(update_fields=["zone", "spot", "status"])
     return pokemon
 
 
@@ -193,6 +201,6 @@ def fill_feeder(player: Player, resource: str, quantity: int) -> None:
         player=player, resource=resource, amount__gte=quantity
     ).update(amount=F("amount") - quantity)
     if not taken:
-        raise ZoneError(f"Not enough {zone.resource_name.lower()}s.")
+        raise ZoneError(f"Not enough {zone.resource_plural.lower()}.")
     player.feeder[resource] = player.feeder.get(resource, 0) + quantity
     player.save(update_fields=["feeder"])
