@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static assets %}
+{% load static assets ranch_extras %}
 
 {% block title %}Ranch · PokéChill{% endblock %}
 
@@ -21,7 +21,9 @@
     spots live inside the stage, placed in percentages of the grid, so they
     stay on their tile at any size: the Day Care door is the tile (31, 6),
     hence left 31/40 = 77.5 % and top 6/23 = 26.1 %; it is 1/40 = 2.5 %
-    wide and spans 2 rows (8.7 %) with the doorstep below it.
+    wide and spans 2 rows (8.7 %) with the doorstep below it. The feeder
+    stands on the tiles (7, 8) and (7, 9) (FEEDER_AT in the map script):
+    left 7/40 = 17.5 %, top 8/23 = 34.8 %.
   {% endcomment %}
   <div class="map-view">
     <div class="map-stage">
@@ -34,6 +36,17 @@
          class="map-spot" style="left: 77.5%; top: 26.1%; width: 2.5%; height: 8.7%;">
         {% if waiting %}<span class="map-badge animate-hop">{{ waiting }}</span>{% endif %}
       </a>
+      {# The feeder: its next slot (the one the next Pokémon will eat) shows above it #}
+      <button type="button" data-open="#feeder" class="map-spot" style="left: 17.5%; top: 34.8%; width: 2.5%; height: 8.7%;"
+              title="Feeder: {{ feeder.filled|length }}/{{ feeder.capacity }} slots filled">
+        {% with next=feeder.filled.0 %}
+          {% if next %}
+            <span class="feeder-badge">
+              <img src="{{ next.zone.resource|resource_icon }}" alt="" class="pixelated size-5">{{ next.units }}
+            </span>
+          {% endif %}
+        {% endwith %}
+      </button>
     </div>
   </div>
 
@@ -58,6 +71,93 @@
       <button type="button" data-open-dialog class="self-start btn">See who came</button>
     {% endif %}
   </section>
+
+  {% if messages %}
+    <div class="absolute top-16 left-1/2 z-20 -translate-x-1/2">
+      {% for message in messages %}<p class="panel px-4 py-2 font-bold text-accent">{{ message }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  {% comment %}
+    The feeder (opened by its spot on the map, app.js). On top, its slots in
+    the order they will be eaten: the next Pokémon to arrive eats the first
+    one, and only that Pokémon gets its bonus. Below, a free slot is filled
+    by picking a resource (a compact grid of tiles: there will be one per
+    zone) and how many units (ranch.js links the slider to the bonus shown).
+    autofocus: the dialog takes the focus, not its "i".
+  {% endcomment %}
+  <dialog id="feeder" autofocus class="dialog-panel">
+    <header class="flex items-center justify-between">
+      <h2 class="title-band -ml-6">Feeder</h2>
+      {% include "_info_tip.html" with text=feeder.tip %}
+    </header>
+
+    <section class="flex flex-col gap-2" aria-label="Slots">
+      <p class="flex items-baseline justify-between text-sm">
+        <span class="font-bold">Slots <span class="text-muted">{{ feeder.filled|length }}/{{ feeder.capacity }}</span></span>
+      </p>
+      <ol class="flex flex-col gap-2">
+        {% for slot in feeder.slots %}
+          {% if slot %}
+            <li class="feeder-slot">
+              <img src="{{ slot.zone.resource|resource_icon }}" alt="" class="pixelated size-8">
+              <span class="flex flex-col leading-tight">
+                <span class="text-lg font-bold">{{ slot.units }} <span class="text-sm font-normal text-muted">{{ slot.units|resource_word:slot.zone.resource }}</span></span>
+                <span class="flex items-center gap-1 text-sm">
+                  <span class="font-bold whitespace-nowrap text-menu-zones">+{{ slot.bonus }} %</span>
+                  {% for type in slot.types %}<img src="{{ type.icon_url }}" alt="{{ type.name }}" title="{{ type.name }}" class="size-4">{% endfor %}
+                </span>
+              </span>
+              <form method="post" action="{% url 'ranch:feeder_take_back' %}" class="ml-auto">
+                {% csrf_token %}
+                <input type="hidden" name="slot" value="{{ slot.index }}">
+                <button class="btn-secondary px-2.5 py-0.5 text-sm whitespace-nowrap" title="Take back: the units return to your stock">Take back</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="feeder-slot is-empty">Free slot</li>
+          {% endif %}
+        {% endfor %}
+      </ol>
+    </section>
+
+    {% if feeder.free %}
+      <form method="post" action="{% url 'ranch:feeder_fill' %}" class="flex flex-col gap-3" data-feeder-form
+            data-bonus-per-unit="{{ feeder.bonus_per_unit }}">
+        {% csrf_token %}
+        <fieldset class="flex flex-col gap-2">
+          <legend class="mb-2 text-sm font-bold">Put in a free slot</legend>
+          {# One tile per resource: icon, stock, the types it attracts #}
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-2">
+            {% for choice in feeder.choices %}
+              <label class="resource-tile{% if not choice.stock %} is-empty{% endif %}"
+                     title="{{ choice.zone.resource_plural }}: {{ choice.stock }} in stock">
+                <input type="radio" name="resource" value="{{ choice.zone.resource }}" data-max="{{ choice.max }}"
+                       class="sr-only" {% if not choice.stock %}disabled{% endif %}>
+                <img src="{{ choice.zone.resource|resource_icon }}" alt="" class="pixelated size-8">
+                <span class="flex flex-col leading-tight">
+                  <span class="text-lg font-bold">{{ choice.stock }}</span>
+                  <span class="flex gap-0.5">
+                    {% for type in choice.types %}<img src="{{ type.icon_url }}" alt="{{ type.name }}" title="{{ type.name }}" class="size-4">{% endfor %}
+                  </span>
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+        {# How many units: one point of chance each (up to the maximum of a slot) #}
+        <div class="flex items-center gap-3 rounded-xl bg-sky px-3 py-2">
+          <input type="range" name="units" min="1" max="1" value="1" disabled class="min-w-0 flex-1" aria-label="Units">
+          <output class="w-28 text-right text-sm" data-units-preview>Pick a resource</output>
+          <button class="btn py-0.5" disabled>Put</button>
+        </div>
+      </form>
+    {% else %}
+      <p class="text-sm text-muted">No free slot: wait until a Pokémon eats one, or take one back.</p>
+    {% endif %}
+
+    <footer class="flex justify-end"><button type="button" data-close class="btn-secondary">Close</button></footer>
+  </dialog>
 
   {% comment %}
     The reveal dialog (native <dialog>). It opens by itself when Pokémon are

@@ -78,15 +78,18 @@ XP_TYPE_BONUS_PERCENT = 25
 
 # --- Feeder ------------------------------------------------------------------
 
-# Slots of the feeder at the start (the skill tree will add more)
+# Slots of the feeder at the start (the skill tree will add more). A slot
+# holds units of one zone's resource.
 FEEDER_SLOTS_BASE = 1
 
-# While a zone's resource is in the feeder, species of that zone's types are
-# FEEDER_WEIGHT_MULTIPLIER times more likely in the hourly draw. Each arrival
-# eats FEEDER_CONSUMPTION_PER_ARRIVAL of every resource in the feeder; no
-# arrival (e.g. a full Welcome area), no consumption.
-FEEDER_WEIGHT_MULTIPLIER = 3
-FEEDER_CONSUMPTION_PER_ARRIVAL = 1
+# Each unit in a slot adds FEEDER_BONUS_PER_UNIT_PERCENT points to the chance
+# that the Pokémon who arrives has one of that zone's types, up to
+# FEEDER_MAX_UNITS units (+50 %): 13 apricorns, +13 points for Grass and Bug.
+# The next Pokémon to arrive eats the whole first slot: it alone gets the
+# bonus, the next one eats the next slot. No arrival (e.g. a full Welcome
+# area), nothing eaten.
+FEEDER_BONUS_PER_UNIT_PERCENT = 1
+FEEDER_MAX_UNITS = 50
 
 # --- Time ------------------------------------------------------------------
 

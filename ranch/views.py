@@ -9,21 +9,79 @@ a summary of them all ends the series; skipping goes straight to it.
 from dataclasses import asdict
 from datetime import timedelta
 
+from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from game import balance
 from game.collection import Obtention
-from pokedex.models import Species
+from game.zones import ZONE_OF_RESOURCE
+from pokedex.models import Species, Type
 
 from . import tutorial
 from .decorators import player_required
+from .models import ResourceStock
 from .services import Reveal, reveal_all, reveal_next
+from .zones import ZoneError, fill_feeder, take_back_slot
+
+
+def feeder_state(player) -> dict:
+    """
+    The feeder as the Ranch shows it: its slots in the order they will be
+    eaten (full ones with their lure, then the free ones), and the resources
+    the player could put in a free slot.
+    """
+    types = Type.objects.in_bulk(
+        {t for zone in ZONE_OF_RESOURCE.values() for t in zone.types}, field_name="slug"
+    )
+
+    def types_of(zone):
+        return [types[slug] for slug in sorted(zone.types) if slug in types]
+
+    def bonus(units):
+        return min(units, balance.FEEDER_MAX_UNITS) * balance.FEEDER_BONUS_PER_UNIT_PERCENT
+
+    filled = [
+        {
+            "index": index,
+            "zone": ZONE_OF_RESOURCE[resource],
+            "units": units,
+            "bonus": bonus(units),
+            "types": types_of(ZONE_OF_RESOURCE[resource]),
+        }
+        for index, (resource, units) in enumerate(player.feeder)
+    ]
+    stock = dict(ResourceStock.objects.filter(player=player).values_list("resource", "amount"))
+    return {
+        "slots": filled + [None] * (player.feeder_capacity - len(filled)),
+        "filled": filled,
+        "free": player.feeder_capacity - len(filled),
+        "capacity": player.feeder_capacity,
+        # One choice per zone of the player: its resource, the stock, the types
+        "choices": [
+            {
+                "zone": zone.spec,
+                "stock": stock.get(zone.spec.resource, 0),
+                "max": min(stock.get(zone.spec.resource, 0), balance.FEEDER_MAX_UNITS),
+                "types": types_of(zone.spec),
+            }
+            for zone in player.zones.all()
+        ],
+        "max_units": balance.FEEDER_MAX_UNITS,
+        "bonus_per_unit": balance.FEEDER_BONUS_PER_UNIT_PERCENT,
+        # The rule, for its "i" bubble (written from the balance values)
+        "tip": (
+            f"Each unit in a slot adds {balance.FEEDER_BONUS_PER_UNIT_PERCENT} % of chance "
+            "that the next Pokémon to arrive has one of the zone's types (up to "
+            f"+{bonus(balance.FEEDER_MAX_UNITS)} % with {balance.FEEDER_MAX_UNITS} units). "
+            "That Pokémon eats the whole slot; the next one eats the next slot."
+        ),
+    }
 
 
 @player_required
 def index(request):
-    """The Ranch, main page of the game: absence summary and Welcome area."""
+    """The Ranch, main page of the game: absence summary, Welcome area, feeder."""
     player = request.player
     # One ball per waiting Pokémon, oldest first (the reveal order). Only the
     # rarities reach the template: the species stay hidden until revealed.
@@ -47,8 +105,35 @@ def index(request):
             else [],
             # The reveal dialog opens by itself, but never over the tutorial
             "auto_open": waiting and player.tutorial_step == tutorial.DONE,
+            "feeder": feeder_state(player),
         },
     )
+
+
+@require_POST  # changes the game state
+@player_required
+def feeder_fill(request):
+    """Fill a free slot of the feeder (POST "resource", "units")."""
+    units = request.POST.get("units", "")
+    try:
+        fill_feeder(
+            request.player, request.POST.get("resource", ""), int(units) if units.isdigit() else 0
+        )
+    except ZoneError as error:
+        messages.error(request, str(error))
+    return redirect("ranch:index")
+
+
+@require_POST
+@player_required
+def feeder_take_back(request):
+    """Take back a slot of the feeder (POST "slot": its index): its units return to the stock."""
+    index = request.POST.get("slot", "")
+    try:
+        take_back_slot(request.player, int(index) if index.isdigit() else -1)
+    except ZoneError as error:
+        messages.error(request, str(error))
+    return redirect("ranch:index")
 
 
 # --- The series of reveals, kept in the session until its summary -----------

@@ -240,6 +240,32 @@
     image-rendering: pixelated;
   }
 
+  /* What the feeder holds, shown above it on the Ranch map */
+  /* Centred with left 50% and a translate, not auto margins: the badge is
+     wider than the feeder's spot, and auto margins can't centre a box wider
+     than its container (it would stick to the left) */
+  .feeder-badge {
+    @apply absolute -top-7 left-1/2 flex h-6 w-max -translate-x-1/2 items-center gap-0.5 rounded-full bg-surface px-1.5 text-sm font-bold text-ink;
+    box-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
+  }
+  /* A slot of the feeder in its dialog; .is-empty for a free one */
+  .feeder-slot {
+    @apply flex items-center gap-2 rounded-xl bg-sky px-3 py-2;
+  }
+  .feeder-slot.is-empty {
+    @apply justify-center border-2 border-dashed border-line bg-transparent text-sm text-muted;
+  }
+  /* A resource to pick for the feeder: a radio button dressed as a tile */
+  .resource-tile {
+    @apply flex cursor-pointer items-center gap-2 rounded-xl bg-sky px-2.5 py-1.5 outline-menu-zones hover:outline-2;
+  }
+  .resource-tile:has(input:checked) {
+    @apply bg-surface outline-3;
+  }
+  .resource-tile.is-empty {
+    @apply cursor-not-allowed opacity-50 hover:outline-0;
+  }
+
   /* Game map (Ranch, zones), covering the whole page like a wallpaper (object-fit: cover
      can't be used: the clickable spots must follow the map, so the map and
      its spots share a "stage" box that we size ourselves).

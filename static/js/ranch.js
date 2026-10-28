@@ -42,3 +42,25 @@ if (dialog) {
     if (cry) setTimeout(() => cry.play().catch(() => {}), 1000);
   });
 }
+
+// --- Feeder: the slider of units ---------------------------------------------
+// Picking a resource sets the slider's maximum (its stock, at most a full
+// slot); the preview shows the units and the chance they add.
+const feederForm = document.querySelector("[data-feeder-form]");
+if (feederForm) {
+  const slider = feederForm.querySelector("input[name=units]");
+  const preview = feederForm.querySelector("[data-units-preview]");
+  const submit = feederForm.querySelector("button");
+  const perUnit = Number(feederForm.dataset.bonusPerUnit);
+  const show = () => {
+    preview.textContent = `${slider.value} → +${slider.value * perUnit} %`;
+  };
+  feederForm.addEventListener("change", (event) => {
+    if (event.target.name !== "resource") return;
+    slider.max = event.target.dataset.max;
+    slider.value = slider.max; // a full slot by default: the best bonus
+    slider.disabled = submit.disabled = false;
+    show();
+  });
+  slider.addEventListener("input", show);
+}

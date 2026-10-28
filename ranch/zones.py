@@ -179,28 +179,41 @@ def move_pokemon(
 
 
 @transaction.atomic
-def fill_feeder(player: Player, resource: str, quantity: int) -> None:
+def fill_feeder(player: Player, resource: str, units: int) -> None:
     """
-    Move `quantity` of a resource from the stock to the feeder.
+    Fill a free slot of the feeder with `units` of a resource, from the stock.
 
-    The resource must come from a zone the player has, and the feeder has a
-    limited number of slots (one per different resource).
+    The resource must come from a zone the player has. A slot holds 1 to
+    balance.FEEDER_MAX_UNITS units (one point of chance each): more would
+    add nothing.
     """
-    if quantity <= 0:
-        raise ZoneError("Choose how many to put in the feeder.")
+    if not 1 <= units <= balance.FEEDER_MAX_UNITS:
+        raise ZoneError(f"A slot holds 1 to {balance.FEEDER_MAX_UNITS} units.")
     zone = ZONE_OF_RESOURCE.get(resource)
     if zone is None or not player.zones.filter(zone=zone.slug).exists():
         raise ZoneError("This resource doesn't come from one of your zones.")
 
     player = Player.objects.select_for_update().get(pk=player.pk)
-    if resource not in player.feeder and len(player.feeder) >= player.feeder_capacity:
-        raise ZoneError("The feeder is full: wait until it is eaten.")
+    if len(player.feeder) >= player.feeder_capacity:
+        raise ZoneError("No free slot: wait until a Pokémon eats one, or take one back.")
     # The stock only goes down if there is enough: the condition is checked by
     # the database itself, in the same UPDATE
     taken = ResourceStock.objects.filter(
-        player=player, resource=resource, amount__gte=quantity
-    ).update(amount=F("amount") - quantity)
+        player=player, resource=resource, amount__gte=units
+    ).update(amount=F("amount") - units)
     if not taken:
         raise ZoneError(f"Not enough {zone.resource_plural.lower()}.")
-    player.feeder[resource] = player.feeder.get(resource, 0) + quantity
+    player.feeder = [*player.feeder, [resource, units]]
+    player.save(update_fields=["feeder"])
+
+
+@transaction.atomic
+def take_back_slot(player: Player, index: int) -> None:
+    """Take back a slot of the feeder: its units return to the stock."""
+    player = Player.objects.select_for_update().get(pk=player.pk)
+    if not 0 <= index < len(player.feeder):
+        raise ZoneError("This slot is already empty.")
+    resource, units = player.feeder[index]
+    add_resource(player, resource, units)
+    player.feeder = [slot for i, slot in enumerate(player.feeder) if i != index]
     player.save(update_fields=["feeder"])

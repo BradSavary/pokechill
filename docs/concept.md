@@ -124,12 +124,12 @@ Les espèces évoluées ne s'obtiennent que par capture, avec des conditions plu
 
 ### La mangeoire
 
-La mangeoire est le principal levier du joueur sur les arrivées. Elle compte d'abord 1 emplacement, puis davantage grâce à l'arbre (4 et au-delà). Le joueur y dépose une quantité d'une ressource, celle de n'importe quelle zone débloquée, et elle produit deux effets :
+La mangeoire est le principal levier du joueur sur les arrivées. Elle compte d'abord 1 emplacement, puis davantage grâce à l'arbre (4 et au-delà). Chaque emplacement contient une seule ressource, celle de n'importe quelle zone débloquée, de 1 à 50 unités. Deux emplacements peuvent contenir la même ressource. La mangeoire produit deux effets :
 
-- Elle **augmente le poids** des espèces dont un type est efficace dans la zone de cette ressource (poids ×3, réglable) : des baies de la Prairie attirent les types Normal, Vol et Fée ; des noigrumes du Verger, les types Plante et Insecte. Pour attirer un type, il suffit donc d'avoir débloqué sa zone et d'en mettre la ressource dans la mangeoire.
+- Elle **oriente l'arrivée suivante** vers les types efficaces dans la zone de la ressource : des baies de la Prairie attirent les types Normal, Vol et Fée ; des noigrumes du Verger, les types Plante et Insecte. Chaque unité ajoute 1 point de pourcentage à la chance habituelle que le Pokémon qui arrive ait l'un de ces types, jusqu'à +50 points avec 50 unités. Par exemple, si les types Plante et Insecte représentent d'habitude 30 % des arrivées possibles, 13 noigrumes portent cette chance à 43 %. Parmi les espèces attirées (ou les autres), le tirage reste pondéré par la rareté. Pour attirer un type, il suffit donc d'avoir débloqué sa zone et d'en mettre la ressource dans la mangeoire.
 - Elle **remplit une condition** pour certaines espèces (des baies dans la mangeoire pour Rondoudou).
 
-**Consommation** (proposition) : chaque Pokémon qui arrive mange une ressource, quel que soit son type. Rien n'est consommé quand personne n'arrive, par exemple quand l'Accueil est plein. Quand la mangeoire est vide, les chances redeviennent normales.
+**Consommation** : le Pokémon qui arrive mange tout le premier emplacement, et lui seul profite de son bonus ; le suivant mange l'emplacement suivant, et ainsi de suite. Il le mange même si aucune espèce attirée ne pouvait venir à cette heure (le tirage est alors normal). Rien n'est consommé quand personne n'arrive, par exemple quand l'Accueil est plein. Le joueur peut reprendre un emplacement tant qu'il n'a pas été mangé : ses unités retournent dans le stock. Quand la mangeoire est vide, les chances redeviennent normales.
 
 Les ressources proviennent des zones de récolte, ce qui relie directement la gestion des zones à la collection.
 

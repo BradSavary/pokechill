@@ -5,6 +5,29 @@ document.addEventListener("dragstart", (event) => {
   if (event.target instanceof HTMLImageElement) event.preventDefault();
 });
 
+// Dialogs: any [data-open="#id"] element opens that dialog; [data-close]
+// closes its own. A click on the dimmed backdrop closes a .dialog-panel: such
+// a click lands on the <dialog> element itself, but so does one in its
+// padding, so only a click outside the dialog's box counts. (The reveal
+// dialog of the Ranch has its own rules, in ranch.js.)
+document.addEventListener("click", (event) => {
+  const opener = event.target.closest("[data-open]");
+  if (opener) document.querySelector(opener.dataset.open)?.showModal();
+  if (event.target.closest("[data-close]")) event.target.closest("dialog")?.close();
+  const dialog = event.target;
+  if (dialog instanceof HTMLDialogElement && dialog.classList.contains("dialog-panel")) {
+    const box = dialog.getBoundingClientRect();
+    const inside =
+      box.left <= event.clientX && event.clientX <= box.right &&
+      box.top <= event.clientY && event.clientY <= box.bottom;
+    if (!inside) dialog.close();
+  }
+});
+// A .dialog-panel marked data-auto-open opens by itself (a harvest summary...)
+document.querySelectorAll("dialog.dialog-panel[data-auto-open]:not([open])").forEach((dialog) => {
+  dialog.showModal();
+});
+
 // "i" bubbles (templates/_info_tip.html): the mouse shows them on hover (CSS);
 // a click or a tap toggles them, and a click anywhere else closes them. Being
 // focused is not enough: a dialog gives the focus to its first "i" on opening.

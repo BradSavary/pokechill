@@ -17,8 +17,10 @@ from mapkit import (
     CLOSED_INNER,
     CLOSED_OUTER,
     COLS,
+    FEEDER,
     FENCE,
     FLOWERS,
+    LIGHT_GRASS,
     PLANT,
     SIDE,
     SIGN,
@@ -73,6 +75,11 @@ YARD_FENCE_COL, YARD_FENCE_ROW = HOUSE[0] - 3, HOUSE[1] + 6
 YARD_GATE = range(DOOR_COL - 1, DOOR_COL + 2)  # the path goes through here
 MAILBOX_AT = (HOUSE[0] - 1, HOUSE[1] + 2)  # top tile, on the left of the front wall
 SIGN_AT = (HOUSE[0] + 4, HOUSE[1] + 3)  # on the right of the front wall
+# The feeder: on the left, between the tall grass and the path, on a patch of
+# grass worn by the visitors (keep in step with the Ranch page, which makes it
+# clickable)
+FEEDER_AT = (7, 8)  # its top tile
+FEEDER_PATCH = (6, 8, 8, 10)
 
 
 def in_path(col, row):
@@ -95,6 +102,9 @@ def build() -> MapCanvas:
     canvas.block(SMALL_POND, *SMALL_POND_AT)
     canvas.scatter(BUSH, BUSH_SPOTS)
     canvas.scatter(PLANT, PLANT_SPOTS)
+    canvas.patch(LIGHT_GRASS, FEEDER_PATCH)
+    for dy, piece in enumerate(FEEDER):
+        canvas.put(piece, FEEDER_AT[0], FEEDER_AT[1] + dy)
 
     # The ranch: the Day Care of Four Island, with a brick doorstep (Route 25)
     canvas.block(

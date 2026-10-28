@@ -127,10 +127,10 @@ def catch_up_player(player: Player, now=None) -> CatchUp:
         )
         work_zones(locked, hours_elapsed=(result.last_slot - locked.last_slot) // ONE_HOUR)
         locked.last_slot = result.last_slot
-        locked.feeder = result.feeder
+        locked.feeder = [list(slot) for slot in result.feeder]  # JSON: [resource, units]
         locked.save(update_fields=["last_slot", "feeder"])
     # Keep the caller's object in sync
-    player.last_slot, player.feeder = result.last_slot, result.feeder
+    player.last_slot, player.feeder = result.last_slot, locked.feeder
     return result
 
 

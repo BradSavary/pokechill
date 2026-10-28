@@ -48,18 +48,13 @@ class GameContext:
     """
 
     slot: datetime
-    feeder: frozenset[str] = frozenset()  # resources currently in the feeder
+    feeder: frozenset[str] = frozenset()  # resources currently in the feeder (any slot)
     owned: frozenset[str] = frozenset()  # slugs of the species the player owns
     occupied_zones: frozenset[str] = frozenset()  # zones with at least one Pokémon
 
     @property
     def time_of_day(self) -> str:
         return clock.time_of_day(self.slot)
-
-    @property
-    def attracted_types(self) -> frozenset[str]:
-        """Types drawn more often: those of the zones whose resource is in the feeder."""
-        return frozenset().union(*(ZONE_OF_RESOURCE[r].types for r in self.feeder))
 
 
 @dataclass(frozen=True)

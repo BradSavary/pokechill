@@ -31,10 +31,12 @@ class Player(models.Model):
     last_seen_at = models.DateTimeField(default=timezone.now)
     # Current step of the tutorial (see ranch/tutorial.py); finished at the end
     tutorial_step = models.PositiveSmallIntegerField(default=0)
-    # What the feeder holds: resource slug -> quantity, e.g. {"berry": 12}.
-    # A small JSON object rather than a table: the engine works on this very
-    # dict (see game.arrivals.catch_up), and it never holds more than a few keys.
-    feeder = models.JSONField(default=dict, blank=True)
+    # The feeder's slots, in the order they will be eaten: a list of
+    # [resource, units], e.g. [["apricorn", 13], ["berry", 5]]. A list, not an
+    # object: the order matters, and PostgreSQL doesn't keep the order of an
+    # object's keys. A small JSON value rather than a table: the engine works
+    # on this very list (see game.arrivals.catch_up).
+    feeder = models.JSONField(default=list, blank=True)
 
     def __str__(self) -> str:
         return f"Player of {self.user.username}"
@@ -46,7 +48,7 @@ class Player(models.Model):
 
     @property
     def feeder_capacity(self) -> int:
-        """Different resources the feeder can hold (the skill tree will add slots)."""
+        """Slots of the feeder (the skill tree will add more)."""
         return balance.FEEDER_SLOTS_BASE
 
 

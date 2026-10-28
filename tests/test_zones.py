@@ -12,7 +12,14 @@ from pokedex.models import Species
 from ranch.models import OwnedPokemon, Player, ResourceStock
 from ranch.services import catch_up_player, ensure_player
 from ranch.zone_maps import ZONE_SPOTS
-from ranch.zones import ZoneError, collect, fill_feeder, give_starting_zones, move_pokemon
+from ranch.zones import (
+    ZoneError,
+    collect,
+    fill_feeder,
+    give_starting_zones,
+    move_pokemon,
+    take_back_slot,
+)
 from tests.conftest import make_species
 
 pytestmark = pytest.mark.django_db
@@ -165,10 +172,16 @@ def berries(player):
     ResourceStock.objects.create(player=player, resource="berry", amount=10)
 
 
+@pytest.fixture
+def two_slots(monkeypatch):
+    """A feeder of two slots (one at the start; the skill tree will add more)."""
+    monkeypatch.setattr(balance, "FEEDER_SLOTS_BASE", 2)
+
+
 def test_filling_the_feeder_takes_from_the_stock(player, berries):
     fill_feeder(player, "berry", 4)
     player.refresh_from_db()
-    assert player.feeder == {"berry": 4}
+    assert player.feeder == [["berry", 4]]
     assert stock(player, "berry") == 6
 
 
@@ -178,12 +191,24 @@ def test_the_feeder_needs_enough_resources(player, berries):
     assert stock(player, "berry") == 10  # nothing taken
 
 
+@pytest.mark.parametrize("units", [0, balance.FEEDER_MAX_UNITS + 1])
+def test_a_slot_holds_a_limited_number_of_units(player, berries, units):
+    with pytest.raises(ZoneError, match="A slot holds"):
+        fill_feeder(player, "berry", units)
+
+
 def test_the_feeder_has_limited_slots(player, berries):
-    ResourceStock.objects.create(player=player, resource="apricorn", amount=5)
     fill_feeder(player, "berry", 2)
-    fill_feeder(player, "berry", 1)  # same resource: same slot
-    with pytest.raises(ZoneError, match="full"):
-        fill_feeder(player, "apricorn", 1)
+    # The same resource does not join the slot: each filling takes a slot
+    with pytest.raises(ZoneError, match="No free slot"):
+        fill_feeder(player, "berry", 1)
+
+
+def test_two_slots_may_hold_the_same_resource(player, berries, two_slots):
+    fill_feeder(player, "berry", 2)
+    fill_feeder(player, "berry", 3)
+    player.refresh_from_db()
+    assert player.feeder == [["berry", 2], ["berry", 3]]  # in the order they will be eaten
 
 
 def test_the_feeder_only_takes_resources_of_the_players_zones(player, berries):
@@ -192,13 +217,28 @@ def test_the_feeder_only_takes_resources_of_the_players_zones(player, berries):
         fill_feeder(player, "berry", 1)
 
 
-def test_arrivals_eat_from_the_feeder(player, berries, bulbasaur):
+def test_taking_back_a_slot(player, berries, two_slots):
+    fill_feeder(player, "berry", 2)
+    fill_feeder(player, "berry", 3)
+    take_back_slot(player, 0)
+    player.refresh_from_db()
+    assert player.feeder == [["berry", 3]]  # the other slot moves up
+    assert stock(player, "berry") == 7
+    with pytest.raises(ZoneError, match="already empty"):
+        take_back_slot(player, 1)
+
+
+def test_each_arrival_eats_a_whole_slot(player, berries, bulbasaur, two_slots):
     Species.objects.filter(pk=bulbasaur.pk).update(is_available=True, rarity="common")
     fill_feeder(player, "berry", 5)
+    fill_feeder(player, "berry", 3)
+    catch_up_player(player, now=START + timedelta(hours=1))
+    player.refresh_from_db()
+    assert player.feeder == [["berry", 3]]  # the first arrival ate the first slot
     catch_up_player(player, now=START + timedelta(hours=3))
     player.refresh_from_db()
     assert player.arrivals.count() == 3
-    assert player.feeder == {"berry": 2}
+    assert player.feeder == []
 
 
 def test_arrival_conditions_see_the_occupied_zones(player, bulbasaur, bulbasaur_owned):

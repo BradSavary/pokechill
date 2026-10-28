@@ -52,6 +52,9 @@ _maps = {
     "pallet": _open("Pallet_Town_FRLG.png"),
     "vf": _open("Viridian_Forest_FRLG.png"),
     "r13": gba_colours(_open("Kanto_Route_13_FRLG.png")),
+    # A piece of the Safari Zone of Pokémon Emerald (tiles 28-34, 27-32 of
+    # the whole map), for its Pokéblock feeder
+    "safari": Image.open(SOURCES.parent / "rse" / "Hoenn_Safari_Zone_E_feeder.png").convert("RGBA"),
 }
 
 
@@ -72,6 +75,10 @@ GRASS = [("r1", 6, 13), ("r1", 7, 12), ("r1", 6, 12), ("r1", 5, 13)]
 # Every colour of the grass: keyed out, they let a tile stand against the sky
 GRASS_COLOURS = {colour for spec in GRASS for colour in tile(*spec).getdata()}
 BROADLEAF_DOME = key_out(tile("vf", 22, 35), GRASS_COLOURS)  # see BROADLEAF_COL
+# The Pokéblock feeder of the Emerald Safari Zone, 1 x 2 tiles (top, then its
+# legs). Emerald's grass is a shade apart from ours: its colours are keyed out.
+_EMERALD_GRASS = {colour for c in range(3) for colour in tile("safari", c, 0).getdata()}
+FEEDER = [key_out(tile("safari", 3, row), _EMERALD_GRASS) for row in (2, 3)]
 TALL_GRASS = ("r1", 17, 15)
 FLOWERS = ("r1", 3, 11)
 # Wooden sign of Viridian Forest, standing on grass (the Route 1 one stands on sand)

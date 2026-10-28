@@ -1,29 +1,13 @@
-// Zone pages: dialogs (the harvest summary, the Pokémon picker, a worker's card).
-// Any [data-open="#id"] element opens that dialog; [data-close] closes its own.
+// Zone pages: the spots of the map and the sortable picker. The dialogs
+// themselves open and close with app.js ([data-open], [data-close]).
 
+// A "+" tells the picker's forms which spot was clicked
 document.body.addEventListener("click", (event) => {
-  const opener = event.target.closest("[data-open]");
-  if (opener) {
-    const dialog = document.querySelector(opener.dataset.open);
-    // A "+" tells the picker's forms which spot was clicked
-    if (opener.dataset.spot !== undefined) {
-      dialog.querySelectorAll("[data-spot-input]").forEach((input) => {
-        input.value = opener.dataset.spot;
-      });
-    }
-    dialog?.showModal();
-  }
-  if (event.target.closest("[data-close]")) event.target.closest("dialog")?.close();
-  // A click on the dimmed backdrop closes the dialog. Such a click lands on the
-  // <dialog> element itself, but so does one in its padding: only a click
-  // outside the dialog's box is a click on the backdrop.
-  if (event.target instanceof HTMLDialogElement) {
-    const box = event.target.getBoundingClientRect();
-    const inside =
-      box.left <= event.clientX && event.clientX <= box.right &&
-      box.top <= event.clientY && event.clientY <= box.bottom;
-    if (!inside) event.target.close();
-  }
+  const opener = event.target.closest("[data-open][data-spot]");
+  if (!opener) return;
+  document.querySelector(opener.dataset.open).querySelectorAll("[data-spot-input]").forEach((input) => {
+    input.value = opener.dataset.spot;
+  });
 });
 
 // Sortable tables (the Pokémon picker): a [data-sort] button sorts the rows
@@ -54,5 +38,3 @@ document.querySelectorAll("[data-sort]").forEach((button) => {
   });
 });
 
-// The harvest summary opens by itself, right after a collection
-document.querySelectorAll("dialog[data-auto-open]").forEach((dialog) => dialog.showModal());

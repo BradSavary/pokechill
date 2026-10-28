@@ -59,14 +59,6 @@ def test_ranch_leaves_look_at_the_feeder_the_collection_and_the_zones():
     assert not evaluate({"feeder": "berry"}, DAY)
 
 
-def test_the_feeder_attracts_the_types_of_its_resources_zones():
-    assert DAY.attracted_types == frozenset()
-    berries = GameContext(slot=DAY.slot, feeder=frozenset({"berry"}))
-    assert berries.attracted_types == {"normal", "flying", "fairy"}
-    both = GameContext(slot=DAY.slot, feeder=frozenset({"berry", "apricorn"}))
-    assert both.attracted_types == {"normal", "flying", "fairy", "grass", "bug"}
-
-
 def test_valid_tree_passes_validation():
     validate({"all": [AT_NIGHT, {"not": {"any": [BY_DAY]}}]})
     validate({"any": [{"feeder": "apricorn"}, {"owns": "pikachu"}, {"zone_occupied": "meadow"}]})
