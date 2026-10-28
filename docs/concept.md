@@ -68,6 +68,8 @@ Les points de recherche gagnés sont la colonne vertébrale à la progression. O
 
 Toutes les conditions de déblocage du jeu (zones, quêtes supplémentaires, certaines arrivées) font référence à un nœud précis de l'arbre.
 
+Il y a en fait plusieurs arbres, réunis dans un même menu d'améliorations. L'arbre **Zones** se divise en une branche par zone : ses nœuds améliorent les zones de diverses façons (emplacements, stockage, rendement, trouvailles, rencontres). Un nœud coûte la ressource de sa zone, ou celles de plusieurs zones pour un nœud commun ; les nœuds majeurs coûtent aussi des points de recherche. Les améliorations de zone arrivent donc avec l'arbre, à l'étape 3.
+
 ### Les indices
 
 Les indices sont gratuits et affichés directement sur la fiche Pokédex. Une espèce jamais obtenue montre un indice sur ses conditions d'arrivée, par exemple : « On l'aperçoit parfois près de l'étang, après le coucher du soleil. »
@@ -81,7 +83,7 @@ Une fois l'espèce obtenue, la fiche affiche à la place toutes ses méthodes d'
 ### Le déroulement d'une arrivée
 
 1. Le jeu liste les espèces dont toutes les conditions sont remplies à cette heure.
-2. Il tire au sort l'une d'elles, pondérée par sa rareté et par les bonus actifs (baies, événements).
+2. Il tire au sort l'une d'elles, pondérée par sa rareté et par les bonus actifs (ressource dans la mangeoire, événements).
 3. Le Pokémon arrive à son niveau minimal : niveau 1 pour une forme de base, sinon le niveau auquel sa pré-évolution évolue. Sa nature et la chance de shiny sont tirées aléatoirement.
 4. Le Pokémon attend à l'**Accueil**, où il sera révélé au joueur avec sa fiche et une animation.
 
@@ -97,7 +99,7 @@ Chaque espèce a une ou plusieurs conditions, combinées avec des ET et des OU.
 | --- | --- |
 | Moment de la journée | Fantominus : seulement la nuit (21 h – 6 h) |
 | Zone débloquée | Magicarpe : l'étang doit exister |
-| Baie dans la mangeoire | Rondoudou : une baie Ceriz est dans la mangeoire |
+| Ressource dans la mangeoire | Rondoudou : des baies sont dans la mangeoire |
 | Présence d'une espèce | Nidoran♂ : un Nidoran♀ vit à la pension |
 | Niveau d'un pensionnaire | Onix : un Pokémon Roche de niveau 25 ou plus travaille à la carrière |
 | Nombre de pensionnaires | Pikachu : au moins 3 Pokémon Électrik à la centrale |
@@ -106,7 +108,7 @@ Chaque espèce a une ou plusieurs conditions, combinées avec des ET et des OU.
 | Exclusif aux expéditions | Artikodin, Électhor, Sulfura, Mewtwo : jamais en arrivée passive |
 | Autre méthode | Amonita, Kabuto, Ptéra : seulement par fossile ranimé |
 
-Une condition combinée donne les espèces les plus satisfaisantes à trouver. Par exemple, Minidraco : la nuit ET étang de niveau 5 ET une baie rare dans la mangeoire.
+Une condition combinée donne les espèces les plus satisfaisantes à trouver. Par exemple, Minidraco : la nuit ET étang de niveau 5 ET des perles dans la mangeoire.
 
 ### Les raretés
 
@@ -122,12 +124,14 @@ Les espèces évoluées ne s'obtiennent que par capture, avec des conditions plu
 
 ### La mangeoire
 
-La mangeoire est le principal levier du joueur sur les arrivées. Elle compte d'abord 1 emplacement, puis jusqu'à 4. Chaque baie déposée est consommée au fil des heures et produit deux effets :
+La mangeoire est le principal levier du joueur sur les arrivées. Elle compte d'abord 1 emplacement, puis davantage grâce à l'arbre (4 et au-delà). Le joueur y dépose une quantité d'une ressource, celle de n'importe quelle zone débloquée, et elle produit deux effets :
 
-- Elle **remplit une condition** pour certaines espèces (baie Ceriz pour Rondoudou).
-- Elle **augmente le poids** d'une famille d'espèces : les baies épicées attirent les types Feu, les baies sucrées les types Fée et Normal.
+- Elle **augmente le poids** des espèces dont un type est efficace dans la zone de cette ressource (poids ×3, réglable) : des baies de la Prairie attirent les types Normal, Vol et Fée ; des noigrumes du Verger, les types Plante et Insecte. Pour attirer un type, il suffit donc d'avoir débloqué sa zone et d'en mettre la ressource dans la mangeoire.
+- Elle **remplit une condition** pour certaines espèces (des baies dans la mangeoire pour Rondoudou).
 
-Les baies proviennent des zones de récolte, ce qui relie directement la gestion des zones à la collection.
+**Consommation** (proposition) : chaque Pokémon qui arrive mange une ressource, quel que soit son type. Rien n'est consommé quand personne n'arrive, par exemple quand l'Accueil est plein. Quand la mangeoire est vide, les chances redeviennent normales.
+
+Les ressources proviennent des zones de récolte, ce qui relie directement la gestion des zones à la collection.
 
 ## Les zones de récolte
 
@@ -137,8 +141,8 @@ La pension compte 8 zones, chacune liée à des types de Pokémon. Les Pokémon 
 
 | Zone | Types efficaces | Ressource principale | Trouvailles rares | Déblocage |
 | --- | --- | --- | --- | --- |
-| Prairie | Normal, Vol, Fée | Baies communes | Plumes, CT de type Normal/Vol/Fée | Départ |
-| Verger | Plante, Insecte | Baies variées | Pierre Plante, CT de type Plante/Insecte | Départ |
+| Prairie | Normal, Vol, Fée | Baie | Plumes, CT de type Normal/Vol/Fée | Départ |
+| Verger | Plante, Insecte | Noigrume | Pierre Plante, CT de type Plante/Insecte | Départ |
 | Étang | Eau, Glace | Perles | Pierre Eau, CT de type Eau/Glace | Nœud de l'arbre |
 | Carrière | Roche, Sol, Combat | Minerai | Pierre Lune, CT de type Roche/Sol/Combat, fossiles | Nœud de l'arbre |
 | Volcan | Feu | Braise | Pierre Feu, CT de type Feu | Nœud de l'arbre |
@@ -148,24 +152,40 @@ La pension compte 8 zones, chacune liée à des types de Pokémon. Les Pokémon 
 
 Les types suivent ceux de PokéAPI, qui utilise les types modernes : Mélofée est de type Fée, Magnéti de type Électrik et Acier.
 
+Chaque zone produit **une seule ressource**, pour rester lisible : une seule sorte de baie dans la Prairie (sprite de la Baie Oran), un seul noigrume dans le Verger.
+
+Une zone compte **3 emplacements** au départ ; l'arbre en ajoute.
+
 ### Le rendement
 
 La production horaire d'une zone dépend de trois facteurs :
 
 - **Le type** : un Pokémon d'un type efficace produit 100 %. Un Pokémon d'un autre type peut travailler, mais à 25 %.
 - **Le niveau** : plus il est élevé, plus la production et la chance de trouvaille rare augmentent.
-- **Le niveau de la zone** : améliorer une zone ajoute des emplacements, augmente le stockage et débloque de nouvelles trouvailles.
+- **Le niveau de la zone** : l'améliorer (par l'arbre Zones) ajoute des emplacements, augmente le stockage et débloque de nouvelles trouvailles.
 - **L****e**** ****n****o****m****b****re**** **: l'efficacité des pokemons est cumulé pour calculé les ressources récoltés (les points de recherche permettent d'augmenter le nombre de pokemons affectable par zone)
 
-Les Pokémon au travail gagnent aussi un peu d'expérience chaque heure. Améliorer une zone augmente les chances de trouvailles rares et de rencontres avec les espèces liées à cette zone.
+Les Pokémon au travail gagnent aussi un peu d'expérience chaque heure, **25 % de plus** dans une zone efficace pour leur type. Améliorer une zone augmente les chances de trouvailles rares et de rencontres avec les espèces liées à cette zone.
 
 ### Le stockage
 
-Chaque zone stocke une quantité limitée de ressources, par exemple 12 heures de production. Au-delà, la production s'arrête jusqu'à la prochaine collecte. Ce plafond est le même principe que l'Accueil : améliorable.
+Chaque zone stocke une quantité limitée de ressources, par exemple 12 heures de production. Au-delà, les Pokémon de la zone s'arrêtent de travailler jusqu'à la prochaine collecte : plus de ressource, et plus d'expérience non plus. Ce plafond est le même principe que l'Accueil : améliorable plus tard, par l'arbre.
+
+La collecte rapporte d'un coup les ressources et l'expérience accumulées depuis la précédente.
 
 ### L'économie des ressources
 
-Chaque zone produit sa propre ressource, qui sert à deux choses : améliorer cette même zone (emplacements, stockage, chances de trouvailles rares et de rencontres) et débloquer certains nœuds de l'arbre de compétences. Les baies de la Prairie et du Verger servent en plus à remplir la mangeoire et le sac d'expédition.
+Chaque zone produit sa propre ressource, qui sert à plusieurs choses :
+
+- **améliorer les zones**, par les nœuds de l'arbre Zones (emplacements, stockage, chances de trouvailles rares et de rencontres) ;
+- **débloquer** certains nœuds des autres arbres ;
+- **remplir la mangeoire**, pour attirer les types de la zone ;
+- **acheter à la boutique** (plus tard, voir ci-dessous) ;
+- les baies et les noigrumes servent en plus à remplir le sac d'expédition.
+
+### La boutique (plus tard)
+
+Une boutique permettra d'acheter, avec les ressources des zones, un Pokémon au hasard, ou un Pokémon au hasard d'un type donné. Elle donne une utilité durable aux ressources, qui sinon deviendraient vite inutiles une fois les zones améliorées. Son étape reste à choisir.
 
 ### Les arrivées propres aux zones
 
@@ -192,7 +212,7 @@ Le panneau propose 3 quêtes par jour (jusqu'à 5 via l'arbre de compétences), 
 
 ### Les récompenses
 
-Baies rares pour la mangeoire, bonbons, points de recherche, et plus rarement une CT ou une pierre d'évolution.
+Ressources pour la mangeoire, bonbons, points de recherche, et plus rarement une CT ou une pierre d'évolution.
 
 ### Les règles de confort
 
@@ -209,6 +229,8 @@ Un Pokémon progresse par son niveau et ses attaques. Ces deux axes nourrissent 
 ### Les niveaux
 
 Un Pokémon gagne de l'expérience de trois façons : en travaillant dans une zone (lent mais passif), en consommant des bonbons, et en expédition. Le niveau maximum est 100.
+
+L'expérience nécessaire suit les **courbes des jeux** : chaque espèce a la sienne (fournie par PokéAPI). Les 151 de Kanto en utilisent quatre : rapide (5 espèces), moyenne (80), parabolique (40) et lente (26). Au niveau 50, il faut ainsi 100 000 points d'expérience en courbe rapide, contre 156 250 en courbe lente.
 
 ### Les bonbons
 
@@ -272,8 +294,8 @@ Une barre verticale sur le côté donne accès à 4 onglets : **Pension**, **Zon
 | Page | Contenu | Actions |
 | --- | --- | --- |
 | Pension (page principale) | Scène illustrée où les Pokémon se promènent, résumé de l'absence, Accueil (x/8), état de la mangeoire | Révéler les arrivées, remplir la mangeoire, ouvrir Quêtes, Arbre, Inventaire et Profil |
-| Zones | Une carte par zone : niveau, emplacements occupés, production par heure, jauge de stockage, synthèse des collectes pendant l'absence | Collecter, ouvrir une zone |
-| Détail d'une zone | Pokémon affectés et leur efficacité, trouvailles rares (découvertes ou « ??? »), coût d'amélioration | Affecter, retirer, améliorer |
+| Zones | La liste des zones : Pokémon au travail, ressources à récupérer, depuis combien de temps ils travaillent, jauge de stockage | Choisir une zone : le clic récolte ressources et expérience accumulées (avec un résumé), puis ouvre la zone ; s'il n'y a rien à récolter, elle s'ouvre directement |
+| Détail d'une zone | La carte de la zone (décor pixel art) avec ses Pokémon qui sautillent (icônes de 7e génération), leur efficacité, les trouvailles rares (découvertes ou « ??? ») | Affecter (clic sur un emplacement vide, puis choix parmi les Pokémon libres, ceux du bon type en premier), retirer (clic sur un Pokémon) |
 | Pokédex | À gauche (1/3) : liste triable et filtrable des espèces (silhouette, sprite, fiche dorée). À droite (2/3) : fiche complète de l'espèce sélectionnée | Affecter, donner des bonbons, apprendre une CT, activer l'apparence shiny |
 | Expéditions | Liste des donjons, choix de l'équipe et du sac, écran de jeu, bilan | Lancer, jouer, abandonner |
 | Quêtes, Arbre, Inventaire, Profil | Panneaux ouverts depuis la Pension | Selon le panneau |
@@ -328,10 +350,11 @@ Les six premières étapes construisent toute la pension. Les expéditions n'arr
 
 ### Étape 2 — Les zones et la mangeoire
 
-- Les deux zones de départ (Prairie, Verger) : affectation, production, stockage, expérience passive.
-- L'amélioration des zones avec les ressources.
+- Les deux zones de départ (Prairie, Verger) : affectation, production, stockage, expérience passive selon les courbes des jeux.
+- La page Zones et la carte de chaque zone, avec ses Pokémon.
 - Le statut unique du Pokémon (libre, en zone).
-- La mangeoire, et les conditions de baie, de présence et de zone.
+- La mangeoire, sur la carte de la Pension, et les conditions de ressource, de présence et de zone.
+- L'amélioration des zones attend l'arbre de compétences (étape 3).
 
 **Jouable** : la boucle idle complète, avec de vrais choix.
 
@@ -339,7 +362,7 @@ Les six premières étapes construisent toute la pension. Les expéditions n'arr
 
 - Le moteur d'objectifs et les défis (hors expédition).
 - Les stades 2 et 3, les bonus de maîtrise.
-- L'arbre de compétences, qui débloque désormais le contenu.
+- L'arbre de compétences, qui débloque désormais le contenu, dont l'arbre Zones pour améliorer les zones.
 - Les indices et les bonbons de lignée.
 
 **Jouable** : un objectif à long terme et une progression guidée.

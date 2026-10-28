@@ -8,10 +8,18 @@ A condition is a JSON tree, stored in each species data file:
     {"not": cond}          NOT
     {"time_of_day": "night"}             a leaf: one simple condition
 
-Example: "only at night" -> {"time_of_day": "night"}
+The leaves:
+
+    {"time_of_day": "day" | "night"}     Paris time (day 6:00-21:00)
+    {"feeder": "berry"}                  this resource is in the feeder
+    {"owns": "nidoran-f"}                the player owns this species
+    {"zone_occupied": "meadow"}          at least one Pokémon works there
+
+Example: "at night, with berries in the feeder" ->
+    {"all": [{"time_of_day": "night"}, {"feeder": "berry"}]}
 
 Leaves are declared in the LEAVES registry below: supporting a new kind of
-condition (berry in the feeder, zone level...) only means adding an entry.
+condition (zone level, day of the week...) only means adding an entry.
 """
 
 from collections.abc import Callable
@@ -20,6 +28,7 @@ from datetime import datetime
 from typing import Any
 
 from . import clock
+from .zones import ZONE_OF_RESOURCE, ZONES
 
 COMBINATORS = ("all", "any", "not")
 
@@ -34,14 +43,23 @@ class GameContext:
     Everything a condition may look at, for one hourly slot.
 
     Frozen (immutable): evaluating conditions can never change the game state.
-    It will grow with the game (owned species, zones, feeder...).
+    Only `slot` changes from one hour to the next during a catch-up, with the
+    feeder: the rest stays as the player left it.
     """
 
     slot: datetime
+    feeder: frozenset[str] = frozenset()  # resources currently in the feeder
+    owned: frozenset[str] = frozenset()  # slugs of the species the player owns
+    occupied_zones: frozenset[str] = frozenset()  # zones with at least one Pokémon
 
     @property
     def time_of_day(self) -> str:
         return clock.time_of_day(self.slot)
+
+    @property
+    def attracted_types(self) -> frozenset[str]:
+        """Types drawn more often: those of the zones whose resource is in the feeder."""
+        return frozenset().union(*(ZONE_OF_RESOURCE[r].types for r in self.feeder))
 
 
 @dataclass(frozen=True)
@@ -57,10 +75,37 @@ def _validate_time_of_day(value: Any) -> None:
         raise ConditionError(f'time_of_day must be "day" or "night", got {value!r}')
 
 
+def _one_of(name: str, allowed) -> Callable[[Any], None]:
+    """A validator accepting only the given values (e.g. the known zones)."""
+
+    def check(value: Any) -> None:
+        if value not in allowed:
+            raise ConditionError(f"{name} must be one of {sorted(allowed)}, got {value!r}")
+
+    return check
+
+
+def _validate_species_slug(value: Any) -> None:
+    if not isinstance(value, str) or not value:
+        raise ConditionError(f"owns expects a species slug, got {value!r}")
+
+
 LEAVES: dict[str, Leaf] = {
     "time_of_day": Leaf(
         check=lambda value, context: context.time_of_day == value,
         validate=_validate_time_of_day,
+    ),
+    "feeder": Leaf(
+        check=lambda value, context: value in context.feeder,
+        validate=_one_of("feeder", ZONE_OF_RESOURCE),
+    ),
+    "owns": Leaf(
+        check=lambda value, context: value in context.owned,
+        validate=_validate_species_slug,
+    ),
+    "zone_occupied": Leaf(
+        check=lambda value, context: value in context.occupied_zones,
+        validate=_one_of("zone_occupied", ZONES),
     ),
 }
 

@@ -47,6 +47,44 @@ CANDIES_PER_DUPLICATE = {
     "legendary": 50,
 }
 
+# --- Zones -------------------------------------------------------------------
+
+# Pokémon a zone can hold at the start (the skill tree will add more)
+ZONE_SLOTS_BASE = 3
+
+# Hours the Pokémon of a zone work between two collections. Then its storage
+# is full: they stop (no resource, no experience) until the player collects.
+# Like the Welcome area, it gives a reason to come back without punishing.
+ZONE_WORK_HOURS_CAP = 8
+
+# Production of one Pokémon per hour, in hundredths of a resource (integers
+# keep the sums exact): 100 = 1 resource. A Pokémon whose types don't match
+# the zone still works, at OFF_TYPE_PRODUCTION_PERCENT of the rate. Each
+# level adds PRODUCTION_BONUS_PER_LEVEL_PERCENT: a level 50 makes 1.5 per hour.
+PRODUCTION_PER_HOUR_CENTI = 100
+OFF_TYPE_PRODUCTION_PERCENT = 25
+PRODUCTION_BONUS_PER_LEVEL_PERCENT = 1
+
+# Experience of a working Pokémon per hour: XP_PER_HOUR_BASE plus
+# XP_PER_HOUR_PER_LEVEL per level (the games give more experience at higher
+# levels, where the curves are steeper), plus XP_TYPE_BONUS_PERCENT in a zone
+# that matches its type. E.g. a level 10 earns 50 per hour, 62 in its zone.
+XP_PER_HOUR_BASE = 20
+XP_PER_HOUR_PER_LEVEL = 3
+XP_TYPE_BONUS_PERCENT = 25
+
+# --- Feeder ------------------------------------------------------------------
+
+# Slots of the feeder at the start (the skill tree will add more)
+FEEDER_SLOTS_BASE = 1
+
+# While a zone's resource is in the feeder, species of that zone's types are
+# FEEDER_WEIGHT_MULTIPLIER times more likely in the hourly draw. Each arrival
+# eats FEEDER_CONSUMPTION_PER_ARRIVAL of every resource in the feeder; no
+# arrival (e.g. a full Welcome area), no consumption.
+FEEDER_WEIGHT_MULTIPLIER = 3
+FEEDER_CONSUMPTION_PER_ARRIVAL = 1
+
 # --- Time ------------------------------------------------------------------
 
 # Day/night cycle, in Paris local time: night from 21:00 to 06:00

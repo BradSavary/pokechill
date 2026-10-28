@@ -42,8 +42,34 @@ def test_nested_tree():
     assert not evaluate(tree, DAY)
 
 
+def test_ranch_leaves_look_at_the_feeder_the_collection_and_the_zones():
+    ranch = GameContext(
+        slot=DAY.slot,
+        feeder=frozenset({"berry"}),
+        owned=frozenset({"nidoran-f"}),
+        occupied_zones=frozenset({"orchard"}),
+    )
+    assert evaluate({"feeder": "berry"}, ranch)
+    assert not evaluate({"feeder": "apricorn"}, ranch)
+    assert evaluate({"owns": "nidoran-f"}, ranch)
+    assert not evaluate({"owns": "nidoran-m"}, ranch)
+    assert evaluate({"zone_occupied": "orchard"}, ranch)
+    assert not evaluate({"zone_occupied": "meadow"}, ranch)
+    # By default the ranch is empty: nothing in the feeder, nothing owned
+    assert not evaluate({"feeder": "berry"}, DAY)
+
+
+def test_the_feeder_attracts_the_types_of_its_resources_zones():
+    assert DAY.attracted_types == frozenset()
+    berries = GameContext(slot=DAY.slot, feeder=frozenset({"berry"}))
+    assert berries.attracted_types == {"normal", "flying", "fairy"}
+    both = GameContext(slot=DAY.slot, feeder=frozenset({"berry", "apricorn"}))
+    assert both.attracted_types == {"normal", "flying", "fairy", "grass", "bug"}
+
+
 def test_valid_tree_passes_validation():
     validate({"all": [AT_NIGHT, {"not": {"any": [BY_DAY]}}]})
+    validate({"any": [{"feeder": "apricorn"}, {"owns": "pikachu"}, {"zone_occupied": "meadow"}]})
 
 
 @pytest.mark.parametrize(
@@ -54,6 +80,9 @@ def test_valid_tree_passes_validation():
         {"time_of_day": "day", "not": BY_DAY},  # two keys in one node
         {"all": AT_NIGHT},  # "all" expects a list
         {"all": [{"any": [{"weather": "rain"}]}]},  # error deep in the tree
+        {"feeder": "pearl"},  # no unlocked zone makes pearls (yet)
+        {"zone_occupied": "volcano"},  # unknown zone
+        {"owns": ""},  # empty species slug
         "night",  # not an object at all
     ],
 )
