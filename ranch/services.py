@@ -19,6 +19,10 @@ from pokedex.models import Species
 from .models import Arrival, CandyStock, OwnedPokemon, Player
 from .zones import give_starting_zones, work_zones
 
+# A visit is recorded at most once per minute: the date only serves to find
+# guests inactive for months, and every write is a round trip to the database
+SEEN_PRECISION = timedelta(minutes=1)
+
 
 def ensure_player(user) -> Player:
     """
@@ -26,6 +30,10 @@ def ensure_player(user) -> Player:
 
     A new save starts at the current hour: arrivals begin with the next one.
     """
+    # The usual case first, in a single query: the save exists
+    player = Player.objects.filter(user=user).first()
+    if player is not None:
+        return player
     with transaction.atomic():  # the save, its starters and zones, or nothing
         player, created = Player.objects.get_or_create(
             user=user, defaults={"last_slot": floor_to_hour(timezone.now())}
@@ -93,6 +101,13 @@ def catch_up_player(player: Player, now=None) -> CatchUp:
     the zones' work and the new clock.
     """
     now = now or timezone.now()
+    if floor_to_hour(now) <= player.last_slot:
+        # Same hour as the last catch-up (the usual case, from one page to
+        # the next): no hour to replay, so no transaction and no query. If
+        # another request moved the clock meanwhile, this one would only see
+        # an older last_slot, and take the full path below.
+        feeder = [(resource, units) for resource, units in player.feeder]
+        return CatchUp(arrivals=[], last_slot=player.last_slot, feeder=feeder)
     with transaction.atomic():
         # Lock the player's row: a second request arriving at the same moment
         # waits here, then finds the clock already moved and replays nothing
@@ -135,9 +150,15 @@ def catch_up_player(player: Player, now=None) -> CatchUp:
 
 
 def mark_seen(player: Player) -> None:
-    """Record a visit (one small UPDATE, without reloading the player)."""
-    player.last_seen_at = timezone.now()
-    Player.objects.filter(pk=player.pk).update(last_seen_at=player.last_seen_at)
+    """
+    Record a visit (one small UPDATE, without reloading the player), at most
+    once per SEEN_PRECISION: browsing from page to page writes nothing.
+    """
+    now = timezone.now()
+    if player.last_seen_at and now - player.last_seen_at < SEEN_PRECISION:
+        return
+    player.last_seen_at = now
+    Player.objects.filter(pk=player.pk).update(last_seen_at=now)
 
 
 def inactive_guests(days: int):

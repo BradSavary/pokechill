@@ -56,6 +56,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # First, so that its timing covers the whole request
+    "config.timing.ServerTimingMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -97,8 +99,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        # Serverless functions are short-lived: don't keep connections open.
-        conn_max_age=0,
+        # Keep the connection for up to 60 s and reuse it for the next
+        # requests: a Vercel function stays warm between close visits, and
+        # opening a connection to Neon (TCP, TLS, login) costs more than a few
+        # queries. Health checks test a reused connection first (Neon may
+        # have closed it while the function slept) and reopen it if needed.
+        conn_max_age=60,
+        conn_health_checks=True,
     )
 }
 

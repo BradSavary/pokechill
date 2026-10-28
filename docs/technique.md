@@ -23,7 +23,7 @@
 | Interface | Templates Django, HTMX 2.0.4, Tailwind CSS v4.3.3 | Pages rendues côté serveur, mises à jour partielles sans framework JavaScript |
 | Base de données | SQLite (local), PostgreSQL Neon (production) | Choisie par la variable `DATABASE_URL` |
 | Hébergement | Vercel, région `fra1` (Francfort) | Une fonction serverless Python, fichiers statiques sur le CDN |
-| Qualité | Ruff, pytest, GitHub Actions | Formatage, lint, 263 tests, intégration continue |
+| Qualité | Ruff, pytest, GitHub Actions | Formatage, lint, 270 tests, intégration continue |
 
 ### Les trois couches
 
@@ -85,7 +85,7 @@ static/                  CSS compilé, HTMX, JS, polices, sprites, cris, icônes
 scripts/                 build_css.py (Tailwind), vercel_build.py (build de production),
                          mapkit.py, build_ranch_map.py, build_zone_maps.py (cartes en tuiles)
 assets/map/sources/      Planches de tuiles d'origine (FRLG, RSE) découpées par les scripts de cartes
-tests/                   263 tests pytest
+tests/                   270 tests pytest
 data/pokeapi_cache/      Cache des réponses PokéAPI (66 Mo, non commité)
 ```
 
@@ -325,20 +325,20 @@ Le style s'inspire des menus de **Pokémon Épée/Bouclier**, avec des polices p
 - La source est [assets/css/input.css](../assets/css/input.css) : les couleurs dans `@theme`, les composants, les animations de la révélation, les variants `portrait-phone:` et `phone:` (téléphone tenu en paysage, repéré à sa faible hauteur) et l'utilitaire `pixelated`.
 - Le scan est limité aux templates `.html` et `.svg` (`source(none)` et `@source`).
 - La compilation passe par `scripts/build_css.py`, avec la version figée (v4.3.3) et un résultat toujours minifié.
-- **Versionnement** : la balise `{% asset %}` ([config/assets.py](../config/assets.py)) ajoute `?v=<date de modification>` aux URL du CSS et des scripts. Sans elle, un navigateur peut garder l'ancien `main.css` en cache après une recompilation : les nouveaux templates s'affichent alors avec d'anciennes classes. En production, Vercel fait déjà revalider chaque fichier (`max-age=0, must-revalidate`) ; le problème touchait surtout le serveur de développement, qui n'envoie aucun en-tête de cache.
+- **Versionnement** : la balise `{% asset %}` ([config/assets.py](../config/assets.py)) ajoute `?v=<empreinte>` aux URL du CSS et des scripts : les 10 premiers caractères du MD5 de leur contenu, calculés une fois par fichier. Un fichier modifié change donc d'adresse, et le navigateur le télécharge à nouveau. C'est ce qui permet de garder ces fichiers en cache un an (voir la section 13). L'empreinte remplace la date de modification utilisée au départ : sur Vercel, tous les fichiers déployés ont la même date, et toutes les versions valaient `?v=1540000000`.
 
 ## 12. Tests et qualité
 
-**263 tests**, exécutés en environ 4 secondes, sans réseau :
+**270 tests**, exécutés en environ 4 secondes, sans réseau :
 
 | Domaine | Fichiers | Tests |
 | --- | --- | --- |
-| Moteur pur | `test_game_clock`, `test_game_conditions`, `test_game_arrivals`, `test_game_collection`, `test_game_moves`, `test_game_experience`, `test_game_zones` | 88 |
-| Catalogue et import | `test_models`, `test_pokeapi`, `test_species_files`, `test_views` | 53 |
+| Moteur pur | `test_game_clock`, `test_game_conditions`, `test_game_arrivals`, `test_game_collection`, `test_game_moves`, `test_game_experience`, `test_game_zones` | 89 |
+| Catalogue et import | `test_models`, `test_pokeapi`, `test_species_files`, `test_views` | 54 |
 | Joueurs | `test_accounts`, `test_purge_guests`, `test_collection`, `test_player_pokedex` | 30 |
 | Arrivées | `test_catch_up`, `test_reveal`, `test_tutorial` | 40 |
 | Zones et mangeoire | `test_zones`, `test_zone_views`, `test_feeder_views` | 42 |
-| Outillage | `test_smoke`, `test_dev_commands`, `test_vercel_build` | 10 |
+| Outillage et performances | `test_smoke`, `test_dev_commands`, `test_vercel_build`, `test_performance` | 15 |
 
 Quelques tests notables :
 - le **déterminisme** du rattrapage, qu'il soit fait d'un coup ou en deux visites ;
@@ -356,6 +356,7 @@ Quelques tests notables :
 | Build de production | `scripts/vercel_build.py` : migrations, puis `load_species` (déclaré dans `[tool.vercel.scripts]`) |
 | Fichiers statiques | `collectstatic` lancé par Vercel, servi par son CDN |
 | Région des fonctions | `vercel.json` (`fra1`) |
+| Cache des fichiers statiques | `vercel.json` (`headers`) : un an et `immutable` pour une URL versionnée (`?v=`), une heure puis revalidation en arrière-plan (`stale-while-revalidate`, une semaine) pour les autres (images, polices) |
 | Base de données | Neon (Francfort), créée depuis l'onglet Storage de Vercel |
 | Domaine | `pokechill.bradsavary.dev`, certificat Let's Encrypt automatique |
 
@@ -386,8 +387,19 @@ Astuce : une fenêtre de navigation privée crée un nouvel invité.
 
 ### Performances observées
 
-- Environ 0,2 à 0,3 s par page une fois la fonction chaude. Le rattrapage d'une absence tient en 7 requêtes SQL, quelle que soit sa durée.
+- Environ 0,2 à 0,3 s par page une fois la fonction chaude, avant les optimisations ci-dessous. Le rattrapage d'une absence tient en une dizaine de requêtes SQL, quelle que soit sa durée.
 - Environ 1,2 à 1,4 s après une période sans visite : c'est le démarrage à froid du serverless.
+- **L'en-tête `Server-Timing`** ([config/timing.py](../config/timing.py)) donne, pour chaque page, le temps passé en base, le nombre de requêtes et le temps total côté serveur. Il s'affiche dans les outils du navigateur (onglet Réseau, une requête, « Timing ») : le reste de l'attente est le réseau.
+
+Ce qui rend les changements de page plus rapides (fin de l'étape 2) :
+
+| Mesure | Effet |
+| --- | --- |
+| Fichiers versionnés en cache un an (`immutable`) | Plus aucun aller-retour pour le CSS et les scripts d'une page à l'autre. Avant, `max-age=0` faisait revérifier chaque fichier (une réponse 304) à chaque page |
+| Rattrapage sauté dans la même heure | Une page de jeu passe de 18 à 7 requêtes : plus de transaction, plus de chargement des espèces, plus d'écriture |
+| `last_seen_at` écrit une fois par minute au plus | Une écriture de moins par page. La date ne sert qu'à repérer les invités inactifs depuis des mois |
+| Connexion à Neon gardée 60 s (`CONN_MAX_AGE`, `CONN_HEALTH_CHECKS`) | Une fonction encore chaude réutilise sa connexion au lieu d'en ouvrir une (TCP, TLS, authentification). Une connexion fermée entre-temps par Neon est détectée et rouverte |
+| Fiche du Pokédex chargée avec `select_related` et `prefetch_related` | La page d'accueil du Pokédex passe de 26 à 11 requêtes : la première espèce affichée faisait une requête par attaque et par type |
 
 ## 14. Pièges rencontrés
 
@@ -405,6 +417,8 @@ Astuce : une fenêtre de navigation privée crée un nouvel invité.
 | Template modifié sans effet en local | `runserver --noreload` garde les templates en cache | Redémarrer le serveur après une modification de template |
 | Bouton qui passe à la ligne, mise en page cassée | Un `<form>` dans un `<p>` : HTML invalide, le navigateur ferme le paragraphe | `<div>` |
 | Texte vide dans une bulle | Le filtre `add` ne mélange pas texte et nombre | Textes des bulles construits dans la vue |
+| Versions des fichiers toutes identiques en production | Vercel donne la même date de modification à tous les fichiers déployés | Version calculée sur le contenu (MD5), plus sur la date |
+| Requêtes N+1 sur la page d'accueil du Pokédex | La première espèce était chargée sans les jointures de la fiche | Un seul jeu de requêtes (`entries()`) pour toutes les fiches, et un test qui plafonne le nombre de requêtes |
 | Chiffres illisibles (le 5 ressemble à un S) | Dessin de Pixelify Sans | Micro 5 pour les chiffres, par `unicode-range` |
 | Les deux polices ne se combinaient pas | Des descripteurs différents (graisse) empêchent la combinaison par `unicode-range` | Même plage `font-weight` sur les deux déclarations |
 | Police absente d'une page de test | Une page en `file://` ne peut pas charger une police servie en `http://` (CORS) | Page servie par le serveur de développement |

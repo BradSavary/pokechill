@@ -5,6 +5,7 @@ import re
 import pytest
 from django.urls import reverse
 
+from config.assets import fingerprint
 from pokedex.models import Move, SpeciesMove, Type
 
 pytestmark = pytest.mark.django_db
@@ -112,8 +113,17 @@ def test_pages_load_htmx_and_their_own_script(client, bulbasaur, page, script):
 
 
 def test_css_and_scripts_are_versioned(client, bulbasaur):
-    # ?v=<last change>: after a CSS rebuild, browsers fetch the new file
+    # ?v=<fingerprint>: after a CSS rebuild, browsers fetch the new file
     # instead of mixing new templates with a stylesheet kept in their cache
     html = client.get(reverse("pokedex:index")).content.decode()
-    assert re.search(r"css/main\.css\?v=\d+", html)
-    assert re.search(r"js/pokedex\.js\?v=\d+", html)
+    assert re.search(r"css/main\.css\?v=[0-9a-f]{10}\"", html)
+    assert re.search(r"js/pokedex\.js\?v=[0-9a-f]{10}\"", html)
+
+
+def test_the_version_follows_the_content_not_the_date(tmp_path):
+    # On Vercel every file has the same date: only the content tells versions apart
+    first, second = tmp_path / "a.css", tmp_path / "b.css"
+    first.write_text("body { color: red }")
+    second.write_text("body { color: blue }")
+    same_date = first.stat().st_mtime_ns
+    assert fingerprint(str(first), same_date, 1) != fingerprint(str(second), same_date, 1)

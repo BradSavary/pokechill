@@ -58,15 +58,22 @@ def filter_species(params, known_ids: set[int] | None = None):
     return species
 
 
-def get_entry(number: int) -> Species:
-    """A species with everything its entry displays, in a handful of SQL queries."""
+def entries():
+    """
+    Species with everything their entry displays, in two SQL queries: the
+    species with its types and family (joins), then its learnset with the
+    moves and their types. Without it, each move and each type shown would
+    cost a query of its own (the "N+1 queries" problem).
+    """
     learnset = SpeciesMove.objects.select_related("move__type")
-    return get_object_or_404(
-        Species.objects.select_related(
-            "primary_type", "secondary_type", "evolution_chain"
-        ).prefetch_related(Prefetch("learnset", queryset=learnset)),
-        number=number,
-    )
+    return Species.objects.select_related(
+        "primary_type", "secondary_type", "evolution_chain"
+    ).prefetch_related(Prefetch("learnset", queryset=learnset))
+
+
+def get_entry(number: int) -> Species:
+    """A species with everything its entry displays (404 if unknown)."""
+    return get_object_or_404(entries(), number=number)
 
 
 def dex_context(request) -> dict:
@@ -141,7 +148,7 @@ def render_page(request, species: Species | None):
 
 def index(request):
     """Pokédex home: the first species is selected (empty state if none imported)."""
-    return render_page(request, Species.objects.first())
+    return render_page(request, entries().order_by("number").first())
 
 
 def species_detail(request, number: int):
