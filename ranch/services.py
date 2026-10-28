@@ -23,6 +23,10 @@ from .zones import give_starting_zones, work_zones
 # guests inactive for months, and every write is a round trip to the database
 SEEN_PRECISION = timedelta(minutes=1)
 
+# Guests inactive for this long are deleted, with their save (purge_guests,
+# and every day in production through a Vercel Cron)
+GUEST_RETENTION_DAYS = 180
+
 
 def ensure_player(user) -> Player:
     """
@@ -159,6 +163,13 @@ def mark_seen(player: Player) -> None:
         return
     player.last_seen_at = now
     Player.objects.filter(pk=player.pk).update(last_seen_at=now)
+
+
+def purge_inactive_guests(days: int = GUEST_RETENTION_DAYS) -> int:
+    """Delete the guests inactive for `days` days, with their saves. Returns how many."""
+    # delete() also removes what depends on each user (CASCADE): the save
+    _total, per_model = inactive_guests(days).delete()
+    return per_model.get("auth.User", 0)
 
 
 def inactive_guests(days: int):

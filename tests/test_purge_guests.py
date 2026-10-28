@@ -77,3 +77,43 @@ def test_playing_keeps_a_guest_active(client):
     assert timezone.now() - player.last_seen_at < timedelta(minutes=1)
     call_command("purge_guests")
     assert Player.objects.exists()
+
+
+# --- The daily Vercel Cron --------------------------------------------------------------
+
+CRON_URL = "/internal/purge-guests/"
+
+
+@pytest.fixture
+def cron_secret(settings):
+    settings.CRON_SECRET = "s3cret"
+    return "s3cret"
+
+
+def test_the_cron_purges_with_the_secret(client, cron_secret):
+    make_user("guest-old", guest=True, days_inactive=200)
+    make_user("guest-recent", guest=True, days_inactive=10)
+    response = client.get(CRON_URL, headers={"Authorization": f"Bearer {cron_secret}"})
+    assert response.json() == {"deleted": 1, "days": 180}
+    assert remaining_usernames() == {"guest-recent"}
+
+
+@pytest.mark.parametrize("header", [None, "Bearer wrong", "s3cret"])
+def test_the_cron_url_refuses_anyone_else(client, cron_secret, header):
+    make_user("guest-old", guest=True, days_inactive=200)
+    headers = {"Authorization": header} if header else {}
+    assert client.get(CRON_URL, headers=headers).status_code == 403
+    assert remaining_usernames() == {"guest-old"}  # nothing deleted
+
+
+def test_without_a_configured_secret_the_cron_url_is_closed(client, settings):
+    settings.CRON_SECRET = ""
+    make_user("guest-old", guest=True, days_inactive=200)
+    # Even an empty "Bearer " can't match an empty secret
+    assert client.get(CRON_URL, headers={"Authorization": "Bearer "}).status_code == 403
+    assert remaining_usernames() == {"guest-old"}
+
+
+def test_visiting_the_cron_url_creates_no_guest(client, cron_secret):
+    client.get(CRON_URL)
+    assert not User.objects.exists()

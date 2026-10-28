@@ -23,7 +23,7 @@
 | Interface | Templates Django, HTMX 2.0.4, Tailwind CSS v4.3.3 | Pages rendues côté serveur, mises à jour partielles sans framework JavaScript |
 | Base de données | SQLite (local), PostgreSQL Neon (production) | Choisie par la variable `DATABASE_URL` |
 | Hébergement | Vercel, région `fra1` (Francfort) | Une fonction serverless Python, fichiers statiques sur le CDN |
-| Qualité | Ruff, pytest, GitHub Actions | Formatage, lint, 270 tests, intégration continue |
+| Qualité | Ruff, pytest, GitHub Actions | Formatage, lint, 276 tests, intégration continue |
 
 ### Les trois couches
 
@@ -75,6 +75,7 @@ ranch/                   Partie du joueur
   zones.py               Travail des zones, récolte, statut du Pokémon, mangeoire
   zone_views.py          Pages Zones (cartes, carte d'une zone, affectation)
   zone_maps.py           Emplacements des Pokémon sur la carte de chaque zone
+  internal_views.py      URL appelées par les Crons Vercel (purge des invités)
   tutorial.py            Étapes du tutoriel et cadeaux
   decorators.py          @player_required (invité automatique + rattrapage)
   management/commands/   purge_guests, players, rewind_clock, reset_player
@@ -85,7 +86,7 @@ static/                  CSS compilé, HTMX, JS, polices, sprites, cris, icônes
 scripts/                 build_css.py (Tailwind), vercel_build.py (build de production),
                          mapkit.py, build_ranch_map.py, build_zone_maps.py (cartes en tuiles)
 assets/map/sources/      Planches de tuiles d'origine (FRLG, RSE) découpées par les scripts de cartes
-tests/                   270 tests pytest
+tests/                   276 tests pytest
 data/pokeapi_cache/      Cache des réponses PokéAPI (66 Mo, non commité)
 ```
 
@@ -99,6 +100,7 @@ Le même code tourne partout : seules les variables d'environnement changent.
 | `DJANGO_SECRET_KEY` | absente : clé de développement | clé secrète (obligatoire, sinon l'application refuse de démarrer) |
 | `DJANGO_ALLOWED_HOSTS` | absente : `localhost`, `127.0.0.1` | `.vercel.app,pokechill.bradsavary.dev` |
 | `DATABASE_URL` | absente : `db.sqlite3` | URL Neon avec pooler (ajoutée par l'intégration Vercel) |
+| `CRON_SECRET` | absente : les URL internes refusent tout | secret partagé avec les Crons Vercel (voir la section 7) |
 
 Réglages notables de [config/settings.py](../config/settings.py) :
 
@@ -216,7 +218,8 @@ Elles se combinent avec `all` (ET), `any` (OU) et `not`. Par exemple, Parasect :
 - **`@player_required`** protège les pages de jeu. Il crée un invité à la première visite, crée sa partie avec les 3 starters, enregistre la visite, puis lance le rattrapage. Le Pokédex n'en a pas besoin : les robots d'indexation qui le parcourent ne créent donc aucun compte.
 - **Créer un compte convertit l'invité** : le `UserCreationForm` de Django reçoit l'utilisateur existant (`instance=`), qui garde son identifiant et toute sa partie. `update_session_auth_hash` le garde connecté après le changement de mot de passe.
 - **La connexion et la déconnexion** utilisent les vues de Django. La déconnexion se fait uniquement en POST, et un invité n'a pas de bouton de déconnexion, qui lui ferait perdre sa partie.
-- **`purge_guests`** supprime les invités inactifs depuis 180 jours, avec leur partie. Un compte inscrit n'est jamais supprimé. La commande se lance à la main pour l'instant, et son automatisation par un Cron Vercel est prévue.
+- **La purge des invités** supprime ceux qui sont inactifs depuis 180 jours (`GUEST_RETENTION_DAYS`), avec leur partie. Un compte inscrit n'est jamais supprimé. Elle se lance à la main (`purge_guests`, avec `--dry-run` pour compter seulement), et tourne **chaque jour à 4 h UTC en production**.
+- **Le Cron Vercel** (déclaré dans `vercel.json`, clé `crons`) envoie chaque jour un GET à `/internal/purge-guests/` ([internal_views.py](../ranch/internal_views.py)). Vercel ajoute à la requête l'en-tête `Authorization: Bearer <CRON_SECRET>`. La vue le compare au secret avec `secrets.compare_digest`, dont la durée ne dépend pas de l'entrée : impossible de deviner le secret caractère par caractère d'après les temps de réponse. Sans secret configuré (en local), l'URL refuse tout. Le nombre de comptes supprimés s'affiche dans les logs de la fonction.
 
 ## 8. Les arrivées : rattrapage et révélation
 
@@ -329,13 +332,13 @@ Le style s'inspire des menus de **Pokémon Épée/Bouclier**, avec des polices p
 
 ## 12. Tests et qualité
 
-**270 tests**, exécutés en environ 4 secondes, sans réseau :
+**276 tests**, exécutés en environ 4 secondes, sans réseau :
 
 | Domaine | Fichiers | Tests |
 | --- | --- | --- |
 | Moteur pur | `test_game_clock`, `test_game_conditions`, `test_game_arrivals`, `test_game_collection`, `test_game_moves`, `test_game_experience`, `test_game_zones` | 89 |
 | Catalogue et import | `test_models`, `test_pokeapi`, `test_species_files`, `test_views` | 54 |
-| Joueurs | `test_accounts`, `test_purge_guests`, `test_collection`, `test_player_pokedex` | 30 |
+| Joueurs | `test_accounts`, `test_purge_guests`, `test_collection`, `test_player_pokedex` | 36 |
 | Arrivées | `test_catch_up`, `test_reveal`, `test_tutorial` | 40 |
 | Zones et mangeoire | `test_zones`, `test_zone_views`, `test_feeder_views` | 42 |
 | Outillage et performances | `test_smoke`, `test_dev_commands`, `test_vercel_build`, `test_performance` | 15 |
@@ -356,6 +359,7 @@ Quelques tests notables :
 | Build de production | `scripts/vercel_build.py` : migrations, puis `load_species` (déclaré dans `[tool.vercel.scripts]`) |
 | Fichiers statiques | `collectstatic` lancé par Vercel, servi par son CDN |
 | Région des fonctions | `vercel.json` (`fra1`) |
+| Tâches planifiées | `vercel.json` (`crons`) : purge des invités chaque jour à 4 h UTC |
 | Cache des fichiers statiques | `vercel.json` (`headers`) : un an et `immutable` pour une URL versionnée (`?v=`), une heure puis revalidation en arrière-plan (`stale-while-revalidate`, une semaine) pour les autres (images, polices) |
 | Base de données | Neon (Francfort), créée depuis l'onglet Storage de Vercel |
 | Domaine | `pokechill.bradsavary.dev`, certificat Let's Encrypt automatique |
@@ -373,6 +377,7 @@ Quelques tests notables :
   La dernière ligne est importante : tant que la variable existe, toutes les commandes Django du terminal agissent sur la production. Le même principe sert pour `createsuperuser` ou `purge_guests`.
 - **Quand une donnée PokéAPI nouvelle est ajoutée au modèle** (comme `growth_rate` à l'étape 2) : relancer l'import en production après le déploiement. Sinon, chaque espèce garde la valeur par défaut du champ.
 - **Après une modification d'une variable d'environnement sur Vercel :** redéployer.
+- **Vérifier le Cron :** dans Vercel, onglet Settings puis Cron Jobs : la dernière exécution, et un bouton pour la lancer à la main.
 
 ### Commandes de développement
 
@@ -433,6 +438,4 @@ Ce qui rend les changements de page plus rapides (fin de l'étape 2) :
 - **Rejouer les tutoriels** depuis un menu, sans leurs récompenses.
 - **Passe UX** : mettre en évidence les éléments cliquables et importants (bonbons, attaques, expérience).
 - **Gestion des attaques** : changer les 4 attaques, consulter celles déjà apprises et les CT. Elle viendra avec la montée de niveau.
-- **Automatiser `purge_guests`** avec un Cron Vercel.
 - **API du jeu** (DRF ou Ninja) : décision reportée à l'étape 6.
-- **Relancer l'import en production** après le déploiement de l'étape 2 : courbes d'expérience (`growth_rate`) et Mew marqué légendaire.

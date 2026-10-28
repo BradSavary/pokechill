@@ -36,6 +36,11 @@ if not SECRET_KEY:
 
 # Comma-separated list, e.g. "pokechill.vercel.app,.vercel.app"
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h]
+
+# Shared secret of the Vercel Crons: Vercel sends it in the Authorization
+# header of each scheduled call (ranch/internal_views.py). Empty (locally):
+# the internal URLs refuse every request.
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
 if DEBUG:
     ALLOWED_HOSTS += ["localhost", "127.0.0.1"]
 
