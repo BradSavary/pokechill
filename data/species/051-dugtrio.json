@@ -1,0 +1,18 @@
+{
+  "species": "dugtrio",
+  "rarity": "uncommon",
+  "min_level": 26,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "works_in": {
+          "species": "diglett",
+          "zone": "quarry"
+        }
+      }
+    ]
+  }
+}

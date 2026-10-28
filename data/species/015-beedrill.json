@@ -3,6 +3,16 @@
   "rarity": "rare",
   "min_level": 10,
   "conditions": {
-    "time_of_day": "day"
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "owns": "kakuna"
+      },
+      {
+        "zone_occupied": "orchard"
+      }
+    ]
   }
 }

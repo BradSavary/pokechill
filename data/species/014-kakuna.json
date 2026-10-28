@@ -3,6 +3,16 @@
   "rarity": "uncommon",
   "min_level": 7,
   "conditions": {
-    "time_of_day": "day"
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "owns": "weedle"
+      },
+      {
+        "zone_occupied": "orchard"
+      }
+    ]
   }
 }

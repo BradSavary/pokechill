@@ -1,0 +1,15 @@
+{
+  "species": "venomoth",
+  "rarity": "rare",
+  "min_level": 31,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "owns": "venonat"
+      }
+    ]
+  }
+}

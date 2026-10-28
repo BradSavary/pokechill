@@ -15,6 +15,7 @@ from game import balance, experience
 from game.zones import experience_per_hour, is_efficient, production_per_hour
 from pokedex.models import Type
 
+from . import tutorial
 from .decorators import player_required
 from .models import OwnedPokemon, PlayerZone
 from .zone_maps import ZONE_SPOTS, spot_style
@@ -125,7 +126,12 @@ def index(request):
     return render(
         request,
         "zones/index.html",
-        {"active_tab": "zones", "zones": zones, "work_cap": balance.ZONE_WORK_HOURS_CAP},
+        {
+            "active_tab": "zones",
+            "zones": zones,
+            "work_cap": balance.ZONE_WORK_HOURS_CAP,
+            **tutorial.context(request.player, "zones"),
+        },
     )
 
 
@@ -177,6 +183,7 @@ def detail(request, slug):
             "xp_bonus": balance.XP_TYPE_BONUS_PERCENT,
             "tips": rule_tips(zone),
             "harvest": request.session.pop(HARVEST_KEY, None),  # shown once
+            **tutorial.context(request.player, "zone"),
         },
     )
 
@@ -194,6 +201,8 @@ def assign(request, slug):
         move_pokemon(pokemon, player_zone(request, slug), int(spot) if spot.isdigit() else None)
     except ZoneError as error:
         messages.error(request, str(error))
+    else:
+        tutorial.pokemon_placed(request.player)  # ends the tutorial's zones step
     return redirect("zones:detail", slug=slug)
 
 

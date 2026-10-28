@@ -1,0 +1,21 @@
+{
+  "species": "golduck",
+  "rarity": "rare",
+  "min_level": 33,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "owns": "psyduck"
+      },
+      {
+        "works_in": {
+          "species": "psyduck",
+          "zone": "pond"
+        }
+      }
+    ]
+  }
+}

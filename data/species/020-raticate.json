@@ -3,6 +3,16 @@
   "rarity": "rare",
   "min_level": 20,
   "conditions": {
-    "time_of_day": "night"
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "owns": "rattata"
+      },
+      {
+        "feeder": "berry"
+      }
+    ]
   }
 }

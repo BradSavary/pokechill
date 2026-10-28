@@ -1,0 +1,8 @@
+{
+  "species": "psyduck",
+  "rarity": "uncommon",
+  "min_level": 1,
+  "conditions": {
+    "time_of_day": "day"
+  }
+}

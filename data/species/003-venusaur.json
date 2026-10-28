@@ -3,6 +3,30 @@
   "rarity": "very_rare",
   "min_level": 32,
   "conditions": {
-    "time_of_day": "day"
-  }
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "owns": "ivysaur"
+      },
+      {
+        "any": [
+          {
+            "works_in": {
+              "species": "bulbasaur",
+              "zone": "orchard"
+            }
+          },
+          {
+            "works_in": {
+              "species": "ivysaur",
+              "zone": "orchard"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "notes": "Comes while a Bulbasaur or an Ivysaur works in the Orchard."
 }

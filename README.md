@@ -23,8 +23,8 @@ Le jeu se construit en 8 étapes jouables, chacune déployée en ligne (concepti
 | --- | --- | --- |
 | 0 | Le socle : Django sur Vercel, import PokéAPI, Pokédex consultable | Terminée |
 | 1 | Les arrivées horaires, le mode invité et les comptes | Terminée |
-| 2 | Les zones de récolte et la mangeoire | Prochaine |
-| 3 | La recherche : défis, arbre de compétences, maîtrise | Prévue |
+| 2 | Les zones de récolte et la mangeoire | Terminée |
+| 3 | La recherche : défis, arbre de compétences, maîtrise | Prochaine |
 | 4 | Les quêtes quotidiennes et hebdomadaires | Prévue |
 | 5 | Le contenu complet de la pension (8 zones, CT, natures, shiny) | Prévue |
 | 6 | Les expéditions roguelike (2D, Phaser) | Prévue |

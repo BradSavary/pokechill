@@ -13,10 +13,10 @@ this file, never the logic that uses these values.
 # a separate "mythical" tier would only ever contain one species.
 RARITY_WEIGHTS = {
     "common": 100,
-    "uncommon": 40,
-    "rare": 12,
-    "very_rare": 3,
-    "legendary": 0.2,
+    "uncommon": 50,
+    "rare": 20,
+    "very_rare": 5,
+    "legendary": 1,
 }
 
 # Places of the Welcome area at the start of the game. Once full, new
@@ -35,6 +35,10 @@ STARTER_SPECIES = ("bulbasaur", "charmander", "squirtle")
 
 # Species given at the end of the tutorial
 TUTORIAL_GIFT_SPECIES = "pikachu"
+
+# Resources given once the tutorial's first Pokémon works in a zone, to try
+# the feeder at once (resource, amount)
+TUTORIAL_FEEDER_GIFT = ("berry", 10)
 
 # --- Duplicates ------------------------------------------------------------
 

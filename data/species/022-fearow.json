@@ -3,6 +3,16 @@
   "rarity": "rare",
   "min_level": 20,
   "conditions": {
-    "time_of_day": "day"
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "owns": "spearow"
+      },
+      {
+        "zone_occupied": "meadow"
+      }
+    ]
   }
 }

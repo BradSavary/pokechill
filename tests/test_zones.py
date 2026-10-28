@@ -254,6 +254,22 @@ def test_arrival_conditions_see_the_occupied_zones(player, bulbasaur, bulbasaur_
     assert player.arrivals.count() == 2
 
 
+def test_arrival_conditions_see_who_works_where(player, bulbasaur, charmander, bulbasaur_owned):
+    # Charmander only comes while a Bulbasaur works in the Orchard
+    Species.objects.filter(pk=charmander.pk).update(
+        is_available=True,
+        rarity="common",
+        arrival_conditions={"works_in": {"species": "bulbasaur", "zone": "orchard"}},
+    )
+    move_pokemon(bulbasaur_owned, zone(player, "meadow"))
+    catch_up_player(player, now=START + timedelta(hours=2))
+    assert player.arrivals.count() == 0
+
+    move_pokemon(bulbasaur_owned, zone(player, "orchard"))
+    catch_up_player(player, now=START + timedelta(hours=4))
+    assert player.arrivals.count() == 2
+
+
 # --- Spots on the map ------------------------------------------------------------------
 
 

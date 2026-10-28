@@ -1,0 +1,19 @@
+{
+  "species": "vileplume",
+  "rarity": "rare",
+  "min_level": 36,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "owns": "gloom"
+      },
+      {
+        "zone_occupied": "orchard"
+      }
+    ]
+  },
+  "notes": "Evolves with a Leaf Stone: arrival level = Gloom's min level + 15."
+}

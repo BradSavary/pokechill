@@ -1,0 +1,15 @@
+{
+  "species": "golbat",
+  "rarity": "uncommon",
+  "min_level": 22,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "owns": "zubat"
+      }
+    ]
+  }
+}

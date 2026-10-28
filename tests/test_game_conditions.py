@@ -47,7 +47,7 @@ def test_ranch_leaves_look_at_the_feeder_the_collection_and_the_zones():
         slot=DAY.slot,
         feeder=frozenset({"berry"}),
         owned=frozenset({"nidoran-f"}),
-        occupied_zones=frozenset({"orchard"}),
+        workers=frozenset({("orchard", "paras")}),
     )
     assert evaluate({"feeder": "berry"}, ranch)
     assert not evaluate({"feeder": "apricorn"}, ranch)
@@ -55,6 +55,9 @@ def test_ranch_leaves_look_at_the_feeder_the_collection_and_the_zones():
     assert not evaluate({"owns": "nidoran-m"}, ranch)
     assert evaluate({"zone_occupied": "orchard"}, ranch)
     assert not evaluate({"zone_occupied": "meadow"}, ranch)
+    assert evaluate({"works_in": {"species": "paras", "zone": "orchard"}}, ranch)
+    assert not evaluate({"works_in": {"species": "paras", "zone": "meadow"}}, ranch)
+    assert not evaluate({"works_in": {"species": "oddish", "zone": "orchard"}}, ranch)
     # By default the ranch is empty: nothing in the feeder, nothing owned
     assert not evaluate({"feeder": "berry"}, DAY)
 
@@ -62,6 +65,20 @@ def test_ranch_leaves_look_at_the_feeder_the_collection_and_the_zones():
 def test_valid_tree_passes_validation():
     validate({"all": [AT_NIGHT, {"not": {"any": [BY_DAY]}}]})
     validate({"any": [{"feeder": "apricorn"}, {"owns": "pikachu"}, {"zone_occupied": "meadow"}]})
+    validate({"works_in": {"species": "paras", "zone": "orchard"}})
+
+
+def test_planned_zones_are_valid_but_never_met():
+    # The Pond is not in the game yet: Blastoise may already wait for it
+    tree = {
+        "any": [
+            {"feeder": "pearl"},
+            {"zone_occupied": "pond"},
+            {"works_in": {"species": "squirtle", "zone": "pond"}},
+        ]
+    }
+    validate(tree)
+    assert not evaluate(tree, DAY)
 
 
 @pytest.mark.parametrize(
@@ -72,9 +89,12 @@ def test_valid_tree_passes_validation():
         {"time_of_day": "day", "not": BY_DAY},  # two keys in one node
         {"all": AT_NIGHT},  # "all" expects a list
         {"all": [{"any": [{"weather": "rain"}]}]},  # error deep in the tree
-        {"feeder": "pearl"},  # no unlocked zone makes pearls (yet)
-        {"zone_occupied": "volcano"},  # unknown zone
+        {"feeder": "gold"},  # no zone makes gold, not even a planned one
+        {"zone_occupied": "moon"},  # unknown zone
         {"owns": ""},  # empty species slug
+        {"works_in": "paras"},  # needs a species and a zone
+        {"works_in": {"species": "paras"}},  # the zone is missing
+        {"works_in": {"species": "paras", "zone": "moon"}},  # unknown zone
         "night",  # not an object at all
     ],
 )

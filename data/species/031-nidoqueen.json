@@ -1,0 +1,9 @@
+{
+  "species": "nidoqueen",
+  "rarity": "rare",
+  "min_level": 31,
+  "conditions": {
+    "owns": "nidorina"
+  },
+  "notes": "Evolves with a Moon Stone: arrival level = Nidorina's min level + 15."
+}

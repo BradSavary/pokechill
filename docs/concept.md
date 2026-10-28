@@ -27,7 +27,7 @@ PokéChill est un jeu web de gestion idle où l'objectif est de compléter enti�
 
 ### Le démarrage
 
-Le joueur commence avec les 3 starters de Kanto : Bulbizarre, Salamèche et Carapuce. Un tutoriel guidé par quelques quêtes présente chaque menu et se termine par une première arrivée offerte, pour montrer le cœur du jeu dès la première minute.
+Le joueur commence avec les 3 starters de Kanto : Bulbizarre, Salamèche et Carapuce. Un tutoriel guidé par quelques quêtes présente chaque menu et se termine par une première arrivée offerte, pour montrer le cœur du jeu dès la première minute. Chaque nouvelle fonctionnalité y ajoute ses étapes (les zones, puis la mangeoire, avec 10 baies offertes pour l'essayer). Un menu permettra plus tard de rejouer les tutoriels, sans leurs récompenses.
 
 ## Le Pokédex de recherche
 
@@ -101,6 +101,7 @@ Chaque espèce a une ou plusieurs conditions, combinées avec des ET et des OU.
 | Zone débloquée | Magicarpe : l'étang doit exister |
 | Ressource dans la mangeoire | Rondoudou : des baies sont dans la mangeoire |
 | Présence d'une espèce | Nidoran♂ : un Nidoran♀ vit à la pension |
+| Espèce au travail dans une zone | Parasect : un Paras travaille au Verger, la nuit |
 | Niveau d'un pensionnaire | Onix : un Pokémon Roche de niveau 25 ou plus travaille à la carrière |
 | Nombre de pensionnaires | Pikachu : au moins 3 Pokémon Électrik à la centrale |
 | Nœud de l'arbre | Lokhlass : nœud « Grand large » débloqué |
@@ -115,10 +116,10 @@ Une condition combinée donne les espèces les plus satisfaisantes à trouver. P
 | Rareté | Poids indicatif | Exemples |
 | --- | --- | --- |
 | Commun | 100 | Rattata, Roucool, Chenipan |
-| Peu commun | 40 | Abo, Psykokwak, Caninos |
-| Rare | 12 | Évoli, Tauros, Kangourex |
-| Très rare | 3 | Lokhlass, Minidraco, Ronflex |
-| Légendaire | 0,2 | Mew, lors d'un événement très rare (Mew est considéré comme légendaire dans ce jeu) |
+| Peu commun | 50 | Abo, Psykokwak, Caninos |
+| Rare | 20 | Évoli, Tauros, Kangourex |
+| Très rare | 5 | Lokhlass, Minidraco, Ronflex |
+| Légendaire | 1 | Mew, lors d'un événement très rare (Mew est considéré comme légendaire dans ce jeu) |
 
 Les espèces évoluées ne s'obtiennent que par capture, avec des conditions plus exigeantes que leur forme de base, souvent liées à celle-ci (son niveau, une pierre placée à la pension). Voir la progression des Pokémon.
 
@@ -354,6 +355,8 @@ Les six premières étapes construisent toute la pension. Les expéditions n'arr
 - La page Zones et la carte de chaque zone, avec ses Pokémon.
 - Le statut unique du Pokémon (libre, en zone).
 - La mangeoire, sur la carte de la Pension, et les conditions de ressource, de présence et de zone.
+- Les espèces jusqu'à Golduck (#055) ; les formes évoluées demandent leur forme précédente.
+- Les étapes du tutoriel pour les zones et la mangeoire.
 - L'amélioration des zones attend l'arbre de compétences (étape 3).
 
 **Jouable** : la boucle idle complète, avec de vrais choix.

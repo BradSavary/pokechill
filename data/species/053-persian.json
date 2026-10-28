@@ -1,0 +1,15 @@
+{
+  "species": "persian",
+  "rarity": "rare",
+  "min_level": 28,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "owns": "meowth"
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "species": "wigglytuff",
+  "rarity": "rare",
+  "min_level": 16,
+  "conditions": {
+    "all": [
+      {
+        "owns": "jigglypuff"
+      },
+      {
+        "zone_occupied": "meadow"
+      }
+    ]
+  },
+  "notes": "Evolves with a Moon Stone: arrival level = Jigglypuff's min level + 15."
+}

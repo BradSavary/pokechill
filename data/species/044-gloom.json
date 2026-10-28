@@ -1,0 +1,15 @@
+{
+  "species": "gloom",
+  "rarity": "uncommon",
+  "min_level": 21,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "owns": "oddish"
+      }
+    ]
+  }
+}

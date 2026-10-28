@@ -3,6 +3,13 @@
   "rarity": "rare",
   "min_level": 16,
   "conditions": {
-    "time_of_day": "day"
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "owns": "bulbasaur"
+      }
+    ]
   }
 }

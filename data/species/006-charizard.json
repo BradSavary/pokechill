@@ -3,6 +3,30 @@
   "rarity": "very_rare",
   "min_level": 36,
   "conditions": {
-    "time_of_day": "night"
-  }
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "owns": "charmeleon"
+      },
+      {
+        "any": [
+          {
+            "works_in": {
+              "species": "charmander",
+              "zone": "volcano"
+            }
+          },
+          {
+            "works_in": {
+              "species": "charmeleon",
+              "zone": "volcano"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "notes": "Comes while a Charmander or a Charmeleon works in the Volcano (a later zone)."
 }

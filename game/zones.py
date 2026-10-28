@@ -45,6 +45,25 @@ ZONES = {
 # Resource slug -> its zone (the feeder looks up a resource's types this way)
 ZONE_OF_RESOURCE = {zone.resource: zone for zone in ZONES.values()}
 
+# The other zones of the concept, not in the game yet: zone slug -> resource
+# slug. Only their names are known here, so that species files can already
+# refer to them (Blastoise needs a Squirtle at work in the Pond): such a
+# condition is valid, and simply never met until the zone comes. A zone
+# moves from here to ZONES when it is built.
+PLANNED_ZONES = {
+    "pond": "pearl",
+    "quarry": "ore",
+    "volcano": "ember",
+    "power-plant": "energy",
+    "swamp": "root",
+    "tower": "mystic-dust",
+}
+
+# Everything a condition may name: the zones and resources of the game, and
+# the planned ones
+KNOWN_ZONES = frozenset(ZONES) | frozenset(PLANNED_ZONES)
+KNOWN_RESOURCES = frozenset(ZONE_OF_RESOURCE) | frozenset(PLANNED_ZONES.values())
+
 
 @dataclass(frozen=True)
 class Worker:

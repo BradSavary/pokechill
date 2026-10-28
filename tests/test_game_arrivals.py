@@ -50,7 +50,9 @@ def test_rarity_weights_shape_the_draw():
     # 3000 seeded draws: deterministic, so this test can never fail randomly
     draws = [draw_arrival([RATTATA, PIKACHU], NOON, random.Random(i)) for i in range(3000)]
     common_share = Counter(a.slug for a in draws)["rattata"] / 3000
-    expected = 100 / (100 + 12)  # about 0.89
+    # Read from the balance: the test follows any change of the weights
+    weights = balance.RARITY_WEIGHTS
+    expected = weights["common"] / (weights["common"] + weights["rare"])
     assert abs(common_share - expected) < 0.03
 
 

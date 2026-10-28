@@ -3,6 +3,30 @@
   "rarity": "very_rare",
   "min_level": 36,
   "conditions": {
-    "time_of_day": "day"
-  }
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "owns": "wartortle"
+      },
+      {
+        "any": [
+          {
+            "works_in": {
+              "species": "squirtle",
+              "zone": "pond"
+            }
+          },
+          {
+            "works_in": {
+              "species": "wartortle",
+              "zone": "pond"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "notes": "Comes while a Squirtle or a Wartortle works in the Pond (a later zone)."
 }

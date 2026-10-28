@@ -110,8 +110,8 @@ def catch_up_player(player: Player, now=None) -> CatchUp:
             free_places=max(locked.welcome_capacity - locked.arrivals.count(), 0),
             feeder=locked.feeder,
             owned=frozenset(locked.pokemon.values_list("species__slug", flat=True)),
-            occupied_zones=frozenset(
-                locked.zones.filter(workers__isnull=False).values_list("zone", flat=True)
+            workers=frozenset(
+                locked.pokemon.filter(zone__isnull=False).values_list("zone__zone", "species__slug")
             ),
         )
         species_by_slug = {species.slug: species for species in available}

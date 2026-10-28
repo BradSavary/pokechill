@@ -72,7 +72,31 @@ def test_errors_are_prefixed_with_the_file_name(tmp_path):
 def test_repository_species_files_are_valid():
     # Guards the hand-edited files of data/species: a mistake fails the CI
     files = read_species_files(settings.BASE_DIR / "data" / "species")
-    assert len(files) >= 26
+    assert len(files) >= 55
+
+
+def species_named_in(node):
+    """The species slugs a condition tree refers to (owns, works_in)."""
+    if not node:
+        return set()
+    key, value = next(iter(node.items()))
+    if key in ("all", "any"):
+        return set().union(*(species_named_in(child) for child in value))
+    if key == "not":
+        return species_named_in(value)
+    if key == "owns":
+        return {value}
+    if key == "works_in":
+        return {value["species"]}
+    return set()
+
+
+def test_repository_conditions_only_name_species_of_the_game():
+    # "owns": "nidoran-f" can only be met if Nidoran♀ can come (a file of its own)
+    files = read_species_files(settings.BASE_DIR / "data" / "species")
+    slugs = {data.slug for data in files}
+    for data in files:
+        assert species_named_in(data.conditions) <= slugs, data.slug
 
 
 # --- The load_species command ---------------------------------------------

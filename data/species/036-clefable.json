@@ -1,0 +1,16 @@
+{
+  "species": "clefable",
+  "rarity": "rare",
+  "min_level": 16,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "owns": "clefairy"
+      }
+    ]
+  },
+  "notes": "Evolves with a Moon Stone: arrival level = Clefairy's min level + 15."
+}

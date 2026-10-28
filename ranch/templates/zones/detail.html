@@ -11,6 +11,7 @@
 {% block main_class %}relative min-h-0 flex-1 overflow-hidden{% endblock %}
 
 {% block content %}
+  {% if tutorial_step is not None %}{% include "ranch/_tutorial.html" %}{% endif %}
   {% comment %}
     The zone's map (scripts/build_zone_maps.py), covering the page. Its
     Pokémon stand on their spots (ranch/zone_maps.py), hopping; the next

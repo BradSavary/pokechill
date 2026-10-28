@@ -14,9 +14,14 @@ The leaves:
     {"feeder": "berry"}                  this resource is in the feeder
     {"owns": "nidoran-f"}                the player owns this species
     {"zone_occupied": "meadow"}          at least one Pokémon works there
+    {"works_in": {"species": "paras", "zone": "orchard"}}
+                                         this species works in this zone
 
 Example: "at night, with berries in the feeder" ->
     {"all": [{"time_of_day": "night"}, {"feeder": "berry"}]}
+
+Zones and resources may be planned ones (game.zones.PLANNED_ZONES): the
+condition is valid, and never met until that zone is in the game.
 
 Leaves are declared in the LEAVES registry below: supporting a new kind of
 condition (zone level, day of the week...) only means adding an entry.
@@ -28,7 +33,7 @@ from datetime import datetime
 from typing import Any
 
 from . import clock
-from .zones import ZONE_OF_RESOURCE, ZONES
+from .zones import KNOWN_RESOURCES, KNOWN_ZONES
 
 COMBINATORS = ("all", "any", "not")
 
@@ -50,11 +55,17 @@ class GameContext:
     slot: datetime
     feeder: frozenset[str] = frozenset()  # resources currently in the feeder (any slot)
     owned: frozenset[str] = frozenset()  # slugs of the species the player owns
-    occupied_zones: frozenset[str] = frozenset()  # zones with at least one Pokémon
+    # Who works where: (zone, species slug) pairs, e.g. ("orchard", "paras")
+    workers: frozenset[tuple[str, str]] = frozenset()
 
     @property
     def time_of_day(self) -> str:
         return clock.time_of_day(self.slot)
+
+    @property
+    def occupied_zones(self) -> frozenset[str]:
+        """The zones where at least one Pokémon works."""
+        return frozenset(zone for zone, _ in self.workers)
 
 
 @dataclass(frozen=True)
@@ -85,6 +96,13 @@ def _validate_species_slug(value: Any) -> None:
         raise ConditionError(f"owns expects a species slug, got {value!r}")
 
 
+def _validate_works_in(value: Any) -> None:
+    if not isinstance(value, dict) or value.keys() != {"species", "zone"}:
+        raise ConditionError(f'works_in expects {{"species": ..., "zone": ...}}, got {value!r}')
+    _validate_species_slug(value["species"])
+    _one_of("works_in zone", KNOWN_ZONES)(value["zone"])
+
+
 LEAVES: dict[str, Leaf] = {
     "time_of_day": Leaf(
         check=lambda value, context: context.time_of_day == value,
@@ -92,7 +110,7 @@ LEAVES: dict[str, Leaf] = {
     ),
     "feeder": Leaf(
         check=lambda value, context: value in context.feeder,
-        validate=_one_of("feeder", ZONE_OF_RESOURCE),
+        validate=_one_of("feeder", KNOWN_RESOURCES),
     ),
     "owns": Leaf(
         check=lambda value, context: value in context.owned,
@@ -100,7 +118,11 @@ LEAVES: dict[str, Leaf] = {
     ),
     "zone_occupied": Leaf(
         check=lambda value, context: value in context.occupied_zones,
-        validate=_one_of("zone_occupied", ZONES),
+        validate=_one_of("zone_occupied", KNOWN_ZONES),
+    ),
+    "works_in": Leaf(
+        check=lambda value, context: (value["zone"], value["species"]) in context.workers,
+        validate=_validate_works_in,
     ),
 }
 

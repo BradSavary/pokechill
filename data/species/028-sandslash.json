@@ -1,0 +1,15 @@
+{
+  "species": "sandslash",
+  "rarity": "rare",
+  "min_level": 22,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "owns": "sandshrew"
+      }
+    ]
+  }
+}

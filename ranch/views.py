@@ -87,7 +87,7 @@ def index(request):
     # rarities reach the template: the species stay hidden until revealed.
     rarities = list(player.arrivals.values_list("species__rarity", flat=True))
     waiting = len(rarities)
-    tutorial_step = tutorial.step_for_page(player, "ranch")
+    tutorial_context = tutorial.context(player, "ranch")
     return render(
         request,
         "ranch/index.html",
@@ -98,13 +98,14 @@ def index(request):
             "catch_up": request.catch_up,  # what happened since the last visit
             # The next arrival comes at the next full hour
             "next_arrival": player.last_slot + timedelta(hours=1),
-            "tutorial_step": tutorial_step,
+            **tutorial_context,
             # The intro of the tutorial shows the starters hopping
             "starters": Species.objects.filter(slug__in=balance.STARTER_SPECIES)
-            if tutorial_step == tutorial.WELCOME
+            if tutorial_context["tutorial_step"] == tutorial.WELCOME
             else [],
-            # The reveal dialog opens by itself, but never over the tutorial
-            "auto_open": waiting and player.tutorial_step == tutorial.DONE,
+            # The reveal dialog opens by itself, but not during the tutorial's
+            # first steps (the gift is revealed by the tutorial itself)
+            "auto_open": waiting and player.tutorial_step > tutorial.GIFT,
             "feeder": feeder_state(player),
         },
     )
@@ -121,6 +122,8 @@ def feeder_fill(request):
         )
     except ZoneError as error:
         messages.error(request, str(error))
+    else:
+        tutorial.feeder_filled(request.player)
     return redirect("ranch:index")
 
 
@@ -237,7 +240,7 @@ def tutorial_next(request):
     step = request.POST.get("step", "")
     if step.isdigit():  # anything else (tampered form) is simply ignored
         tutorial.advance(request.player, int(step))
-    page = tutorial.STEP_PAGE.get(request.player.tutorial_step, "ranch")
+    page = tutorial.STEP_PAGES.get(request.player.tutorial_step, ("ranch",))[0]
     return redirect(f"{page}:index")
 
 

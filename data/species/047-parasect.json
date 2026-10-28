@@ -1,0 +1,19 @@
+{
+  "species": "parasect",
+  "rarity": "rare",
+  "min_level": 24,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "works_in": {
+          "species": "paras",
+          "zone": "orchard"
+        }
+      }
+    ]
+  },
+  "notes": "Comes at night while a Paras works in the Orchard."
+}

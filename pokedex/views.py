@@ -132,7 +132,7 @@ def render_page(request, species: Species | None):
         "owned_ids": dex["owned_ids"],
         "owned_count": len(dex["owned_ids"]) if dex["owned_ids"] is not None else None,
         "total_count": Species.objects.count(),
-        "tutorial_step": tutorial.step_for_page(dex["player"], "pokedex"),
+        **tutorial.context(dex["player"], "pokedex"),
     }
     if species:
         context |= entry_context(species, dex)

@@ -3,7 +3,14 @@
   "rarity": "very_rare",
   "min_level": 16,
   "conditions": {
-    "time_of_day": "day"
+    "all": [
+      {
+        "time_of_day": "day"
+      },
+      {
+        "owns": "pikachu"
+      }
+    ]
   },
   "notes": "Evolves with a Thunder Stone: arrival level = Pikachu's min level + 15."
 }

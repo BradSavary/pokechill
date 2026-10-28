@@ -1,7 +1,9 @@
-{% load static assets %}
+{% load static assets ranch_extras %}
 {% comment %}
   The tutorial, shown as a popup over the page of the current step (see
-  ranch/tutorial.py). Variables: tutorial_step, starters (step 0 only).
+  ranch/tutorial.py). Variables: tutorial.context() (tutorial_step,
+  tutorial_page: a step may show on several pages, tutorial_gift), starters
+  (step 0 only), feeder (Ranch).
 
   - Intro and gift: centred popup over a dimmed page.
   - Guided steps: a "spotlight" dims everything except the element explained
@@ -13,7 +15,11 @@
   between them, the server only knows step 0.
 {% endcomment %}
 <div data-tutorial
-     {% if tutorial_step == 1 %}data-spot="#welcome-area"{% elif tutorial_step == 2 %}data-spot="#species-list-section"{% endif %}>
+     {% if tutorial_step == 1 %}data-spot="#welcome-area"{% elif tutorial_step == 2 %}data-spot="#species-list-section"
+     {% elif tutorial_step == 4 and tutorial_page == "ranch" %}data-spot='.menu-item[href="{% url "zones:index" %}"]'
+     {% elif tutorial_step == 4 and tutorial_page == "zones" %}data-spot="#zone-cards"
+     {% elif tutorial_step == 4 and tutorial_page == "zone" %}data-spot=".map-slot"
+     {% elif tutorial_step == 5 and tutorial_page == "ranch" %}data-spot='[data-open="#feeder"]'{% endif %}>
 
   {% if tutorial_step == 0 or tutorial_step == 3 %}
     <div class="fixed inset-0 z-40 bg-black/55"></div>
@@ -22,8 +28,19 @@
     <div class="tutorial-spot" hidden></div>
   {% endif %}
 
+  {% comment %}
+    Where the popup sits: away from the explained element. Next to the menu
+    for the Zones tab, at the bottom over the maps (their "+" are higher), on
+    the right of the Ranch for the feeder (on the left of the map).
+  {% endcomment %}
   <aside id="tutorial-content" aria-label="Tutorial" role="dialog" aria-modal="true"
-         class="panel fixed z-50 flex w-[min(34rem,90vw)] flex-col gap-3 p-6 {% if tutorial_step == 1 %}top-8 left-1/2 -translate-x-1/2{% elif tutorial_step == 2 %}bottom-8 left-36{% else %}inset-0 m-auto h-fit{% endif %}">
+         class="panel fixed z-50 flex flex-col gap-3 p-6
+                {% if tutorial_step == 1 %}top-8 left-1/2 w-[min(34rem,90vw)] -translate-x-1/2
+                {% elif tutorial_step == 2 %}bottom-8 left-36 w-[min(34rem,90vw)]
+                {% elif tutorial_step == 4 and tutorial_page == "ranch" %}top-20 left-32 w-[min(30rem,65vw)] phone:left-22
+                {% elif tutorial_step == 4 or tutorial_step == 5 and tutorial_page == "zone" %}bottom-8 left-1/2 w-[min(34rem,80vw)] -translate-x-1/2
+                {% elif tutorial_step == 5 %}top-16 right-6 w-[min(26rem,55vw)]
+                {% else %}inset-0 m-auto h-fit w-[min(34rem,90vw)]{% endif %}">
 
     {% if tutorial_step == 0 %}
       {# Page 1: the story #}
@@ -79,6 +96,41 @@
       {# The server answers with the reveal of the gift, swapped into this popup #}
       <button type="button" hx-post="{% url 'ranch:tutorial_gift' %}" hx-target="#tutorial-content"
               hx-swap="innerHTML" class="btn self-end">Go and see</button>
+
+    {# Zones: from the Ranch to the Zones tab, then a zone, then its map #}
+    {% elif tutorial_step == 4 and tutorial_page == "ranch" %}
+      <h2 class="title-band -ml-6 self-start">Put them to work</h2>
+      <p>Your Pokémon can work in <strong>zones</strong>. There, they gather resources and gain experience, even while you're away.</p>
+      <a href="{% url 'zones:index' %}" class="btn self-end">Open the Zones</a>
+
+    {% elif tutorial_step == 4 and tutorial_page == "zones" %}
+      <h2 class="title-band -ml-6 self-start">Your zones</h2>
+      <p>Each zone favours a few types: Pokémon of those types work faster and learn more there. Open a zone to see its map.</p>
+
+    {% elif tutorial_step == 4 and tutorial_page == "zone" %}
+      <h2 class="title-band -ml-6 self-start">Send a Pokémon</h2>
+      <p>Click a <strong>+</strong> on the map and pick one of your Pokémon. The best workers for this zone come first in the list.</p>
+
+    {# Feeder: a word of praise on the zone's map, then the feeder on the Ranch #}
+    {% elif tutorial_step == 5 and tutorial_page == "zone" %}
+      <h2 class="title-band -ml-6 self-start">Hard at work!</h2>
+      <p>Your Pokémon now gather {{ zone.spec.resource_plural|lower }} hour after hour. Come back to collect them: open the zone, and everything ready goes to your stock.</p>
+      <p>Here are <strong>{{ tutorial_gift.amount }} {{ tutorial_gift.amount|resource_word:tutorial_gift.resource }}</strong> to get you started. Let's put them to use!</p>
+      <a href="{% url 'ranch:index' %}" class="btn self-end">Back to the ranch</a>
+
+    {% elif tutorial_step == 5 %}
+      <h2 class="title-band -ml-6 self-start">The feeder</h2>
+      <p>Resources in the feeder lure the Pokémon of their zone's types: each unit adds to the chance. The next Pokémon to arrive eats the first slot.</p>
+      {% if feeder.free %}
+        <p>Click the <strong>feeder</strong> and put your {{ tutorial_gift.amount|resource_word:tutorial_gift.resource }} in!</p>
+      {% else %}
+        {# No free slot (filled before this step existed): nothing to do but read #}
+        <form method="post" action="{% url 'ranch:tutorial_next' %}" class="self-end">
+          {% csrf_token %}
+          <input type="hidden" name="step" value="5">
+          <button class="btn">Got it</button>
+        </form>
+      {% endif %}
     {% endif %}
   </aside>
 </div>

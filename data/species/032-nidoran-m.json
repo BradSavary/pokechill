@@ -1,0 +1,9 @@
+{
+  "species": "nidoran-m",
+  "rarity": "common",
+  "min_level": 1,
+  "conditions": {
+    "owns": "nidoran-f"
+  },
+  "notes": "Comes once a Nidoran♀ lives at the ranch."
+}

@@ -1,0 +1,8 @@
+{
+  "species": "nidorina",
+  "rarity": "uncommon",
+  "min_level": 16,
+  "conditions": {
+    "owns": "nidoran-f"
+  }
+}

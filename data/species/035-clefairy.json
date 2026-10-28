@@ -1,0 +1,15 @@
+{
+  "species": "clefairy",
+  "rarity": "uncommon",
+  "min_level": 1,
+  "conditions": {
+    "all": [
+      {
+        "time_of_day": "night"
+      },
+      {
+        "feeder": "berry"
+      }
+    ]
+  }
+}

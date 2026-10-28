@@ -125,13 +125,13 @@ def catch_up(
     free_places: int,
     feeder: list[tuple[str, int]] | None = None,
     owned: frozenset[str] = frozenset(),
-    occupied_zones: frozenset[str] = frozenset(),
+    workers: frozenset[tuple[str, str]] = frozenset(),
 ) -> CatchUp:
     """
     Replay every hour since `last_slot`, in chronological order.
 
     `feeder` (its slots in order: [(resource, units), ...]), `owned` and
-    `occupied_zones` describe the ranch as the player left it. Only the
+    `workers` ((zone, species) pairs) describe the ranch as the player left it. Only the
     feeder changes along the way: each arrival eats its first slot, whose
     lure only acted on that arrival. That is why the hours are replayed in
     order.
@@ -154,7 +154,7 @@ def catch_up(
             slot=slot,
             feeder=frozenset(resource for resource, _ in feeder),
             owned=owned,
-            occupied_zones=occupied_zones,
+            workers=workers,
         )
         lure = lure_of(feeder[0]) if feeder else None
         arrival = draw_arrival(rules, context, clock.slot_rng(player_id, slot), lure)
