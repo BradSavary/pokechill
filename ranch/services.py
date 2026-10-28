@@ -12,11 +12,12 @@ from django.utils import timezone
 
 from game import balance
 from game.arrivals import NATURES, CatchUp, catch_up
-from game.clock import floor_to_hour
+from game.clock import ONE_HOUR, floor_to_hour
 from game.collection import Obtention, OwnedState, resolve_obtention
 from pokedex.models import Species
 
 from .models import Arrival, CandyStock, OwnedPokemon, Player
+from .zones import give_starting_zones, work_zones
 
 
 def ensure_player(user) -> Player:
@@ -25,12 +26,13 @@ def ensure_player(user) -> Player:
 
     A new save starts at the current hour: arrivals begin with the next one.
     """
-    with transaction.atomic():  # the save and its starters, or nothing
+    with transaction.atomic():  # the save, its starters and zones, or nothing
         player, created = Player.objects.get_or_create(
             user=user, defaults={"last_slot": floor_to_hour(timezone.now())}
         )
         if created:
             give_starters(player)
+            give_starting_zones(player)
     return player
 
 
@@ -85,21 +87,32 @@ def catch_up_player(player: Player, now=None) -> CatchUp:
     """
     Replay the hours elapsed since the player's last visit.
 
-    The game rules run in game.arrivals.catch_up (pure Python); this function
-    loads what they need, then saves the new arrivals and the new clock.
+    The game rules run in pure Python: game.arrivals.catch_up for the
+    arrivals and the feeder, game.zones for the work of the zones. This
+    function loads what they need, then saves the new arrivals, the feeder,
+    the zones' work and the new clock.
     """
     now = now or timezone.now()
     with transaction.atomic():
         # Lock the player's row: a second request arriving at the same moment
         # waits here, then finds the clock already moved and replays nothing
         locked = Player.objects.select_for_update().get(pk=player.pk)
-        available = list(Species.objects.filter(is_available=True))
+        available = list(
+            Species.objects.filter(is_available=True).select_related(
+                "primary_type", "secondary_type"
+            )
+        )
         result = catch_up(
             player_id=locked.pk,
             rules=[species.to_rule() for species in available],
             last_slot=locked.last_slot,
             now=now,
             free_places=max(locked.welcome_capacity - locked.arrivals.count(), 0),
+            feeder=locked.feeder,
+            owned=frozenset(locked.pokemon.values_list("species__slug", flat=True)),
+            occupied_zones=frozenset(
+                locked.zones.filter(workers__isnull=False).values_list("zone", flat=True)
+            ),
         )
         species_by_slug = {species.slug: species for species in available}
         Arrival.objects.bulk_create(
@@ -112,9 +125,12 @@ def catch_up_player(player: Player, now=None) -> CatchUp:
             )
             for arrival in result.arrivals
         )
+        work_zones(locked, hours_elapsed=(result.last_slot - locked.last_slot) // ONE_HOUR)
         locked.last_slot = result.last_slot
-        locked.save(update_fields=["last_slot"])
-    player.last_slot = result.last_slot  # keep the caller's object in sync
+        locked.feeder = result.feeder
+        locked.save(update_fields=["last_slot", "feeder"])
+    # Keep the caller's object in sync
+    player.last_slot, player.feeder = result.last_slot, result.feeder
     return result
 
 

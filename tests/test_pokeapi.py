@@ -85,6 +85,7 @@ def fake_species(number, slug, name, chain_id=1):
         ],
         "is_legendary": False,
         "is_mythical": False,
+        "growth_rate": {"name": "medium-slow"},
         "evolution_chain": {"url": f"https://pokeapi.co/api/v2/evolution-chain/{chain_id}/"},
     }
 
@@ -177,6 +178,7 @@ def test_parse_species_merges_both_resources():
     assert data["secondary_type"] == "poison"
     assert data["special_attack"] == 50
     assert data["flavor_text"] == "A strange seed was planted on its back."
+    assert data["growth_rate"] == "medium-slow"
 
 
 def test_parse_learnset_keeps_only_the_chosen_game():

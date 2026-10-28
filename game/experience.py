@@ -38,3 +38,18 @@ def level_for(curve: str, experience: int) -> int:
     while level < MAX_LEVEL and total_experience(curve, level + 1) <= experience:
         level += 1
     return level
+
+
+def add_experience(curve: str, level: int, progress: int, gained: int) -> tuple[int, int]:
+    """
+    Level and progress after gaining experience.
+
+    `progress` is the experience earned since the current level was reached
+    (the blue bar of the games), not a total: a Pokémon keeps its level even
+    if its species' curve is corrected later. At MAX_LEVEL, progress stays 0.
+    """
+    total = total_experience(curve, level) + progress + gained
+    new_level = level_for(curve, total)
+    if new_level == MAX_LEVEL:
+        return MAX_LEVEL, 0
+    return new_level, total - total_experience(curve, new_level)

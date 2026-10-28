@@ -9,12 +9,14 @@ player owns: player data will live in other apps from step 1 onwards.
 from django.db import models
 from django.templatetags.static import static
 
-from game import balance
+from game import balance, experience
 from game.arrivals import SpeciesRule
 
 # Rarity values come from the game engine, the single source of truth:
 # ("very_rare", "Very rare"), ("legendary", "Legendary")...
 RARITY_CHOICES = [(key, key.replace("_", " ").capitalize()) for key in balance.RARITY_WEIGHTS]
+# Growth rates (experience curves) supported by the engine: "medium-slow"...
+GROWTH_RATE_CHOICES = [(key, key.replace("-", " ").capitalize()) for key in experience.CURVES]
 
 
 class Type(models.Model):
@@ -97,6 +99,9 @@ class Species(models.Model):
     special_attack = models.PositiveSmallIntegerField()
     special_defense = models.PositiveSmallIntegerField()
     speed = models.PositiveSmallIntegerField()
+    # Experience curve of the games (see game.experience). "medium", the most
+    # common one, until the import sets the real value.
+    growth_rate = models.CharField(max_length=12, choices=GROWTH_RATE_CHOICES, default="medium")
 
     # --- Body (raw PokéAPI units, converted by the properties below) -------
     height_dm = models.PositiveSmallIntegerField(help_text="Height in decimetres")
@@ -138,7 +143,12 @@ class Species(models.Model):
 
     def to_rule(self) -> SpeciesRule:
         """What the game engine needs to know about this species."""
-        return SpeciesRule(slug=self.slug, rarity=self.rarity, conditions=self.arrival_conditions)
+        return SpeciesRule(
+            slug=self.slug,
+            rarity=self.rarity,
+            conditions=self.arrival_conditions,
+            types=tuple(t.slug for t in self.types),  # for the feeder bonus
+        )
 
     # --- Derived values -----------------------------------------------------
 

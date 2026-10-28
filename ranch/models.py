@@ -10,6 +10,11 @@ from django.db import models
 from django.utils import timezone
 
 from game import balance
+from game.zones import ZONES
+
+# Zones and resources as choices for the database: ("meadow", "Meadow")...
+ZONE_CHOICES = [(zone.slug, zone.name) for zone in ZONES.values()]
+RESOURCE_CHOICES = [(zone.resource, zone.resource_name) for zone in ZONES.values()]
 
 
 class Player(models.Model):
@@ -26,6 +31,10 @@ class Player(models.Model):
     last_seen_at = models.DateTimeField(default=timezone.now)
     # Current step of the tutorial (see ranch/tutorial.py); finished at the end
     tutorial_step = models.PositiveSmallIntegerField(default=0)
+    # What the feeder holds: resource slug -> quantity, e.g. {"berry": 12}.
+    # A small JSON object rather than a table: the engine works on this very
+    # dict (see game.arrivals.catch_up), and it never holds more than a few keys.
+    feeder = models.JSONField(default=dict, blank=True)
 
     def __str__(self) -> str:
         return f"Player of {self.user.username}"
@@ -34,6 +43,55 @@ class Player(models.Model):
     def welcome_capacity(self) -> int:
         """Places of the Welcome area (research bonuses will be added in step 3)."""
         return balance.WELCOME_CAPACITY_BASE
+
+    @property
+    def feeder_capacity(self) -> int:
+        """Different resources the feeder can hold (the skill tree will add slots)."""
+        return balance.FEEDER_SLOTS_BASE
+
+
+class PlayerZone(models.Model):
+    """
+    A harvest zone of the player (a row exists once the zone is unlocked).
+
+    Its work since the last collection piles up here (see ranch.zones): the
+    resource made, and the hours worked, capped by the storage.
+    """
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="zones")
+    zone = models.CharField(max_length=20, choices=ZONE_CHOICES)
+    # Hours worked since the last collection (at most balance.ZONE_WORK_HOURS_CAP)
+    hours_worked = models.PositiveSmallIntegerField(default=0)
+    # Resource made since the last collection, in hundredths (100 = 1 resource)
+    stock_centi = models.PositiveIntegerField(default=0)
+    collected_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [models.UniqueConstraint(fields=["player", "zone"], name="one_row_per_zone")]
+
+    def __str__(self) -> str:
+        return f"{self.spec.name} of {self.player.user.username}"
+
+    @property
+    def spec(self):
+        """The zone's definition in the engine (types, resource): game.zones.Zone."""
+        return ZONES[self.zone]
+
+    @property
+    def capacity(self) -> int:
+        """Pokémon it can hold (the skill tree will add slots)."""
+        return balance.ZONE_SLOTS_BASE
+
+    @property
+    def stock(self) -> int:
+        """Whole resources waiting to be collected."""
+        return self.stock_centi // 100
+
+    @property
+    def is_full(self) -> bool:
+        """The storage is full: its Pokémon have stopped working."""
+        return self.hours_worked >= balance.ZONE_WORK_HOURS_CAP
 
 
 class OwnedPokemon(models.Model):
@@ -47,6 +105,23 @@ class OwnedPokemon(models.Model):
     # PROTECT: a species with owners can't be deleted from the catalogue
     species = models.ForeignKey("pokedex.Species", on_delete=models.PROTECT, related_name="owners")
     level = models.PositiveSmallIntegerField(default=1)
+    # Experience earned since the current level was reached (the blue bar of
+    # the games), see game.experience.add_experience
+    experience = models.PositiveIntegerField(default=0)
+    # Experience earned in a zone, applied when the zone is collected
+    pending_experience = models.PositiveIntegerField(default=0)
+
+    # --- Status: a Pokémon is in one place at a time ---------------------------
+    # Changed only by ranch.zones.move_pokemon. Expedition and care come later.
+    FREE, IN_ZONE = "free", "zone"
+    STATUS_CHOICES = [(FREE, "Free"), (IN_ZONE, "In a zone")]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=FREE)
+    # The zone it works in (only when its status is IN_ZONE). PROTECT: a zone
+    # with workers can't be deleted.
+    zone = models.ForeignKey(
+        PlayerZone, on_delete=models.PROTECT, null=True, blank=True, related_name="workers"
+    )
+
     # Natures obtained at least once for this species (e.g. ["attack", "speed"]).
     # Their stat bonuses arrive with step 5; they are recorded from the start.
     unlocked_natures = models.JSONField(default=list)
@@ -57,11 +132,35 @@ class OwnedPokemon(models.Model):
         ordering = ["species__number"]
         constraints = [
             # The database itself forbids a second Pokémon of the same species
-            models.UniqueConstraint(fields=["player", "species"], name="one_pokemon_per_species")
+            models.UniqueConstraint(fields=["player", "species"], name="one_pokemon_per_species"),
+            # A zone if and only if the status says so: no half-assigned Pokémon
+            models.CheckConstraint(
+                condition=(
+                    models.Q(status="zone", zone__isnull=False)
+                    | (~models.Q(status="zone") & models.Q(zone__isnull=True))
+                ),
+                name="zone_matches_status",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"{self.species.name} of {self.player.user.username}"
+
+
+class ResourceStock(models.Model):
+    """The player's stock of one resource (berries, apricorns...)."""
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="resources")
+    resource = models.CharField(max_length=20, choices=RESOURCE_CHOICES)
+    amount = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["player", "resource"], name="one_stock_per_resource")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.amount} {self.get_resource_display()}"
 
 
 class CandyStock(models.Model):

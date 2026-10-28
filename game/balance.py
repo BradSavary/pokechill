@@ -49,6 +49,9 @@ CANDIES_PER_DUPLICATE = {
 
 # --- Zones -------------------------------------------------------------------
 
+# Zones every player has from the start (the skill tree unlocks the others)
+STARTING_ZONES = ("meadow", "orchard")
+
 # Pokémon a zone can hold at the start (the skill tree will add more)
 ZONE_SLOTS_BASE = 3
 

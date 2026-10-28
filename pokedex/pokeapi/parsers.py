@@ -64,6 +64,7 @@ def parse_species(pokemon: dict, species: dict) -> dict:
         "secondary_type": types[1]["type"]["name"] if len(types) > 1 else None,
         "height_dm": pokemon["height"],
         "weight_hg": pokemon["weight"],
+        "growth_rate": species["growth_rate"]["name"],
         **stats,
     }
 
