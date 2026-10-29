@@ -9,6 +9,9 @@ The formulas are those of the games: total_experience(curve, n) is the
 experience a Pokémon needs, from zero, to reach level n.
 """
 
+from . import balance
+from .zones import base_experience_per_hour
+
 MAX_LEVEL = 100
 
 # Total experience to reach level n, by growth rate (PokéAPI names).
@@ -53,3 +56,13 @@ def add_experience(curve: str, level: int, progress: int, gained: int) -> tuple[
     if new_level == MAX_LEVEL:
         return MAX_LEVEL, 0
     return new_level, total - total_experience(curve, new_level)
+
+
+def candy_experience(level: int, evolution_stage: int) -> int:
+    """
+    Experience given by one candy of its family to a Pokémon (see
+    balance.CANDY_WORK_HOURS): hours of zone work at its level, divided by
+    its evolution stage (1 for a base form, 2 or 3 for evolved ones).
+    """
+    hours = balance.CANDY_WORK_HOURS * base_experience_per_hour(level)
+    return max(1, hours // evolution_stage)

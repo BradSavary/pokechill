@@ -85,9 +85,14 @@ def production_per_hour(zone: Zone, worker: Worker) -> int:
     return balance.PRODUCTION_PER_HOUR_CENTI * rate * level_bonus // 10_000
 
 
+def base_experience_per_hour(level: int) -> int:
+    """Experience of one hour of work at this level, before the type bonus."""
+    return balance.XP_PER_HOUR_BASE + balance.XP_PER_HOUR_PER_LEVEL * level
+
+
 def experience_per_hour(zone: Zone, worker: Worker) -> int:
     """Experience earned in one hour of work."""
-    base = balance.XP_PER_HOUR_BASE + balance.XP_PER_HOUR_PER_LEVEL * worker.level
+    base = base_experience_per_hour(worker.level)
     bonus = balance.XP_TYPE_BONUS_PERCENT if is_efficient(zone, worker) else 0
     return base * (100 + bonus) // 100
 

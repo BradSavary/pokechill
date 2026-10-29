@@ -2,7 +2,14 @@
 
 import pytest
 
-from game.experience import CURVES, MAX_LEVEL, add_experience, level_for, total_experience
+from game.experience import (
+    CURVES,
+    MAX_LEVEL,
+    add_experience,
+    candy_experience,
+    level_for,
+    total_experience,
+)
 
 
 @pytest.mark.parametrize(
@@ -65,3 +72,12 @@ def test_add_experience_levels_up_and_keeps_the_rest():
 def test_add_experience_stops_at_level_100():
     assert add_experience("fast", 99, 0, 10**9) == (100, 0)
     assert add_experience("fast", 100, 0, 5000) == (100, 0)
+
+
+def test_a_candy_is_worth_hours_of_work_divided_by_the_stage():
+    # 2 hours at level 10 (20 + 3 x 10 = 50 per hour) for a base form
+    assert candy_experience(10, evolution_stage=1) == 100
+    assert candy_experience(10, evolution_stage=2) == 50
+    # Worth more at higher levels, so candies stay useful
+    assert candy_experience(50, evolution_stage=3) == 113
+    assert candy_experience(1, evolution_stage=3) >= 1

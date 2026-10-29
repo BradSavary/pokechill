@@ -13,9 +13,9 @@ this file, never the logic that uses these values.
 # a separate "mythical" tier would only ever contain one species.
 RARITY_WEIGHTS = {
     "common": 100,
-    "uncommon": 50,
-    "rare": 20,
-    "very_rare": 5,
+    "uncommon": 60,
+    "rare": 25,
+    "very_rare": 8,
     "legendary": 1,
 }
 
@@ -94,6 +94,55 @@ FEEDER_SLOTS_BASE = 1
 # area), nothing eaten.
 FEEDER_BONUS_PER_UNIT_PERCENT = 1
 FEEDER_MAX_UNITS = 50
+
+# --- Candies ------------------------------------------------------------------
+
+# A candy is worth CANDY_WORK_HOURS hours of zone work at the Pokémon's
+# level (without the type bonus), divided by its evolution stage: candies
+# stay useful at every level, and cost more for evolved forms. Charmander
+# level 10: 2 x 50 = 100 experience; Charizard level 50: 2 x 170 / 3 = 113.
+CANDY_WORK_HOURS = 2
+
+# --- Research: the Pokédex challenges (game.challenges) ------------------------
+
+# "Obtain it N times": three tiers, fewer for rarer species (a very rare one
+# arrives a few times a month at best)
+CHALLENGE_OBTAIN_TIERS = {
+    "common": (1, 10, 20),
+    "uncommon": (1, 8, 15),
+    "rare": (1, 5, 10),
+    "very_rare": (1, 3, 5),
+    "legendary": (1, 2, 3),
+}
+
+# "Reach level N": two targets above its arrival level (min_level + offset,
+# rounded up to a multiple of 5). Pidgey (level 1): 15 and 30.
+CHALLENGE_LEVEL_OFFSETS = (10, 25)
+
+# "Unlock N natures" (6 in all, one per stat)
+CHALLENGE_NATURE_TIERS = (3, 6)
+
+# "Gather N resources" (while working in a zone) and "Work N hours"
+CHALLENGE_HARVEST_RESOURCES = 100
+CHALLENGE_WORK_HOURS = 48
+
+# Challenges completed for stage 2 ("studied"); stage 3 needs all of them
+STAGE_2_CHALLENGES = 5
+
+# Research points per challenge completed, by the species' rarity
+RESEARCH_POINTS_PER_CHALLENGE = {
+    "common": 5,
+    "uncommon": 8,
+    "rare": 12,
+    "very_rare": 20,
+    "legendary": 40,
+}
+
+# Rewards of the stages: research points, and candies of the family at stage 2
+# (stage 3 gives the species its mastery bonuses)
+STAGE_1_RESEARCH_POINTS = 10
+STAGE_2_RESEARCH_POINTS = 50
+STAGE_2_CANDIES = 50
 
 # --- Time ------------------------------------------------------------------
 
