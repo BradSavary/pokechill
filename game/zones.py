@@ -78,11 +78,15 @@ def is_efficient(zone: Zone, worker: Worker) -> bool:
     return not zone.types.isdisjoint(worker.types)
 
 
-def production_per_hour(zone: Zone, worker: Worker) -> int:
-    """Resource made in one hour, in hundredths (100 = 1 resource)."""
+def production_per_hour(zone: Zone, worker: Worker, bonus_percent: int = 0) -> int:
+    """
+    Resource made in one hour, in hundredths (100 = 1 resource). `bonus_percent`:
+    the yield bonus of the zone (its skill tree), on top of the level bonus.
+    """
     rate = 100 if is_efficient(zone, worker) else balance.OFF_TYPE_PRODUCTION_PERCENT
     level_bonus = 100 + worker.level * balance.PRODUCTION_BONUS_PER_LEVEL_PERCENT
-    return balance.PRODUCTION_PER_HOUR_CENTI * rate * level_bonus // 10_000
+    made = balance.PRODUCTION_PER_HOUR_CENTI * rate * level_bonus // 10_000
+    return made * (100 + bonus_percent) // 100
 
 
 def base_experience_per_hour(level: int) -> int:
@@ -90,11 +94,11 @@ def base_experience_per_hour(level: int) -> int:
     return balance.XP_PER_HOUR_BASE + balance.XP_PER_HOUR_PER_LEVEL * level
 
 
-def experience_per_hour(zone: Zone, worker: Worker) -> int:
-    """Experience earned in one hour of work."""
+def experience_per_hour(zone: Zone, worker: Worker, bonus_percent: int = 0) -> int:
+    """Experience earned in one hour of work (`bonus_percent`: the zone's skill tree)."""
     base = base_experience_per_hour(worker.level)
     bonus = balance.XP_TYPE_BONUS_PERCENT if is_efficient(zone, worker) else 0
-    return base * (100 + bonus) // 100
+    return base * (100 + bonus + bonus_percent) // 100
 
 
 @dataclass(frozen=True)
@@ -109,21 +113,33 @@ class Work:
     resources: tuple[int, ...] = ()
 
 
-def work(zone: Zone, workers: list[Worker], hours_done: int, hours_elapsed: int) -> Work:
+def work(
+    zone: Zone,
+    workers: list[Worker],
+    hours_done: int,
+    hours_elapsed: int,
+    *,
+    cap_hours: int | None = None,
+    yield_percent: int = 0,
+    xp_percent: int = 0,
+) -> Work:
     """
     The work of a zone over `hours_elapsed` hours.
 
     `hours_done`: hours already worked since the last collection. The
-    Pokémon stop once the storage holds ZONE_WORK_HOURS_CAP hours of work.
-    An empty zone does nothing (its storage doesn't fill up either).
+    Pokémon stop once the storage holds `cap_hours` hours of work
+    (ZONE_WORK_HOURS_CAP by default; the skill tree adds to it, like it adds
+    `yield_percent` and `xp_percent`). An empty zone does nothing (its
+    storage doesn't fill up either).
     """
     if not workers:
         return Work(hours=0, resource_centi=0, experience=())
-    hours = max(0, min(hours_elapsed, balance.ZONE_WORK_HOURS_CAP - hours_done))
-    resources = tuple(hours * production_per_hour(zone, w) for w in workers)
+    cap = balance.ZONE_WORK_HOURS_CAP if cap_hours is None else cap_hours
+    hours = max(0, min(hours_elapsed, cap - hours_done))
+    resources = tuple(hours * production_per_hour(zone, w, yield_percent) for w in workers)
     return Work(
         hours=hours,
         resource_centi=sum(resources),
-        experience=tuple(hours * experience_per_hour(zone, w) for w in workers),
+        experience=tuple(hours * experience_per_hour(zone, w, xp_percent) for w in workers),
         resources=resources,
     )

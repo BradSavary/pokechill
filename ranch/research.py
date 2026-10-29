@@ -113,8 +113,10 @@ def record(player: Player, events) -> list[str]:
     ObjectiveProgress.objects.bulk_create(new_rows)
     ObjectiveProgress.objects.bulk_update(updated_rows, ["progress", "completed_at"])
 
-    if newly_done:
-        # A challenge completed is a reward to claim (and maybe a stage)
+    # A reward to claim: a challenge completed, or a new species (its stage 1).
+    # FAMILY events only come with a new species (and when a save is set up).
+    new_species = any(event.kind == FAMILY for event in events)
+    if newly_done or new_species:
         Player.objects.filter(pk=player.pk).update(has_rewards=True)
         player.has_rewards = True
     return newly_done
@@ -244,7 +246,7 @@ class Claimed:
 @transaction.atomic
 def claim(player: Player, species: Species, what: str) -> Claimed:
     """
-    Claim a reward of a species: `what` is a challenge id ("obtain-2"),
+    Claim a reward of a species: `what` is a challenge id ("obtain-10"),
     "stage" (the next stage reached), or "all" (everything waiting).
     """
     locked = Player.objects.select_for_update().get(pk=player.pk)

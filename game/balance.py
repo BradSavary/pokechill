@@ -105,14 +105,15 @@ CANDY_WORK_HOURS = 2
 
 # --- Research: the Pokédex challenges (game.challenges) ------------------------
 
-# "Obtain it N times": three tiers, fewer for rarer species (a very rare one
-# arrives a few times a month at best)
+# "Obtain it N times": two tiers, fewer for rarer species (a very rare one
+# arrives a few times a month at best). No "once": the stage 1 rewards the
+# first obtention already.
 CHALLENGE_OBTAIN_TIERS = {
-    "common": (1, 10, 20),
-    "uncommon": (1, 8, 15),
-    "rare": (1, 5, 10),
-    "very_rare": (1, 3, 5),
-    "legendary": (1, 2, 3),
+    "common": (10, 20),
+    "uncommon": (8, 15),
+    "rare": (5, 10),
+    "very_rare": (3, 5),
+    "legendary": (2, 3),
 }
 
 # "Reach level N": two targets above its arrival level (min_level + offset,
@@ -143,6 +144,23 @@ RESEARCH_POINTS_PER_CHALLENGE = {
 STAGE_1_RESEARCH_POINTS = 10
 STAGE_2_RESEARCH_POINTS = 50
 STAGE_2_CANDIES = 50
+
+# --- Skill tree (game.skill_tree, data/skill_tree.json) -------------------------
+
+# A node costs base x growth^(col - 1) of each currency of its tree (its
+# column: the further right, the dearer), times SKILL_MILESTONE_FACTOR for a
+# milestone. "resource": the resource of a zone (berries, apricorns...).
+# Tuning the whole economy = these few numbers (check with the simulation:
+# uv run python manage.py simulate).
+SKILL_COST_BASE = {"research": 70, "resource": 20}
+SKILL_COST_GROWTH = 1.2
+SKILL_MILESTONE_FACTOR = 2.5
+
+# The nodes of all the trees together should cost this share of the research
+# points the species of the game can give (the rest: room for the nodes of
+# later steps, and other sources of points will come: quests, expeditions).
+# Checked by a test, to see at once when content and costs drift apart.
+SKILL_BUDGET_SHARE = (0.50, 0.70)
 
 # --- Time ------------------------------------------------------------------
 

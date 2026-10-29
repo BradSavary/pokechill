@@ -66,9 +66,9 @@ def test_the_overview_leaves_out_description_cry_stats_and_moves(player_client, 
 def test_the_challenges_action_lists_them_with_the_stage_bar(player_client):
     url = reverse("pokedex:detail", args=[1]) + "?view=challenges"
     html = player_client.get(url, **HTMX).content.decode()
-    assert "Obtain it once" in html
+    assert "Obtain it 10 times" in html
     # As a starter, Bulbasaur already completed a few of its 10 challenges
-    assert re.search(r"\d+/10 challenges claimed", html)
+    assert re.search(r"\d+/9 challenges claimed", html)
     assert 'class="stage-bar"' in html
     assert 'aria-pressed="true"' in html  # its button is the active one
 

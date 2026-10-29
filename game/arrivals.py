@@ -59,14 +59,16 @@ class Lure:
     chance: float  # extra chance that the arrival has one of them (0.13 = +13 points)
 
 
-def lure_of(slot: tuple[str, int]) -> Lure:
-    """The lure of a feeder slot: (resource, units)."""
+def lure_of(slot: tuple[str, int], max_units: int | None = None, unit_tenths: int = 0) -> Lure:
+    """
+    The lure of a feeder slot: (resource, units). The skill tree may raise
+    the units a slot holds (`max_units`) and what each one adds, by tenths
+    of a point (`unit_tenths`: 2 makes a unit worth 1.2 points instead of 1).
+    """
     resource, units = slot
-    units = min(units, balance.FEEDER_MAX_UNITS)
-    return Lure(
-        types=ZONE_OF_RESOURCE[resource].types,
-        chance=units * balance.FEEDER_BONUS_PER_UNIT_PERCENT / 100,
-    )
+    units = min(units, balance.FEEDER_MAX_UNITS if max_units is None else max_units)
+    per_unit_tenths = balance.FEEDER_BONUS_PER_UNIT_PERCENT * 10 + unit_tenths
+    return Lure(types=ZONE_OF_RESOURCE[resource].types, chance=units * per_unit_tenths / 1000)
 
 
 def weight(rule: SpeciesRule) -> float:
@@ -126,6 +128,8 @@ def catch_up(
     feeder: list[tuple[str, int]] | None = None,
     owned: frozenset[str] = frozenset(),
     workers: frozenset[tuple[str, str]] = frozenset(),
+    max_units: int | None = None,
+    unit_tenths: int = 0,
 ) -> CatchUp:
     """
     Replay every hour since `last_slot`, in chronological order.
@@ -140,7 +144,8 @@ def catch_up(
     following arrivals are lost (the offline cap): nobody comes to eat any
     more, nothing else changes in the arrivals, so the loop stops and only
     counts the hours left. The zones' work is computed apart (game.zones).
-    The last processed slot is always the current hour.
+    The last processed slot is always the current hour. `max_units` and
+    `unit_tenths`: the skill tree's bonuses of the feeder (see lure_of).
     """
     feeder = [(resource, units) for resource, units in (feeder or []) if units > 0]
     slots = list(clock.slots_after(last_slot, now))
@@ -156,7 +161,7 @@ def catch_up(
             owned=owned,
             workers=workers,
         )
-        lure = lure_of(feeder[0]) if feeder else None
+        lure = lure_of(feeder[0], max_units, unit_tenths) if feeder else None
         arrival = draw_arrival(rules, context, clock.slot_rng(player_id, slot), lure)
         if arrival is not None:
             arrivals.append(arrival)

@@ -63,7 +63,7 @@ class Event:
 
 @dataclass(frozen=True)
 class Objective:
-    key: str  # unique for a player, e.g. "dex:pidgey:obtain-2"
+    key: str  # unique for a player, e.g. "dex:pidgey:obtain-10"
     event: str  # the kind of event it follows
     target: int
     filters: Mapping[str, Any] = field(default_factory=dict)

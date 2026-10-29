@@ -1,0 +1,552 @@
+{
+  "trees": [
+    {
+      "id": "ranch",
+      "name": "Ranch",
+      "currencies": [
+        "research"
+      ]
+    },
+    {
+      "id": "feeder",
+      "name": "Feeder",
+      "requires": "ranch-level-2",
+      "currencies": [
+        "research",
+        "berry",
+        "apricorn"
+      ]
+    },
+    {
+      "id": "meadow",
+      "name": "Meadow",
+      "zone": "meadow",
+      "currencies": [
+        "berry"
+      ],
+      "milestone_currencies": [
+        "berry",
+        "research"
+      ]
+    },
+    {
+      "id": "orchard",
+      "name": "Orchard",
+      "zone": "orchard",
+      "currencies": [
+        "apricorn"
+      ],
+      "milestone_currencies": [
+        "apricorn",
+        "research"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "ranch-welcome-1",
+      "tree": "ranch",
+      "name": "Bigger Welcome area",
+      "col": 1,
+      "lane": 1,
+      "effects": {
+        "welcome_places": 1
+      }
+    },
+    {
+      "id": "ranch-research-1",
+      "tree": "ranch",
+      "name": "Careful notes",
+      "col": 2,
+      "lane": 0,
+      "effects": {
+        "research_percent": 5
+      },
+      "requires": [
+        "ranch-welcome-1"
+      ]
+    },
+    {
+      "id": "ranch-candy-1",
+      "tree": "ranch",
+      "name": "Sweeter candies",
+      "col": 2,
+      "lane": 2,
+      "effects": {
+        "candy_xp_percent": 10
+      },
+      "requires": [
+        "ranch-welcome-1"
+      ]
+    },
+    {
+      "id": "ranch-welcome-2",
+      "tree": "ranch",
+      "name": "Bigger Welcome area",
+      "col": 3,
+      "lane": 0,
+      "effects": {
+        "welcome_places": 1
+      },
+      "requires": [
+        "ranch-research-1"
+      ]
+    },
+    {
+      "id": "ranch-storage-1",
+      "tree": "ranch",
+      "name": "Bigger storehouses",
+      "col": 3,
+      "lane": 2,
+      "effects": {
+        "zone_storage_hours": 1
+      },
+      "requires": [
+        "ranch-candy-1"
+      ],
+      "zone": "all"
+    },
+    {
+      "id": "ranch-level-2",
+      "tree": "ranch",
+      "name": "Ranch level 2",
+      "col": 4,
+      "lane": 1,
+      "effects": {
+        "welcome_places": 2
+      },
+      "requires": [
+        "ranch-welcome-2",
+        "ranch-storage-1"
+      ],
+      "milestone": true
+    },
+    {
+      "id": "ranch-research-2",
+      "tree": "ranch",
+      "name": "Careful notes",
+      "col": 5,
+      "lane": 0,
+      "effects": {
+        "research_percent": 5
+      },
+      "requires": [
+        "ranch-level-2"
+      ]
+    },
+    {
+      "id": "ranch-candy-2",
+      "tree": "ranch",
+      "name": "Sweeter candies",
+      "col": 5,
+      "lane": 2,
+      "effects": {
+        "candy_xp_percent": 10
+      },
+      "requires": [
+        "ranch-level-2"
+      ]
+    },
+    {
+      "id": "ranch-welcome-3",
+      "tree": "ranch",
+      "name": "Bigger Welcome area",
+      "col": 6,
+      "lane": 0,
+      "effects": {
+        "welcome_places": 1
+      },
+      "requires": [
+        "ranch-research-2"
+      ]
+    },
+    {
+      "id": "ranch-storage-2",
+      "tree": "ranch",
+      "name": "Bigger storehouses",
+      "col": 6,
+      "lane": 2,
+      "effects": {
+        "zone_storage_hours": 1
+      },
+      "requires": [
+        "ranch-candy-2"
+      ],
+      "zone": "all"
+    },
+    {
+      "id": "ranch-research-3",
+      "tree": "ranch",
+      "name": "Careful notes",
+      "col": 7,
+      "lane": 1,
+      "effects": {
+        "research_percent": 5
+      },
+      "requires": [
+        "ranch-welcome-3",
+        "ranch-storage-2"
+      ]
+    },
+    {
+      "id": "ranch-level-3",
+      "tree": "ranch",
+      "name": "Ranch level 3",
+      "col": 8,
+      "lane": 1,
+      "effects": {
+        "welcome_places": 2,
+        "research_percent": 10
+      },
+      "requires": [
+        "ranch-research-3"
+      ],
+      "milestone": true
+    },
+    {
+      "id": "feeder-units-1",
+      "tree": "feeder",
+      "name": "Deeper bowls",
+      "col": 1,
+      "lane": 1,
+      "effects": {
+        "feeder_max_units": 10
+      }
+    },
+    {
+      "id": "feeder-lure-1",
+      "tree": "feeder",
+      "name": "Tasty mix",
+      "col": 2,
+      "lane": 0,
+      "effects": {
+        "feeder_unit_tenths": 1
+      },
+      "requires": [
+        "feeder-units-1"
+      ]
+    },
+    {
+      "id": "feeder-units-2",
+      "tree": "feeder",
+      "name": "Deeper bowls",
+      "col": 2,
+      "lane": 2,
+      "effects": {
+        "feeder_max_units": 10
+      },
+      "requires": [
+        "feeder-units-1"
+      ]
+    },
+    {
+      "id": "feeder-lure-2",
+      "tree": "feeder",
+      "name": "Tasty mix",
+      "col": 3,
+      "lane": 0,
+      "effects": {
+        "feeder_unit_tenths": 1
+      },
+      "requires": [
+        "feeder-lure-1"
+      ]
+    },
+    {
+      "id": "feeder-units-3",
+      "tree": "feeder",
+      "name": "Deeper bowls",
+      "col": 3,
+      "lane": 2,
+      "effects": {
+        "feeder_max_units": 10
+      },
+      "requires": [
+        "feeder-units-2"
+      ]
+    },
+    {
+      "id": "feeder-level-2",
+      "tree": "feeder",
+      "name": "Feeder level 2",
+      "col": 4,
+      "lane": 1,
+      "effects": {
+        "feeder_slots": 1
+      },
+      "requires": [
+        "feeder-lure-2",
+        "feeder-units-3"
+      ],
+      "milestone": true
+    },
+    {
+      "id": "meadow-yield-1",
+      "tree": "meadow",
+      "name": "Swift pickers",
+      "col": 1,
+      "lane": 1,
+      "effects": {
+        "zone_yield_percent": 5
+      }
+    },
+    {
+      "id": "meadow-storage-1",
+      "tree": "meadow",
+      "name": "Bigger baskets",
+      "col": 2,
+      "lane": 0,
+      "effects": {
+        "zone_storage_hours": 1
+      },
+      "requires": [
+        "meadow-yield-1"
+      ]
+    },
+    {
+      "id": "meadow-xp-1",
+      "tree": "meadow",
+      "name": "Good habits",
+      "col": 2,
+      "lane": 2,
+      "effects": {
+        "zone_xp_percent": 10
+      },
+      "requires": [
+        "meadow-yield-1"
+      ]
+    },
+    {
+      "id": "meadow-yield-2",
+      "tree": "meadow",
+      "name": "Swift pickers",
+      "col": 3,
+      "lane": 0,
+      "effects": {
+        "zone_yield_percent": 5
+      },
+      "requires": [
+        "meadow-storage-1"
+      ]
+    },
+    {
+      "id": "meadow-yield-3",
+      "tree": "meadow",
+      "name": "Swift pickers",
+      "col": 3,
+      "lane": 2,
+      "effects": {
+        "zone_yield_percent": 5
+      },
+      "requires": [
+        "meadow-xp-1"
+      ]
+    },
+    {
+      "id": "meadow-level-2",
+      "tree": "meadow",
+      "name": "Meadow level 2",
+      "col": 4,
+      "lane": 1,
+      "effects": {
+        "zone_slots": 1,
+        "zone_level": 1
+      },
+      "requires": [
+        "meadow-yield-2",
+        "meadow-yield-3"
+      ],
+      "milestone": true
+    },
+    {
+      "id": "meadow-storage-2",
+      "tree": "meadow",
+      "name": "Bigger baskets",
+      "col": 5,
+      "lane": 0,
+      "effects": {
+        "zone_storage_hours": 2
+      },
+      "requires": [
+        "meadow-level-2"
+      ]
+    },
+    {
+      "id": "meadow-xp-2",
+      "tree": "meadow",
+      "name": "Good habits",
+      "col": 5,
+      "lane": 2,
+      "effects": {
+        "zone_xp_percent": 10
+      },
+      "requires": [
+        "meadow-level-2"
+      ]
+    },
+    {
+      "id": "meadow-yield-4",
+      "tree": "meadow",
+      "name": "Swift pickers",
+      "col": 6,
+      "lane": 1,
+      "effects": {
+        "zone_yield_percent": 5
+      },
+      "requires": [
+        "meadow-storage-2",
+        "meadow-xp-2"
+      ]
+    },
+    {
+      "id": "meadow-level-3",
+      "tree": "meadow",
+      "name": "Meadow level 3",
+      "col": 7,
+      "lane": 1,
+      "effects": {
+        "zone_yield_percent": 25,
+        "zone_level": 1
+      },
+      "requires": [
+        "meadow-yield-4",
+        "ranch-level-2"
+      ],
+      "milestone": true
+    },
+    {
+      "id": "orchard-yield-1",
+      "tree": "orchard",
+      "name": "Nimble climbers",
+      "col": 1,
+      "lane": 1,
+      "effects": {
+        "zone_yield_percent": 5
+      }
+    },
+    {
+      "id": "orchard-storage-1",
+      "tree": "orchard",
+      "name": "Bigger crates",
+      "col": 2,
+      "lane": 0,
+      "effects": {
+        "zone_storage_hours": 1
+      },
+      "requires": [
+        "orchard-yield-1"
+      ]
+    },
+    {
+      "id": "orchard-xp-1",
+      "tree": "orchard",
+      "name": "Good habits",
+      "col": 2,
+      "lane": 2,
+      "effects": {
+        "zone_xp_percent": 10
+      },
+      "requires": [
+        "orchard-yield-1"
+      ]
+    },
+    {
+      "id": "orchard-yield-2",
+      "tree": "orchard",
+      "name": "Nimble climbers",
+      "col": 3,
+      "lane": 0,
+      "effects": {
+        "zone_yield_percent": 5
+      },
+      "requires": [
+        "orchard-storage-1"
+      ]
+    },
+    {
+      "id": "orchard-yield-3",
+      "tree": "orchard",
+      "name": "Nimble climbers",
+      "col": 3,
+      "lane": 2,
+      "effects": {
+        "zone_yield_percent": 5
+      },
+      "requires": [
+        "orchard-xp-1"
+      ]
+    },
+    {
+      "id": "orchard-level-2",
+      "tree": "orchard",
+      "name": "Orchard level 2",
+      "col": 4,
+      "lane": 1,
+      "effects": {
+        "zone_slots": 1,
+        "zone_level": 1
+      },
+      "requires": [
+        "orchard-yield-2",
+        "orchard-yield-3"
+      ],
+      "milestone": true
+    },
+    {
+      "id": "orchard-storage-2",
+      "tree": "orchard",
+      "name": "Bigger crates",
+      "col": 5,
+      "lane": 0,
+      "effects": {
+        "zone_storage_hours": 2
+      },
+      "requires": [
+        "orchard-level-2"
+      ]
+    },
+    {
+      "id": "orchard-xp-2",
+      "tree": "orchard",
+      "name": "Good habits",
+      "col": 5,
+      "lane": 2,
+      "effects": {
+        "zone_xp_percent": 10
+      },
+      "requires": [
+        "orchard-level-2"
+      ]
+    },
+    {
+      "id": "orchard-yield-4",
+      "tree": "orchard",
+      "name": "Nimble climbers",
+      "col": 6,
+      "lane": 1,
+      "effects": {
+        "zone_yield_percent": 5
+      },
+      "requires": [
+        "orchard-storage-2",
+        "orchard-xp-2"
+      ]
+    },
+    {
+      "id": "orchard-level-3",
+      "tree": "orchard",
+      "name": "Orchard level 3",
+      "col": 7,
+      "lane": 1,
+      "effects": {
+        "zone_yield_percent": 25,
+        "zone_level": 1
+      },
+      "requires": [
+        "orchard-yield-4",
+        "ranch-level-2"
+      ],
+      "milestone": true
+    }
+  ]
+}

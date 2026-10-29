@@ -53,7 +53,7 @@ def test_a_visitor_sees_the_challenges_without_progress(client, bulbasaur):
     Species.objects.filter(pk=bulbasaur.pk).update(is_available=True, rarity="common")
     url = reverse("pokedex:detail", args=[1]) + "?view=challenges"
     html = client.get(url, **HTMX).content.decode()
-    assert "Obtain it once" in html
+    assert "Obtain it 10 times" in html
     assert "completed" not in html  # no save, no progress
     assert "Claim" not in html
     # No Pokémon to train for a visitor: no level nor candies

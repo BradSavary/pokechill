@@ -24,20 +24,20 @@ def ids(challenges):
     return [challenge.id for challenge in challenges]
 
 
-def test_every_species_has_8_to_10_generic_challenges():
+def test_every_species_has_8_or_9_generic_challenges():
     for species in (PIDGEY, CHARIZARD, TAUROS):
-        assert 8 <= len(generic_challenges(species)) <= 10
+        assert 8 <= len(generic_challenges(species)) <= 9
     assert "family" not in ids(generic_challenges(TAUROS))  # alone in its family
 
 
 def test_generic_challenges_of_a_common_species():
     texts = [challenge.text for challenge in generic_challenges(PIDGEY)]
     # The tiers come from the balance (they may be tuned)
-    _, second, third = balance.CHALLENGE_OBTAIN_TIERS["common"]
+    # No "once": the stage 1 rewards the first obtention already
+    first, second = balance.CHALLENGE_OBTAIN_TIERS["common"]
     assert texts == [
-        "Obtain it once",
+        f"Obtain it {first} times",
         f"Obtain it {second} times",
-        f"Obtain it {third} times",
         "Reach level 15",
         "Reach level 30",
         "Unlock 3 natures",
@@ -63,7 +63,9 @@ def test_levels_start_from_the_arrival_level():
 
 def test_challenges_only_count_their_own_species():
     first = generic_challenges(PIDGEY)[0]
-    assert first.objective.key == "dex:pidgey:obtain-1"
+    first_tier = balance.CHALLENGE_OBTAIN_TIERS["common"][0]
+    # Named by its target: the name stays if the tiers are tuned
+    assert first.objective.key == f"dex:pidgey:obtain-{first_tier}"
     assert first.objective.filters == {"species": "pidgey"}
     family = next(c for c in generic_challenges(CHARIZARD) if c.id == "family")
     assert family.objective.event == FAMILY

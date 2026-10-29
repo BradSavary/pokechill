@@ -64,7 +64,7 @@ def obtain(player, species, nature="attack", shiny=False):
 def test_a_first_obtention_completes_challenges_but_pays_nothing_yet(player, in_game):
     bulbasaur, _ = in_game
     obtain(player, bulbasaur)
-    assert progress(player, "dex:bulbasaur:obtain-1") == 1
+    assert progress(player, "dex:bulbasaur:obtain-10") == 1
     assert progress(player, "dex:bulbasaur:natures-3") == 1
     assert progress(player, "dex:bulbasaur:family") == 1  # 1 of its 2 species
     # The rewards wait to be claimed: the "!" of the menu shows
@@ -77,7 +77,7 @@ def test_duplicates_count_and_new_natures_count(player, in_game):
     obtain(player, bulbasaur, "attack")
     obtain(player, bulbasaur, "speed")
     obtain(player, bulbasaur, "speed")
-    assert progress(player, "dex:bulbasaur:obtain-2") == 3
+    assert progress(player, "dex:bulbasaur:obtain-10") == 3
     assert progress(player, "dex:bulbasaur:natures-3") == 2  # attack and speed
 
 
@@ -136,12 +136,13 @@ def test_custom_challenges_of_a_species_file(player, in_game):
 
 def test_claiming_a_challenge_then_the_stage(player, in_game):
     bulbasaur, _ = in_game
-    obtain(player, bulbasaur)  # obtain-1 done; stage 1 reached
-    assert claim(player, bulbasaur, "obtain-1").points == COMMON
+    for nature in ("attack", "speed", "defense"):
+        obtain(player, bulbasaur, nature)  # natures-3 done; stage 1 reached
+    assert claim(player, bulbasaur, "natures-3").points == COMMON
     with pytest.raises(ClaimError):
-        claim(player, bulbasaur, "obtain-1")  # never twice
+        claim(player, bulbasaur, "natures-3")  # never twice
     with pytest.raises(ClaimError):
-        claim(player, bulbasaur, "obtain-2")  # not completed
+        claim(player, bulbasaur, "obtain-10")  # not completed (3 of 10)
     claimed = claim(player, bulbasaur, "stage")
     assert (claimed.points, claimed.stages) == (balance.STAGE_1_RESEARCH_POINTS, (1,))
     assert fresh(player).research_points == COMMON + balance.STAGE_1_RESEARCH_POINTS
@@ -152,17 +153,18 @@ def test_claiming_a_challenge_then_the_stage(player, in_game):
 def test_claiming_all_gives_challenges_and_stages_in_order(player, in_game):
     bulbasaur, ivysaur = in_game
     obtain(player, ivysaur)
-    for nature in ("attack", "speed", "defense"):
-        obtain(player, bulbasaur, nature)
+    natures = ("attack", "speed", "defense", "hp", "special_attack", "special_defense")
+    for time in range(10):  # obtain-10, natures-3, natures-6, and the family
+        obtain(player, bulbasaur, natures[time % 6])
     owned = OwnedPokemon.objects.get(player=player, species=bulbasaur)
     OwnedPokemon.objects.filter(pk=owned.pk).update(level=30)
     owned.refresh_from_db()
-    research.record(player, [research.level_event(owned)])  # 5 challenges done in all
+    research.record(player, [research.level_event(owned)])  # and both levels: 6 in all
 
     claimed = claim(player, bulbasaur, "all")
     assert claimed.stages == (1, 2)
     assert claimed.points == (
-        5 * COMMON + balance.STAGE_1_RESEARCH_POINTS + balance.STAGE_2_RESEARCH_POINTS
+        6 * COMMON + balance.STAGE_1_RESEARCH_POINTS + balance.STAGE_2_RESEARCH_POINTS
     )
     assert claimed.candies == balance.STAGE_2_CANDIES
     candies = CandyStock.objects.get(player=player, family=bulbasaur.evolution_chain).amount
@@ -240,8 +242,8 @@ def test_a_save_made_before_the_research_is_set_up_from_its_state(player, in_gam
     player.refresh_from_db()
 
     sync_research(player)
-    assert progress(player, "dex:bulbasaur:obtain-1") == 1  # owned: obtained once at least
-    assert progress(player, "dex:bulbasaur:obtain-2") == 1  # the rest was never counted
+    # Owned: obtained once at least (the rest was never counted)
+    assert progress(player, "dex:bulbasaur:obtain-10") == 1
     assert progress(player, "dex:bulbasaur:level-1") == 15  # level 18: done (capped)
     assert progress(player, "dex:bulbasaur:natures-3") == 3
     assert progress(player, "dex:ivysaur:family") == 2
@@ -259,8 +261,11 @@ def test_new_saves_need_no_set_up(client, bulbasaur):
 
 def test_claiming_a_challenge_fills_the_stage_bar_from_where_it_was(client, in_game):
     bulbasaur, _ = in_game
-    client.get("/ranch/")  # Bulbasaur, a starter: some of its challenges are done
+    client.get("/ranch/")  # Bulbasaur, a starter
+    player = Player.objects.get()
+    for nature in ("speed", "defense", "attack"):  # natures-3 done
+        obtain(player, bulbasaur, nature)
     url = reverse("pokedex:claim", args=[bulbasaur.number])
-    html = client.post(url, {"what": "obtain-1"}, **HTMX).content.decode()
-    # The bar of the stages counts the claimed challenges: 1 of 10, from 0
-    assert re.search(r'class="fill fill-from" style="width: 10%; --from: 0%"', html)
+    html = client.post(url, {"what": "natures-3"}, **HTMX).content.decode()
+    # The bar of the stages counts the claimed challenges: 1 of 9, from 0
+    assert re.search(r'class="fill fill-from" style="width: 11%; --from: 0%"', html)

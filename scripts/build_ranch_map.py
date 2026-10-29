@@ -3,7 +3,8 @@ Build the Ranch map (top-down, Pokémon FireRed/LeafGreen tiles).
 
 The layout: a clearing closed by firs, the entrance on the left, a path
 crossing the screen to the ranch (the Four Island Day Care) on the right,
-two ponds, tall grass and simple props. Tiles and drawing tools come from
+Professor Oak's lab (Pallet Town) above the path, two ponds, tall grass and
+simple props. Tiles and drawing tools come from
 mapkit.py; the colours are warmed up towards HeartGold/SoulSilver.
 
 Usage:
@@ -36,19 +37,29 @@ from mapkit import (
 MAILBOX = [("pallet", 4, 6), ("pallet", 4, 7)]  # top, then bottom
 # The Four Island Day Care: 4 x 4 tiles (the top row is the ridge of the roof)
 DAY_CARE = ("four", 11, 10)  # its top-left tile in the source
+# Professor Oak's lab of Pallet Town: 7 x 5 tiles, its door in the middle of
+# the bottom row
+LAB_SOURCE = ("pallet", 13, 9)  # its top-left tile in the source
+LAB_SIZE = (7, 5)
 
 # --- Layout -------------------------------------------------------------------------
 ENTRANCE_ROWS = (12, 13)  # the path enters on the left edge
 # The clearing spans cols 4 to 35, between the two thick borders of firs
 HOUSE = (30, 3)  # top-left tile of the ranch (4 x 4 tiles)
 DOOR_COL = HOUSE[0] + 1
-POND_BOX = (16, 4, 21, 7)  # col0, row0, col1, row1 (inclusive)
+POND_BOX = (12, 4, 17, 7)  # col0, row0, col1, row1 (inclusive)
+# The lab, between the pond and the yard: its door opens onto the path, by a
+# short piece of path (keep in step with the Ranch page, which makes it
+# clickable)
+LAB = (19, 6)  # its top-left tile
+LAB_DOOR_COL = LAB[0] + 3
+LAB_SIGN_AT = (LAB[0] + 5, LAB[1] + 5)
 TALL_GRASS_BOXES = [(5, 3, 9, 6), (6, 16, 11, 18), (16, 16, 20, 18)]
 FLOWER_SPOTS = [
-    (12, 4),
-    (13, 5),
+    (11, 4),
+    (11, 6),
     (12, 9),
-    (22, 9),
+    (18, 9),
     (21, 2),
     (26, 19),
     (14, 17),
@@ -60,7 +71,7 @@ SMALL_POND_AT = (22, 15)  # top-left tile of the second, smaller pond
 # Firs: (col, row, count) = a stack of `count` firs whose top tile is at (col, row)
 FIRS = [
     (25, 3, 1),  # outside the yard, on the left of the house
-    (22, 5, 1),  # next to the big pond
+    (19, 3, 1),  # next to the big pond, above the lab
     (13, 14, 1),
     (24, 15, 1),  # next to the small pond
     # a grove: three stacks side by side, at staggered heights
@@ -68,8 +79,8 @@ FIRS = [
     (29, 14, 2),
     (31, 15, 2),
 ]
-BUSH_SPOTS = [(10, 3), (10, 4), (4, 14), (4, 15), (24, 11), (34, 12), (35, 12), (35, 13), (14, 9)]
-PLANT_SPOTS = [(14, 6), (25, 9), (12, 19)]
+BUSH_SPOTS = [(10, 3), (10, 4), (4, 14), (4, 15), (19, 11), (34, 12), (35, 12), (35, 13), (14, 9)]
+PLANT_SPOTS = [(11, 8), (26, 11), (12, 19)]
 # Yard of the ranch: a fence on its left and bottom, open where the path comes in
 YARD_FENCE_COL, YARD_FENCE_ROW = HOUSE[0] - 3, HOUSE[1] + 6
 YARD_GATE = range(DOOR_COL - 1, DOOR_COL + 2)  # the path goes through here
@@ -83,10 +94,15 @@ FEEDER_PATCH = (6, 8, 8, 10)
 
 
 def in_path(col, row):
-    """Path cells: the band from the entrance to the ranch, then up to the door."""
+    """
+    Path cells: the band from the entrance to the ranch, then up to its door,
+    and the short way up to the lab's door.
+    """
     horizontal = row in ENTRANCE_ROWS and col <= DOOR_COL + 1
     vertical = DOOR_COL - 1 <= col <= DOOR_COL + 1 and HOUSE[1] + 5 <= row <= ENTRANCE_ROWS[1]
-    return horizontal or vertical or (col < 0 and row in ENTRANCE_ROWS)  # runs off the map
+    lab_way = LAB_DOOR_COL - 1 <= col <= LAB_DOOR_COL + 1 and row == LAB[1] + LAB_SIZE[1]
+    off_map = col < 0 and row in ENTRANCE_ROWS  # the path runs off the map
+    return horizontal or vertical or lab_way or off_map
 
 
 def build() -> MapCanvas:
@@ -117,6 +133,17 @@ def build() -> MapCanvas:
     # Mailbox and notice board on each side of the front wall. Pallet Town's grass
     # is a shade lighter than ours: its colours become transparent around the mailbox.
     pallet_grass = set(tile("pallet", 4, 5).getdata())
+
+    # Professor Oak's lab, its Pallet Town grass made transparent too (above the
+    # roof: the grass just above the lab in the source, a dotted shade), and its
+    # sign on the right of the way to its door
+    source, col0, row0 = LAB_SOURCE
+    lab_grass = pallet_grass | set(tile(source, col0 + 3, row0 - 1).getdata())
+    for dy in range(LAB_SIZE[1]):
+        for dx in range(LAB_SIZE[0]):
+            piece = key_out(tile(source, col0 + dx, row0 + dy), lab_grass)
+            canvas.put(piece, LAB[0] + dx, LAB[1] + dy)
+    canvas.put_tile(SIGN, *LAB_SIGN_AT)
     for dy, spec in enumerate(MAILBOX):
         canvas.put(key_out(tile(*spec), pallet_grass), MAILBOX_AT[0], MAILBOX_AT[1] + dy)
     canvas.put_tile(SIGN, *SIGN_AT)

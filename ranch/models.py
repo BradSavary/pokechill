@@ -175,7 +175,7 @@ class ObjectiveProgress(models.Model):
 
     A row only exists once the objective moved. The objectives themselves are
     not stored: they are built from the species data (game.challenges), and
-    found here by their key, e.g. "dex:pidgey:obtain-2".
+    found here by their key, e.g. "dex:pidgey:obtain-10".
     """
 
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="objectives")

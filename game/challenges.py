@@ -62,7 +62,7 @@ class ChallengeSpecies:
 
 @dataclass(frozen=True)
 class Challenge:
-    id: str  # "obtain-2": unique within the species, used by "skip"
+    id: str  # "obtain-10": unique within the species, used by "skip"
     objective: Objective
     text: str  # shown on the Pokédex entry
 
@@ -111,10 +111,14 @@ def level_targets(min_level: int) -> list[int]:
 
 
 def generic_challenges(species: ChallengeSpecies) -> list[Challenge]:
-    """The challenges every species has (8 to 10, depending on its family)."""
+    """
+    The challenges every species has (8 or 9, depending on its family). Each
+    one is named by its target ("obtain-10", "natures-6"): the name stays the
+    same if the tiers are tuned, so the progress saved still matches it.
+    """
     challenges = [
-        _challenge(species, f"obtain-{tier}", OBTAINED, times)
-        for tier, times in enumerate(balance.CHALLENGE_OBTAIN_TIERS[species.rarity], start=1)
+        _challenge(species, f"obtain-{times}", OBTAINED, times)
+        for times in balance.CHALLENGE_OBTAIN_TIERS[species.rarity]
     ]
     challenges += [
         _challenge(species, f"level-{tier}", LEVEL, level)
