@@ -32,10 +32,12 @@ def test_every_species_has_8_to_10_generic_challenges():
 
 def test_generic_challenges_of_a_common_species():
     texts = [challenge.text for challenge in generic_challenges(PIDGEY)]
+    # The tiers come from the balance (they may be tuned)
+    _, second, third = balance.CHALLENGE_OBTAIN_TIERS["common"]
     assert texts == [
         "Obtain it once",
-        "Obtain it 5 times",
-        "Obtain it 10 times",
+        f"Obtain it {second} times",
+        f"Obtain it {third} times",
         "Reach level 15",
         "Reach level 30",
         "Unlock 3 natures",

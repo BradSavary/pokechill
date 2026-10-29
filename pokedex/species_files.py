@@ -12,10 +12,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from game import balance
+from game.challenges import ChallengeError, validate_custom
 from game.conditions import ConditionError, validate
 
 REQUIRED_KEYS = {"species", "rarity", "min_level"}
-OPTIONAL_KEYS = {"conditions", "notes"}
+OPTIONAL_KEYS = {"conditions", "challenges", "notes"}
 
 
 class SpeciesFileError(ValueError):
@@ -34,6 +35,7 @@ class SpeciesData:
     rarity: str
     min_level: int
     conditions: dict | None
+    challenges: dict  # its own challenges: {"add": [...], "skip": [...]} or {}
 
 
 def parse_species_data(raw: object) -> SpeciesData:
@@ -66,9 +68,21 @@ def parse_species_data(raw: object) -> SpeciesData:
         except ConditionError as error:
             errors.append(f"invalid conditions: {error}")
 
+    challenges = raw.get("challenges", {})
+    try:
+        validate_custom(challenges)
+    except ChallengeError as error:
+        errors.append(f"invalid challenges: {error}")
+
     if errors:
         raise SpeciesFileError(errors)
-    return SpeciesData(slug=raw["species"], rarity=rarity, min_level=level, conditions=conditions)
+    return SpeciesData(
+        slug=raw["species"],
+        rarity=rarity,
+        min_level=level,
+        conditions=conditions,
+        challenges=challenges,
+    )
 
 
 def read_species_files(directory: Path) -> list[SpeciesData]:

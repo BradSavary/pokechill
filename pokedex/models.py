@@ -11,6 +11,7 @@ from django.templatetags.static import static
 
 from game import balance, experience
 from game.arrivals import SpeciesRule
+from game.challenges import ChallengeSpecies
 
 # Rarity values come from the game engine, the single source of truth:
 # ("very_rare", "Very rare"), ("legendary", "Legendary")...
@@ -133,6 +134,9 @@ class Species(models.Model):
     min_level = models.PositiveSmallIntegerField(default=1)
     # Condition tree evaluated by game.conditions; null = may arrive any time
     arrival_conditions = models.JSONField(null=True, blank=True)
+    # Its own Pokédex challenges, on top of the generic ones (game.challenges):
+    # {"add": [...], "skip": [...]}, empty for most species
+    custom_challenges = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["number"]
@@ -148,6 +152,20 @@ class Species(models.Model):
             rarity=self.rarity,
             conditions=self.arrival_conditions,
             types=tuple(t.slug for t in self.types),  # for the feeder bonus
+        )
+
+    def challenge_species(self, family_size: int) -> ChallengeSpecies:
+        """
+        What game.challenges needs to know about this species. `family_size`
+        (species in its family) comes from the caller, who counts it for many
+        species in one query.
+        """
+        return ChallengeSpecies(
+            slug=self.slug,
+            rarity=self.rarity,
+            min_level=self.min_level,
+            family=str(self.evolution_chain_id),
+            family_size=family_size,
         )
 
     # --- Derived values -----------------------------------------------------

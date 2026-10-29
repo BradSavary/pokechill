@@ -18,7 +18,7 @@ DATA_DIR = settings.BASE_DIR / "data" / "species"
 
 
 class Command(BaseCommand):
-    help = "Load rarity, level and arrival conditions from data/species/*.json."
+    help = "Load rarity, level, arrival conditions and challenges from data/species/*.json."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -44,7 +44,11 @@ class Command(BaseCommand):
         with transaction.atomic():
             # A species whose file was removed is no longer available
             Species.objects.update(
-                is_available=False, rarity="", min_level=1, arrival_conditions=None
+                is_available=False,
+                rarity="",
+                min_level=1,
+                arrival_conditions=None,
+                custom_challenges={},
             )
             for data in files:
                 species = species_by_slug[data.slug]
@@ -52,9 +56,10 @@ class Command(BaseCommand):
                 species.rarity = data.rarity
                 species.min_level = data.min_level
                 species.arrival_conditions = data.conditions
+                species.custom_challenges = data.challenges
             Species.objects.bulk_update(
                 [species_by_slug[data.slug] for data in files],
-                ["is_available", "rarity", "min_level", "arrival_conditions"],
+                ["is_available", "rarity", "min_level", "arrival_conditions", "custom_challenges"],
             )
 
         self.stdout.write(self.style.SUCCESS(f"Loaded {len(files)} available species."))

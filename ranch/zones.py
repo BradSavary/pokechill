@@ -16,6 +16,7 @@ from django.utils import timezone
 from game import balance, experience
 from game.zones import ZONE_OF_RESOURCE, Worker, work
 
+from . import research
 from .models import OwnedPokemon, Player, PlayerZone, ResourceStock
 
 
@@ -56,6 +57,7 @@ def work_zones(player: Player, hours_elapsed: int) -> None:
     """
     if hours_elapsed <= 0:
         return
+    events = []
     for zone in player.zones.select_for_update():
         workers = workers_of(zone)
         done = work(zone.spec, [as_worker(p) for p in workers], zone.hours_worked, hours_elapsed)
@@ -69,6 +71,9 @@ def work_zones(player: Player, hours_elapsed: int) -> None:
             OwnedPokemon.objects.filter(pk=pokemon.pk).update(
                 pending_experience=F("pending_experience") + gained
             )
+        events += research.work_events(zone, workers, done)
+    # Hours worked and resources gathered count for each worker's challenges
+    research.record(player, events)
 
 
 # --- Collection ------------------------------------------------------------------
@@ -122,7 +127,7 @@ def collect(zone: PlayerZone) -> Harvest:
     if resource:
         add_resource(zone.player, zone.spec.resource, resource)
 
-    growths = []
+    growths, events = [], []
     for pokemon in workers_of(zone):
         gained, old_level = pokemon.pending_experience, pokemon.level
         pokemon.level, pokemon.experience = experience.add_experience(
@@ -131,6 +136,9 @@ def collect(zone: PlayerZone) -> Harvest:
         pokemon.pending_experience = 0
         pokemon.save(update_fields=["level", "experience", "pending_experience"])
         growths.append(Growth(pokemon, gained, old_level))
+        if pokemon.level > old_level:
+            events.append(research.level_event(pokemon))
+    research.record(zone.player, events)  # levels reached count for the challenges
     return Harvest(zone=zone, resource=resource, hours=hours, growths=growths)
 
 

@@ -37,6 +37,11 @@ class Player(models.Model):
     # object's keys. A small JSON value rather than a table: the engine works
     # on this very list (see game.arrivals.catch_up).
     feeder = models.JSONField(default=list, blank=True)
+    # Earned by the Pokédex challenges, spent in the skill tree
+    research_points = models.PositiveIntegerField(default=0)
+    # False for the saves made before the research (step 3): their challenges
+    # are set up from their current state at their next visit (ranch.research)
+    research_synced = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return f"Player of {self.user.username}"
@@ -132,6 +137,9 @@ class OwnedPokemon(models.Model):
     unlocked_natures = models.JSONField(default=list)
     shiny_unlocked = models.BooleanField(default=False)
     obtained_at = models.DateTimeField(auto_now_add=True)
+    # Research stage of its species already rewarded (0 to 3): the rewards of
+    # a stage are given once, when the challenges first reach it
+    research_stage = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ["species__number"]
@@ -154,6 +162,30 @@ class OwnedPokemon(models.Model):
 
     def __str__(self) -> str:
         return f"{self.species.name} of {self.player.user.username}"
+
+
+class ObjectiveProgress(models.Model):
+    """
+    The player's progress on one objective (a Pokédex challenge for now).
+
+    A row only exists once the objective moved. The objectives themselves are
+    not stored: they are built from the species data (game.challenges), and
+    found here by their key, e.g. "dex:pidgey:obtain-2".
+    """
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="objectives")
+    key = models.CharField(max_length=80)
+    progress = models.PositiveIntegerField(default=0)
+    # When it was completed (null: not yet). Kept even if its target changes.
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["player", "key"], name="one_progress_per_objective")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.key}: {self.progress}"
 
 
 class ResourceStock(models.Model):

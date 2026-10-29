@@ -2,6 +2,7 @@ from functools import wraps
 
 from accounts.services import login_as_new_guest
 
+from .research import sync_research
 from .services import catch_up_player, ensure_player, mark_seen
 
 
@@ -22,6 +23,7 @@ def player_required(view):
         if not request.user.is_authenticated:
             login_as_new_guest(request)
         request.player = ensure_player(request.user)
+        sync_research(request.player)  # once, for a save made before step 3
         mark_seen(request.player)
         # Every visit to a game page replays the hours since the last one
         request.catch_up = catch_up_player(request.player)

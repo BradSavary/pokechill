@@ -16,6 +16,7 @@ from game.clock import ONE_HOUR, floor_to_hour
 from game.collection import Obtention, OwnedState, resolve_obtention
 from pokedex.models import Species
 
+from . import research
 from .models import Arrival, CandyStock, OwnedPokemon, Player
 from .zones import give_starting_zones, work_zones
 
@@ -66,7 +67,8 @@ def receive_pokemon(player: Player, species: Species, *, nature: str, is_shiny: 
     The single entry point for obtaining a Pokémon (starter, arrival, gift...).
 
     The game rule lives in game.collection.resolve_obtention; this function
-    loads the current state, asks the rule, and saves its outcome.
+    loads the current state, asks the rule, and saves its outcome. Then the
+    Pokédex challenges hear of it (ranch.research).
     """
     # select_for_update locks the row until the end of the transaction, so two
     # simultaneous requests can't both convert the same catch
@@ -75,23 +77,25 @@ def receive_pokemon(player: Player, species: Species, *, nature: str, is_shiny: 
     outcome = resolve_obtention(state, species.rarity, nature, is_shiny)
 
     if outcome.is_new:
-        OwnedPokemon.objects.create(
+        owned = OwnedPokemon.objects.create(
             player=player,
             species=species,
             level=species.min_level,
             unlocked_natures=[nature],
             shiny_unlocked=is_shiny,
         )
-        return outcome
+    else:
+        owned.species = species  # already loaded: the challenges need it, no new query
+        if outcome.new_nature:
+            owned.unlocked_natures = sorted([*owned.unlocked_natures, outcome.new_nature])
+        owned.shiny_unlocked = owned.shiny_unlocked or outcome.new_shiny
+        owned.save(update_fields=["unlocked_natures", "shiny_unlocked"])
 
-    if outcome.new_nature:
-        owned.unlocked_natures = sorted([*owned.unlocked_natures, outcome.new_nature])
-    owned.shiny_unlocked = owned.shiny_unlocked or outcome.new_shiny
-    owned.save(update_fields=["unlocked_natures", "shiny_unlocked"])
+        stock, _ = CandyStock.objects.get_or_create(player=player, family=species.evolution_chain)
+        # F() makes the database do the addition: no lost update if two requests race
+        CandyStock.objects.filter(pk=stock.pk).update(amount=F("amount") + outcome.candies)
 
-    stock, _ = CandyStock.objects.get_or_create(player=player, family=species.evolution_chain)
-    # F() makes the database do the addition: no lost update if two requests race
-    CandyStock.objects.filter(pk=stock.pk).update(amount=F("amount") + outcome.candies)
+    research.record(player, research.obtention_events(owned, is_new=outcome.is_new, shiny=is_shiny))
     return outcome
 
 

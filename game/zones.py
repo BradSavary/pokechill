@@ -104,6 +104,9 @@ class Work:
     hours: int  # hours actually worked (the storage may fill up before the end)
     resource_centi: int  # resource made, in hundredths
     experience: tuple[int, ...]  # experience of each worker, in the given order
+    # Resource made by each worker, in hundredths (same order): their sum is
+    # resource_centi. The Pokédex challenges count what each one gathered.
+    resources: tuple[int, ...] = ()
 
 
 def work(zone: Zone, workers: list[Worker], hours_done: int, hours_elapsed: int) -> Work:
@@ -117,8 +120,10 @@ def work(zone: Zone, workers: list[Worker], hours_done: int, hours_elapsed: int)
     if not workers:
         return Work(hours=0, resource_centi=0, experience=())
     hours = max(0, min(hours_elapsed, balance.ZONE_WORK_HOURS_CAP - hours_done))
+    resources = tuple(hours * production_per_hour(zone, w) for w in workers)
     return Work(
         hours=hours,
-        resource_centi=hours * sum(production_per_hour(zone, w) for w in workers),
+        resource_centi=sum(resources),
         experience=tuple(hours * experience_per_hour(zone, w) for w in workers),
+        resources=resources,
     )

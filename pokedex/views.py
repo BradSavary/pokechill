@@ -19,6 +19,7 @@ from django.shortcuts import get_object_or_404, render
 
 from game.moves import default_moves
 from ranch import tutorial
+from ranch.research import sync_research
 from ranch.services import candies_of, collection_of, player_for
 
 from .models import Species, SpeciesMove, Type
@@ -84,6 +85,8 @@ def dex_context(request) -> dict:
     set of species ids the player owns.
     """
     player = player_for(request.user)
+    if player:
+        sync_research(player)  # once, for a save made before step 3
     collection = collection_of(player) if player else None
     return {
         "player": player,
