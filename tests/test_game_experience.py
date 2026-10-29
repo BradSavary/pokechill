@@ -6,7 +6,9 @@ from game.experience import (
     CURVES,
     MAX_LEVEL,
     add_experience,
+    candies_to_next_level,
     candy_experience,
+    feed_candies,
     level_for,
     total_experience,
 )
@@ -81,3 +83,20 @@ def test_a_candy_is_worth_hours_of_work_divided_by_the_stage():
     # Worth more at higher levels, so candies stay useful
     assert candy_experience(50, evolution_stage=3) == 113
     assert candy_experience(1, evolution_stage=3) >= 1
+
+
+def test_candies_to_the_next_level_follow_the_stage():
+    # Medium curve, level 10 -> 11: 1331 - 1000 = 331 experience to earn
+    assert candies_to_next_level("medium", 10, 0, evolution_stage=1) == 4  # 100 each
+    assert candies_to_next_level("medium", 10, 0, evolution_stage=2) == 7  # 50 each
+    assert candies_to_next_level("medium", 10, 300, evolution_stage=1) == 1  # almost there
+    assert candies_to_next_level("medium", MAX_LEVEL, 0, evolution_stage=1) == 0
+
+
+def test_feeding_candies_levels_up_and_stops_at_the_maximum():
+    level, progress, eaten = feed_candies("medium", 10, 0, 1, candies=4)
+    assert (level, eaten) == (11, 4)
+    assert progress == 4 * 100 - 331  # what is left above level 11
+    level, progress, eaten = feed_candies("medium", 99, 0, 1, candies=10_000)
+    assert (level, progress) == (MAX_LEVEL, 0)
+    assert eaten < 10_000  # the rest is not eaten

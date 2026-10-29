@@ -3,8 +3,10 @@
   a white disc holding a coloured icon. The name only shows on hover (title)
   and is kept for screen readers (sr-only).
   Parameters: name, label, color (text-menu-* class), url (none for a locked
-  entry), icon (file in templates/icons/, defaults to the name). The entry is
-  active when the page's `active_tab` equals its name.
+  entry), icon (file in templates/icons/, defaults to the name), badge (shows
+  a "!": something waits there, e.g. rewards to claim). The entry is active
+  when the page's `active_tab` equals its name. The "!" always exists, hidden
+  when there is nothing: an HTMX answer can then show or hide it (its id).
 {% endcomment %}
 {% with icon|default:name as icon_name %}
 {% with "icons/"|add:icon_name|add:".svg" as icon_template %}
@@ -13,6 +15,8 @@
        {% if active_tab == name %}aria-current="page"{% endif %}>
       <span class="menu-disc {{ color }}">{% include icon_template %}</span>
       <span class="sr-only">{{ label }}</span>
+      <span id="menu-badge-{{ name }}" class="menu-badge" {% if not badge %}hidden{% endif %}
+            title="Rewards to claim">!</span>
     </a>
   {% else %}
     <span title="{{ label }} (coming soon)" class="menu-item is-locked">

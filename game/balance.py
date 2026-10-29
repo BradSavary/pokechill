@@ -44,11 +44,11 @@ TUTORIAL_FEEDER_GIFT = ("berry", 10)
 
 # Candies of the evolution family given when an owned species arrives again
 CANDIES_PER_DUPLICATE = {
-    "common": 3,
-    "uncommon": 5,
-    "rare": 10,
-    "very_rare": 20,
-    "legendary": 50,
+    "common": 5,
+    "uncommon": 10,
+    "rare": 20,
+    "very_rare": 50,
+    "legendary": 100,
 }
 
 # --- Zones -------------------------------------------------------------------

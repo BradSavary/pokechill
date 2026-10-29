@@ -9,7 +9,7 @@ from datetime import timedelta
 import pytest
 from django.urls import reverse
 
-from pokedex.models import Move, SpeciesMove
+from pokedex.models import Species
 from ranch.models import Player
 
 pytestmark = pytest.mark.django_db
@@ -57,11 +57,8 @@ def test_every_response_tells_its_server_timing(client):
 def test_the_pokedex_loads_an_entry_in_a_fixed_number_of_queries(
     guest, bulbasaur, django_assert_max_num_queries
 ):
-    # The entry's moves and types come with the species (select_related,
-    # prefetch_related): one more move must not cost one more query
-    tackle = Move.objects.create(slug="tackle", name="Tackle", type=bulbasaur.primary_type, pp=35)
-    growl = Move.objects.create(slug="growl", name="Growl", type=bulbasaur.primary_type, pp=40)
-    for move in (tackle, growl):
-        SpeciesMove.objects.create(species=bulbasaur, move=move, learn_method="level-up", level=1)
-    with django_assert_max_num_queries(11):
+    # An entry in the game, with its challenges: its types come with the
+    # species (select_related), its challenges' progress in a single query
+    Species.objects.filter(pk=bulbasaur.pk).update(is_available=True, rarity="common")
+    with django_assert_max_num_queries(12):
         guest.get(reverse("pokedex:index"))

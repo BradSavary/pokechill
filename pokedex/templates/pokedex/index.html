@@ -15,13 +15,18 @@
       <div class="flex items-center justify-between pt-3 pr-4">
         <h1 class="title-band">Kanto Pokédex</h1>
         {% if owned_count is not None %}
-          <p><span class="text-muted">Owned</span> <span class="text-xl font-bold">{{ owned_count }} / {{ total_count }}</span></p>
+          <p class="flex items-center gap-10 text-xl">
+            {# Its id: a claim (HTMX) replaces it with the new total; the gap leaves room for the "+N" that rises #}
+            <span id="research-points">{% include "_research_points.html" with amount=research_points %}</span>
+            <span><span class="text-base text-muted">Owned</span> <span class="font-bold">{{ owned_count }} / {{ total_count }}</span></span>
+          </p>
         {% endif %}
       </div>
 
-      <div class="grid min-h-0 flex-1 grid-cols-5 gap-3 p-3">
-        {# --- Left (3/5): entry of the selected species --- #}
-        <section id="entry" class="col-span-3 min-h-0 overflow-y-auto pr-1" aria-live="polite">
+      {# The entry takes the room; the list keeps a fixed, narrow column, set apart #}
+      <div class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_18rem] gap-4 p-3 phone:grid-cols-[minmax(0,1fr)_13rem]">
+        {# --- Left: entry of the selected species --- #}
+        <section id="entry" class="flex min-h-0 flex-col overflow-x-hidden overflow-y-auto pr-1" aria-live="polite">
           {% if species %}
             {% include "pokedex/_entry.html" %}
           {% else %}
@@ -29,8 +34,8 @@
           {% endif %}
         </section>
 
-        {# --- Right (2/5): search, filter and species list --- #}
-        <section id="species-list-section" class="col-span-2 flex min-h-0 flex-col gap-2" aria-label="Species list">
+        {# --- Right: search, filter and species list, in their own box --- #}
+        <section id="species-list-section" class="flex min-h-0 flex-col gap-2 rounded-2xl bg-sky p-2" aria-label="Species list">
           {% comment %}
             Typing in the search box or changing the type re-renders only the list:
             hx-get sends the form fields, hx-target says where to put the answer.
@@ -40,9 +45,9 @@
                 hx-get="{% url 'pokedex:list' %}"
                 hx-trigger="input changed delay:250ms from:#dex-search, change from:#dex-type"
                 hx-target="#species-list">
-            <div class="flex gap-2">
+            <div class="flex flex-col gap-1.5">
               <input id="dex-search" type="search" name="q" value="{{ request.GET.q }}"
-                     placeholder="Search a Pokémon…" autocomplete="off" class="field min-w-0 flex-1 text-sm">
+                     placeholder="Search a Pokémon…" autocomplete="off" class="field min-w-0 text-sm">
               <select id="dex-type" name="type" class="field text-sm">
                 <option value="">All types</option>
                 {% for type in types %}

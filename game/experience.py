@@ -66,3 +66,30 @@ def candy_experience(level: int, evolution_stage: int) -> int:
     """
     hours = balance.CANDY_WORK_HOURS * base_experience_per_hour(level)
     return max(1, hours // evolution_stage)
+
+
+def feed_candies(
+    curve: str, level: int, progress: int, evolution_stage: int, candies: int
+) -> tuple[int, int, int]:
+    """
+    Give candies one by one: each is worth the experience of the level the
+    Pokémon has when it eats it (a candy given after a level up is worth a
+    little more). Stops at MAX_LEVEL. Returns (level, progress, candies eaten).
+    """
+    eaten = 0
+    while eaten < candies and level < MAX_LEVEL:
+        gained = candy_experience(level, evolution_stage)
+        level, progress = add_experience(curve, level, progress, gained)
+        eaten += 1
+    return level, progress, eaten
+
+
+def candies_to_next_level(curve: str, level: int, progress: int, evolution_stage: int) -> int:
+    """Candies needed to reach the next level (0 at MAX_LEVEL)."""
+    if level >= MAX_LEVEL:
+        return 0
+    needed, candies = total_experience(curve, level + 1) - total_experience(curve, level), 0
+    while progress < needed:
+        progress += candy_experience(level, evolution_stage)
+        candies += 1
+    return candies

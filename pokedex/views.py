@@ -14,15 +14,24 @@ The player's data comes from the ranch app: views may combine apps, while
 the pokedex models never depend on ranch (no circular dependency).
 """
 
-from django.db.models import Prefetch, Q
-from django.shortcuts import get_object_or_404, render
+from django.db.models import Q
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 
-from game.moves import default_moves
+from game import experience
 from ranch import tutorial
-from ranch.research import sync_research
-from ranch.services import candies_of, collection_of, player_for
+from ranch.research import (
+    ClaimError,
+    claim,
+    entry_research,
+    species_with_rewards,
+    sync_research,
+)
+from ranch.services import CandyError, candies_of, collection_of, player_for, use_candies
 
-from .models import Species, SpeciesMove, Type
+from .models import Species, Type
 
 
 def is_htmx(request) -> bool:
@@ -61,15 +70,11 @@ def filter_species(params, known_ids: set[int] | None = None):
 
 def entries():
     """
-    Species with everything their entry displays, in two SQL queries: the
-    species with its types and family (joins), then its learnset with the
-    moves and their types. Without it, each move and each type shown would
-    cost a query of its own (the "N+1 queries" problem).
+    Species with everything their entry displays, in one SQL query: the
+    species with its types and family (joins). Without it, each type shown
+    would cost a query of its own (the "N+1 queries" problem).
     """
-    learnset = SpeciesMove.objects.select_related("move__type")
-    return Species.objects.select_related(
-        "primary_type", "secondary_type", "evolution_chain"
-    ).prefetch_related(Prefetch("learnset", queryset=learnset))
+    return Species.objects.select_related("primary_type", "secondary_type", "evolution_chain")
 
 
 def get_entry(number: int) -> Species:
@@ -87,44 +92,79 @@ def dex_context(request) -> dict:
     player = player_for(request.user)
     if player:
         sync_research(player)  # once, for a save made before step 3
+        request.player = player  # for the "!" of the menu (base.html)
     collection = collection_of(player) if player else None
     return {
         "player": player,
         "collection": collection,
         "owned_ids": set(collection) if collection is not None else None,
+        # Research stage of each owned species, for the stars of the list
+        "stages": {sid: owned.research_stage for sid, owned in (collection or {}).items()},
+        # Species with rewards to claim, for the "!" of the list
+        "with_rewards": species_with_rewards(player, collection) if player else set(),
     }
 
 
-def entry_context(species: Species, dex: dict) -> dict:
-    """Template values of a species entry."""
+# The actions of an entry: each one focuses the entry on one thing (the
+# buttons at its bottom). None: the default view, with the level and the
+# candies of the player's Pokémon.
+VIEWS = ("challenges",)
+
+
+def experience_percent(species: Species, owned) -> int:
+    """How full its experience bar is (0 to 100)."""
+    curve = species.growth_rate
+    if owned.level >= experience.MAX_LEVEL:
+        return 100
+    needed = experience.total_experience(curve, owned.level + 1) - experience.total_experience(
+        curve, owned.level
+    )
+    return 100 * owned.experience // needed
+
+
+def training_context(species: Species, owned, candies: int) -> dict:
+    """The "Level & candies" action: the experience bar and what candies give."""
+    curve, stage = species.growth_rate, species.evolution_stage
+    at_max = owned.level >= experience.MAX_LEVEL
+    needed = (
+        0
+        if at_max
+        else experience.total_experience(curve, owned.level + 1)
+        - experience.total_experience(curve, owned.level)
+    )
+    to_next = experience.candies_to_next_level(curve, owned.level, owned.experience, stage)
+    return {
+        "at_max": at_max,
+        "xp": owned.experience,
+        "xp_needed": needed,
+        "xp_percent": experience_percent(species, owned),
+        "candy_xp": experience.candy_experience(owned.level, stage),
+        "to_next": to_next,
+        "can_feed": not at_max and candies > 0,
+        "can_level": not at_max and 0 < to_next <= candies,
+        "missing": max(0, to_next - candies),  # candies lacking for the next level
+        "stage_multiplier": stage,
+    }
+
+
+def entry_context(species: Species, dex: dict, view: str | None = None) -> dict:
+    """Template values of a species entry, focused on the action `view`."""
     owned = dex["collection"].get(species.id) if dex["player"] else None
-    # The player's Pokémon knows the moves of its level; the public catalogue
-    # shows the moves a species has when it arrives at the ranch
-    level = owned.level if owned else species.min_level
-    level_up = [
-        entry
-        for entry in species.learnset.all()
-        if entry.learn_method == SpeciesMove.LearnMethod.LEVEL_UP
-    ]
-    move_by_slug = {entry.move.slug: entry.move for entry in level_up}
-    known_moves = default_moves([(entry.level, entry.move.slug) for entry in level_up], level)
+    candies = candies_of(dex["player"], species.evolution_chain) if owned else 0
+    view = view if view in VIEWS else None
+    # Stats and moves are not shown yet: they only matter with the expeditions
     return {
         "species": species,
         # Shown in full for its owner, or in the public catalogue
         "known": dex["player"] is None or owned is not None,
         "owned": owned,
-        "candies": candies_of(dex["player"], species.evolution_chain) if owned else 0,
+        "is_visitor": dex["player"] is None,
+        "candies": candies,
         "owned_ids": dex["owned_ids"],
-        "moves": [move_by_slug[slug] for slug in known_moves],
-        "moves_level": level,
-        "stats": [
-            ("HP", species.hp),
-            ("Attack", species.attack),
-            ("Defense", species.defense),
-            ("Sp. Atk", species.special_attack),
-            ("Sp. Def", species.special_defense),
-            ("Speed", species.speed),
-        ],
+        "view": view,
+        "research": entry_research(dex["player"], species, owned),
+        # The default view of an owned species shows its level and candies
+        "training": training_context(species, owned, candies) if owned and not view else None,
     }
 
 
@@ -140,12 +180,15 @@ def render_page(request, species: Species | None):
         ).distinct(),
         "selected": species.number if species else None,
         "owned_ids": dex["owned_ids"],
+        "stages": dex["stages"],
+        "with_rewards": dex["with_rewards"],
+        "research_points": dex["player"].research_points if dex["player"] else None,
         "owned_count": len(dex["owned_ids"]) if dex["owned_ids"] is not None else None,
         "total_count": Species.objects.count(),
         **tutorial.context(dex["player"], "pokedex"),
     }
     if species:
-        context |= entry_context(species, dex)
+        context |= entry_context(species, dex, request.GET.get("view"))
     return render(request, "pokedex/index.html", context)
 
 
@@ -158,7 +201,8 @@ def species_detail(request, number: int):
     """Entry of one species: a fragment for HTMX, the full page otherwise."""
     species = get_entry(number)
     if is_htmx(request):
-        return render(request, "pokedex/_entry.html", entry_context(species, dex_context(request)))
+        context = entry_context(species, dex_context(request), request.GET.get("view"))
+        return render(request, "pokedex/_entry.html", context)
     return render_page(request, species)
 
 
@@ -172,6 +216,86 @@ def species_list(request):
         {
             "species_list": filter_species(request.GET, dex["owned_ids"]),
             "owned_ids": dex["owned_ids"],
+            "stages": dex["stages"],
+            "with_rewards": dex["with_rewards"],
             "selected": int(selected) if selected and selected.isdigit() else None,
         },
     )
+
+
+# --- Actions of an entry (POST): claiming rewards, giving candies ------------------------
+
+
+def entry_action(request, number: int, view: str | None, act) -> HttpResponse:
+    """
+    Run `act(player, species)` (a claim, candies...), then answer with the
+    entry focused on `view`. `act` returns what the entry shows of it (a
+    notice, the growth to animate...). With HTMX: the entry, plus the parts
+    of the page the action may change (the "!" of the menu and of the list,
+    the points), swapped "out of band". Without JavaScript: back to the
+    entry's page.
+    """
+    player = player_for(request.user)
+    if player is None:
+        raise Http404("No save")
+    species = get_entry(number)
+    shown = {}
+    try:
+        shown = act(player, species)
+    except (ClaimError, CandyError) as problem:
+        shown = {"error": str(problem)}
+    if not is_htmx(request):
+        url = reverse("pokedex:detail", args=[number])
+        return redirect(f"{url}?view={view}" if view else url)
+    dex = dex_context(request)
+    context = (
+        entry_context(species, dex, view)
+        | shown
+        | {
+            "research_points": dex["player"].research_points,
+            "s": species,  # the row of the list to refresh
+            "stages": dex["stages"],
+            "with_rewards": dex["with_rewards"],
+            "selected": number,
+        }
+    )
+    return render(request, "pokedex/_entry_action.html", context)
+
+
+@require_POST
+def claim_reward(request, number: int):
+    """Claim a reward of an entry (POST "what": a challenge id, "stage" or "all")."""
+
+    def act(player, species):
+        owned = collection_of(player).get(species.id)
+        # Where the bar of the stages was: it fills from there to its new place
+        bar_from = entry_research(player, species, owned)["bar_percent"] if owned else 0
+        claimed = claim(player, species, request.POST.get("what", ""))
+        # No notice (it would push the entry down): the points rise next to
+        # the total, the bar of the stages fills, the gift turns green
+        return {"bar_from": bar_from, "points_gained": claimed.points}
+
+    return entry_action(request, number, "challenges", act)
+
+
+@require_POST
+def give_candies(request, number: int):
+    """Give candies to the player's Pokémon (POST "count": a number, or "level")."""
+
+    def act(player, species):
+        count = request.POST.get("count", "")
+        wanted = None if count == "level" else int(count) if count.isdigit() else 0
+        before = collection_of(player)[species.id]
+        _, levels = use_candies(player, species, wanted)
+        # No notice: the level and the experience bar move on the entry
+        return {
+            "growth": {
+                "levels": levels,
+                # The levels passed, for the number that rolls (from the old one)
+                "rolled": list(range(before.level, before.level + levels + 1)),
+                # Where the bar starts from: empty after a level up
+                "xp_from": 0 if levels else experience_percent(species, before),
+            }
+        }
+
+    return entry_action(request, number, None, act)

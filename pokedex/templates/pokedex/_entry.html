@@ -1,98 +1,114 @@
 {% load ranch_extras %}
 {% comment %}
   Entry of one species (left pane). Rendered inside the full page, or alone
-  when HTMX asks for it after a click in the list.
-  known: shown in full (owned by the player, or public catalogue).
-  owned: the player's Pokémon of this species, if any.
-  moves: its current moves (computed, see game/moves.py); moves_level: their level.
+  when HTMX asks for it (a click in the list, an action button, a claim).
+
+  - known: shown in full (owned by the player, or public catalogue);
+    owned: the player's Pokémon of this species, if any.
+  - view: None, the default view (big sprite, identity, and for the
+    player's Pokémon its level and the candies of its family), or
+    "challenges" (its challenges, the bar of its stages and their gifts),
+    opened by the button at its bottom: a small header then leaves the room
+    to the challenges. Clicking the button again goes back.
+  - research: ranch.research.entry_research; training: pokedex.views.
+  - error: why the last action failed (nothing to claim, no candies...).
+    A success shows by itself: the points rise, the bars fill.
+  Stats, moves and the description are left out until they matter.
 {% endcomment %}
 {% if known %}
-<article class="flex flex-col gap-4">
+<article class="flex min-h-full flex-col gap-4">
 
-  {# --- Header: the sprite on its red stage, then name, types and player info --- #}
-  <header class="grid grid-cols-2 gap-4">
-    <div class="dex-stage aspect-[4/3]">
-      <span class="absolute size-56 text-white/20">{% include "icons/pokeball.svg" %}</span>
-      <img src="{{ species.sprite_url }}" alt="{{ species.name }}" width="160" height="160" class="pixelated relative size-40">
-    </div>
-
-    <div class="flex flex-col gap-2">
-      <p class="section-title self-start">No. {{ species.number|stringformat:"03d" }}</p>
-      <h2 class="text-3xl font-bold">{{ species.name }}</h2>
-      <p class="text-muted">{{ species.genus }}</p>
-      <div class="flex flex-wrap gap-2">
-        {% for type in species.types %}
-          {% include "pokedex/_type_badge.html" with type=type %}
-        {% endfor %}
-        {% if species.is_legendary %}<span class="type-label bg-accent px-3">Legendary</span>{% endif %}
+  {% if not view %}
+    {# --- Overview: the sprite on its red stage, identity, the player's Pokémon --- #}
+    {% comment %}
+      A square stage as tall as the identity beside it: bigger would make the
+      whole entry taller, and it must fit on a desktop screen.
+    {% endcomment %}
+    <header class="grid grid-cols-[auto_minmax(0,1fr)] gap-4">
+      <div class="dex-stage size-60">
+        <span class="absolute size-52 text-white/20">{% include "icons/pokeball.svg" %}</span>
+        <img src="{{ species.sprite_url }}" alt="{{ species.name }}" width="192" height="192" class="pixelated relative size-48">
       </div>
-      <p class="flex items-center gap-4">
-        <span><span class="text-muted">HT</span> {{ species.height_m }} m</span>
-        <span><span class="text-muted">WT</span> {{ species.weight_kg }} kg</span>
-        {# preload="none": the cry is only downloaded when played #}
-        <button type="button" onclick="this.nextElementSibling.play()" class="btn-secondary py-0.5">▶ Cry</button>
-        <audio src="{{ species.cry_url }}" preload="none"></audio>
-      </p>
 
+      <div class="flex flex-col gap-2">
+        <p class="section-title self-start">No. {{ species.number|stringformat:"03d" }}</p>
+        <h2 class="text-3xl font-bold">{{ species.name }}</h2>
+        <p class="text-muted">{{ species.genus }}</p>
+        <div class="flex flex-wrap gap-2">
+          {% for type in species.types %}
+            {% include "pokedex/_type_badge.html" with type=type %}
+          {% endfor %}
+          {% if species.is_legendary %}<span class="type-label bg-accent px-3">Legendary</span>{% endif %}
+        </div>
+        <p class="flex items-center gap-4">
+          <span><span class="text-muted">HT</span> {{ species.height_m }} m</span>
+          <span><span class="text-muted">WT</span> {{ species.weight_kg }} kg</span>
+        </p>
+
+        {% if owned %}
+          <dl class="mt-auto grid grid-cols-[auto_1fr] gap-x-4 rounded-xl bg-sky px-4 py-2">
+            <dt class="text-muted">Stage</dt>
+            <dd>
+              <span class="font-bold text-accent">{{ research.stage_name }}</span>
+              {% include "pokedex/_stage_mark.html" with stage=research.stage %}
+              <span class="text-muted">· {{ research.claimed_count }}/{{ research.total }}</span>
+            </dd>
+            <dt class="text-muted">Natures</dt>
+            <dd>{% for nature in owned.unlocked_natures %}{{ nature|nature_label }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+            {% if owned.shiny_unlocked %}<dt class="text-muted">Shiny</dt><dd class="text-accent">✦ Unlocked</dd>{% endif %}
+          </dl>
+        {% endif %}
+      </div>
+    </header>
+
+  {% else %}
+    {# --- An action: a small header, the room goes to the action --- #}
+    <header class="flex items-center gap-3 rounded-2xl bg-sky p-2">
+      <div class="dex-stage size-24 shrink-0 rounded-xl">
+        <img src="{{ species.sprite_url }}" alt="{{ species.name }}" width="96" height="96" class="pixelated relative size-24">
+      </div>
+      <div class="flex min-w-0 flex-col gap-1">
+        <p class="text-sm text-muted">No. {{ species.number|stringformat:"03d" }}</p>
+        <h2 class="flex items-center gap-2 text-2xl font-bold">
+          {{ species.name }} {% include "pokedex/_stage_mark.html" with stage=research.stage %}
+        </h2>
+        <div class="flex flex-wrap gap-2">
+          {% for type in species.types %}{% include "pokedex/_type_badge.html" with type=type %}{% endfor %}
+        </div>
+      </div>
       {% if owned %}
-        {# Research stage 1: the player owns this species #}
-        <dl class="mt-auto grid grid-cols-[auto_1fr] gap-x-4 rounded-xl bg-sky px-4 py-2">
-          <dt class="text-muted">Stage</dt><dd class="font-bold text-accent">Encountered</dd>
-          <dt class="text-muted">Level</dt><dd>{{ owned.level }}</dd>
-          <dt class="text-muted">Candies</dt>
-          <dd class="flex items-center gap-1">
-            <span class="candy-icon"><img src="{{ species.evolution_chain.candy_url }}" alt=""></span>
-            {{ candies }}
-          </dd>
-          <dt class="text-muted">Natures</dt>
-          <dd>{% for nature in owned.unlocked_natures %}{{ nature|nature_label }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
-          {% if owned.shiny_unlocked %}<dt class="text-muted">Shiny</dt><dd class="text-accent">✦ Unlocked</dd>{% endif %}
-        </dl>
+        <p class="ml-auto pr-2 text-right">
+          <span class="block text-xs text-muted">Stage</span>
+          <span class="font-bold text-accent">{{ research.stage_name }}</span>
+        </p>
       {% endif %}
-    </div>
-  </header>
-
-  {% if species.flavor_text %}
-    <p>{{ species.flavor_text }}</p>
+    </header>
   {% endif %}
 
-  <div class="grid grid-cols-2 gap-4">
-    {# --- Base stats: bar width = stat / 255 (the highest possible base stat) --- #}
-    <section>
-      <h3 class="section-title">Base stats</h3>
-      <dl class="flex flex-col gap-0.5">
-        {% for label, value in stats %}
-          <div class="flex items-center gap-2">
-            <dt class="w-16 text-muted">{{ label }}</dt>
-            <dd class="w-8 text-right">{{ value }}</dd>
-            <dd class="h-2.5 flex-1 rounded-full bg-sky">
-              <div class="h-full rounded-full bg-accent" style="width: {% widthratio value 255 100 %}%"></div>
-            </dd>
-          </div>
-        {% endfor %}
-        <div class="flex gap-2 border-t border-line pt-0.5">
-          <dt class="w-16 text-muted">Total</dt>
-          <dd class="w-8 text-right font-bold">{{ species.base_stat_total }}</dd>
-        </div>
-      </dl>
-    </section>
+  {% if error %}<p class="rounded-xl bg-sky px-3 py-2 font-bold text-accent" role="alert">{{ error }}</p>{% endif %}
 
-    {# --- Current moves (changing them comes once Pokémon gain levels) --- #}
-    <section>
-      <h3 class="section-title">Moves <span class="font-normal text-white/70">Lv. {{ moves_level }}</span></h3>
-      <ul class="flex flex-col gap-1.5">
-        {% for move in moves %}
-          <li class="flex items-center gap-2">
-            <span class="flex-1 truncate">{{ move.name }}</span>
-            {% include "pokedex/_type_badge.html" with type=move.type %}
-            <span class="w-10 text-right text-muted" title="Power">{{ move.power|default:"—" }}</span>
-          </li>
-        {% empty %}
-          <li class="text-muted">No move yet.</li>
-        {% endfor %}
-      </ul>
-    </section>
-  </div>
+  {% if view == "challenges" %}
+    {% include "pokedex/_entry_challenges.html" %}
+  {% elif training %}
+    {% include "pokedex/_entry_training.html" %}
+  {% endif %}
+
+  {# --- The action button: opens the challenges; pressed again, goes back --- #}
+  {% if research.challenges %}
+    <nav class="entry-actions mt-auto" aria-label="Actions">
+      {% url 'pokedex:detail' species.number as entry_url %}
+      {% if view == "challenges" %}
+        <a href="{{ entry_url }}" hx-get="{{ entry_url }}" hx-target="#entry" hx-push-url="true"
+           class="entry-action" aria-pressed="true">
+      {% else %}
+        <a href="{{ entry_url }}?view=challenges" hx-get="{{ entry_url }}?view=challenges" hx-target="#entry" hx-push-url="true"
+           class="entry-action" aria-pressed="false">
+      {% endif %}
+        Challenges
+        {% if research.to_claim %}<span class="reward-badge" title="Rewards to claim">!</span>{% endif %}
+      </a>
+    </nav>
+  {% endif %}
 </article>
 {% else %}
   {# Research stage 0: the player hasn't met this species yet (a black silhouette) #}

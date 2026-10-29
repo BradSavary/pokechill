@@ -1,0 +1,9 @@
+{% load static %}
+{% comment %}
+  An amount of research points with their sprite (the Wide Lens item, from
+  PokéAPI: a magnifying glass, for the study of a species).
+  Parameters: amount, size (Tailwind size class, size-6 by default).
+{% endcomment %}
+<span class="inline-flex items-center gap-0.5 whitespace-nowrap font-bold" title="Research points">
+  <img src="{% static 'pokemon/items/research-points.png' %}" alt="Research points" width="30" height="30" class="pixelated shrink-0 {{ size|default:'size-6' }}">{{ amount }}
+</span>

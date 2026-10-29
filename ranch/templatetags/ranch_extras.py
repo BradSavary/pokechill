@@ -61,3 +61,9 @@ def resource_word(count, resource: str) -> str:
 def resource_icon(resource: str) -> str:
     """{{ "berry"|resource_icon }} -> URL of its item sprite (static/pokemon/resources/)."""
     return static(f"pokemon/resources/{resource}.png")
+
+
+@register.filter
+def get_item(mapping, key):
+    """{{ stages|get_item:species.id }}: a dict lookup by a variable key (None if absent)."""
+    return mapping.get(key) if mapping else None

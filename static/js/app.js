@@ -73,3 +73,4 @@ document.addEventListener("keydown", (event) => {
     toggleTip(tip);
   }
 });
+

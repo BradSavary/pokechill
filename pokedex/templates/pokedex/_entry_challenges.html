@@ -1,0 +1,87 @@
+{% comment %}
+  The "Challenges" action of an entry (included by _entry.html).
+
+  On top, the bar of the research stages: it fills with the challenges
+  claimed (with an animation from where it was, bar_from, after a claim),
+  and shows a gift at each stage. Its reward shows on hover (or
+  when the gift has the focus, after a tap). A gift reached waits to be
+  claimed (it bounces): a click claims it. Below, the challenges in two
+  columns: a completed one shows its "Claim" button until it is claimed.
+  Every claim is a POST answered by the entry again (HTMX), with the "!" of
+  the menu and of the list refreshed (see _entry_action.html).
+  A visitor (no save) sees the challenges only.
+{% endcomment %}
+{% url 'pokedex:claim' species.number as claim_url %}
+<section class="flex flex-col gap-3" aria-label="Challenges">
+
+  {% if owned %}
+    <div class="flex items-center justify-between">
+      <h3 class="section-title mb-0">Research stages</h3>
+      <span class="text-sm text-muted">{{ research.claimed_count }}/{{ research.total }} challenges claimed</span>
+    </div>
+    <div class="stage-bar" role="img" aria-label="{{ research.claimed_count }} of {{ research.total }} challenges claimed">
+      <span class="fill {% if bar_from is not None %}fill-from{% endif %}" style="width: {{ research.bar_percent }}%; --from: {{ bar_from|default:0 }}%"></span>
+      {% for stage in research.stages %}
+        <div class="stage-gift is-{{ stage.state }} {% if forloop.first %}is-first{% elif forloop.last %}is-last{% endif %}" style="left: {{ stage.position }}%">
+          {% if stage.state == "ready" %}
+            <form method="post" action="{{ claim_url }}" hx-post="{{ claim_url }}" hx-target="#entry">
+              {% csrf_token %}
+              <input type="hidden" name="what" value="stage">
+              <button class="gift" title="Claim the reward of the stage {{ stage.name }}">{% include "icons/gift.svg" %}</button>
+            </form>
+          {% else %}
+            {# tabindex: a tap gives it the focus, which shows its reward #}
+            <span class="gift" tabindex="0">{% include "icons/gift.svg" %}</span>
+          {% endif %}
+          <span class="label" role="tooltip">
+            <strong>{{ stage.name }}</strong>
+            <span class="text-muted">· {% if stage.state == "claimed" %}claimed{% elif stage.state == "ready" %}click to claim{% elif stage.state == "waiting" %}claim the stage before{% elif stage.reward.mastery %}all challenges{% else %}{{ stage.reward.at }} challenges{% endif %}</span><br>
+            {% if stage.reward.mastery %}Mastery bonuses{% else %}
+              {% include "_research_points.html" with amount=stage.reward.points size="size-4" %}
+              {% if stage.reward.candies %}
+                <span class="inline-flex items-center gap-0.5 font-bold"><span class="candy-icon size-4"><img src="{{ species.evolution_chain.candy_url }}" alt="candies"></span>{{ stage.reward.candies }}</span>
+              {% endif %}
+            {% endif %}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <h3 class="section-title mb-0 self-start">Challenges</h3>
+
+  {# Filled column by column (grid-flow-col): "once", "10 times", "20 times" follow each other #}
+  <ul class="challenge-columns grid gap-x-8 gap-y-1 sm:grid-flow-col sm:grid-cols-2"
+      style="grid-template-rows: repeat({{ research.rows_per_column }}, auto)">
+    {% for challenge in research.challenges %}
+      <li class="challenge-row {% if challenge.claimed %}is-claimed{% elif challenge.ready %}is-ready{% endif %}">
+        <span class="text-center">
+          {% if challenge.claimed %}<span class="text-menu-zones">✔</span>
+          {% elif challenge.ready %}<span class="reward-badge">!</span>
+          {% else %}<span class="text-line">○</span>{% endif %}
+        </span>
+        <span>{{ challenge.text }}</span>
+        <span class="flex justify-end">
+          {% if is_visitor %}
+            {% include "_research_points.html" with amount=challenge.points size="size-5" %}
+          {% elif challenge.ready %}
+            <form method="post" action="{{ claim_url }}" hx-post="{{ claim_url }}" hx-target="#entry">
+              {% csrf_token %}
+              <input type="hidden" name="what" value="{{ challenge.id }}">
+              <button class="btn flex items-center gap-1 px-3 py-0.5 text-sm">Claim {% include "_research_points.html" with amount=challenge.points size="size-5" %}</button>
+            </form>
+          {% elif challenge.claimed %}
+            <span class="opacity-60">{% include "_research_points.html" with amount=challenge.points size="size-5" %}</span>
+          {% else %}
+            {# Its reward in a bubble on hover (or on focus, after a tap) #}
+            <span class="tip-host flex w-full flex-col gap-0.5" tabindex="0">
+              <span class="text-right text-xs text-muted">{{ challenge.progress }}/{{ challenge.target }}</span>
+              <span class="gauge h-1.5"><span class="bg-accent" style="width: {{ challenge.percent }}%"></span></span>
+              <span class="tip-bubble" role="tooltip">Reward: {% include "_research_points.html" with amount=challenge.points size="size-4" %}</span>
+            </span>
+          {% endif %}
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+</section>

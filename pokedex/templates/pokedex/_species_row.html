@@ -1,0 +1,43 @@
+{% load static ranch_extras %}
+{% comment %}
+  One species of the list: a rounded pill (red when selected) with a Poké Ball
+  when it is owned, its number and name, a star for its research stage (dark
+  grey: studied, gold: mastered) and a "!" when rewards wait to be claimed.
+  Its id lets an HTMX answer replace it alone after a claim (oob: "out of
+  band", see _entry_action.html).
+  owned_ids is None in the public catalogue (everything shown); otherwise
+  species the player doesn't own are named "???".
+{% endcomment %}
+<li id="species-row-{{ s.number }}" {% if oob %}hx-swap-oob="true"{% endif %} class="{% if not s.is_available and owned_ids is not None %}opacity-50{% endif %}"
+    {% if not s.is_available and owned_ids is not None %}title="Not in the game yet"{% endif %}>
+  {% comment %}
+    A real link (works without JavaScript) enhanced by HTMX: hx-get loads only
+    the entry fragment into #entry, hx-push-url updates the address bar.
+  {% endcomment %}
+  <a href="{% url 'pokedex:detail' s.number %}"
+     hx-get="{% url 'pokedex:detail' s.number %}" hx-target="#entry" hx-push-url="true"
+     data-species-link
+     {% if s.number == selected %}aria-current="page"{% endif %}
+     class="dex-row group">
+    <span class="grid size-5 shrink-0 place-items-center">
+      {% if owned_ids is not None and s.id in owned_ids %}
+        <img src="{% static 'pokemon/poke-ball.png' %}" alt="Owned" width="20" height="20" class="pixelated size-5">
+      {% endif %}
+    </span>
+    <span class="text-sm text-muted group-aria-[current=page]:text-white/80">{{ s.number|stringformat:"03d" }}</span>
+    {% if owned_ids is None or s.id in owned_ids %}
+      <span class="flex min-w-0 flex-1 items-center gap-1">
+        <span class="truncate">{{ s.name }}</span>
+        {% include "pokedex/_stage_mark.html" with stage=stages|get_item:s.id %}
+      </span>
+      {% if s.id in with_rewards %}<span class="reward-badge" title="Rewards to claim">!</span>{% endif %}
+      <span class="flex gap-0.5 phone:hidden">
+        {% for type in s.types %}
+          <img src="{{ type.icon_url }}" alt="{{ type.name }}" title="{{ type.name }}" width="16" height="16" class="size-4">
+        {% endfor %}
+      </span>
+    {% else %}
+      <span class="flex-1 truncate text-muted group-aria-[current=page]:text-white/80">???</span>
+    {% endif %}
+  </a>
+</li>

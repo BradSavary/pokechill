@@ -1,0 +1,16 @@
+{% comment %}
+  The answer to an action of an entry (a claim, candies), for HTMX: the
+  entry itself (swapped into #entry), then the other parts of the page the
+  action may change, swapped "out of band" (hx-swap-oob: HTMX finds them by
+  their id and replaces them, wherever they are): the total of research
+  points, the "!" of the Pokédex menu, the row of the species in the list.
+{% endcomment %}
+{% include "pokedex/_entry.html" %}
+<span id="research-points" hx-swap-oob="true" class="relative">
+  {% include "_research_points.html" with amount=research_points %}
+  {# What the claim brought: rises and fades next to the total #}
+  {% if points_gained %}<span class="points-up" aria-hidden="true">+{{ points_gained }}</span>{% endif %}
+</span>
+<span id="menu-badge-pokedex" hx-swap-oob="true" class="menu-badge" {% if not request.player.has_rewards %}hidden{% endif %}
+      title="Rewards to claim">!</span>
+{% include "pokedex/_species_row.html" with oob=True %}

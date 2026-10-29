@@ -6,7 +6,7 @@ import pytest
 from django.urls import reverse
 
 from config.assets import fingerprint
-from pokedex.models import Move, SpeciesMove, Type
+from pokedex.models import Species, Type
 
 pytestmark = pytest.mark.django_db
 
@@ -49,20 +49,16 @@ def test_unknown_species_returns_404(client, bulbasaur):
     assert client.get(reverse("pokedex:detail", args=[999])).status_code == 404
 
 
-def test_entry_shows_the_moves_of_the_arrival_level(client, bulbasaur, grass):
-    def move(slug, name, level):
-        created = Move.objects.create(
-            slug=slug, name=name, type=grass, damage_class="physical", power=40, pp=25
-        )
-        SpeciesMove.objects.create(
-            species=bulbasaur, move=created, learn_method="level-up", level=level
-        )
-
-    move("tackle", "Tackle", 1)
-    move("vine-whip", "Vine Whip", 10)  # learned later than the arrival level (1)
+def test_a_visitor_sees_the_challenges_without_progress(client, bulbasaur):
+    Species.objects.filter(pk=bulbasaur.pk).update(is_available=True, rarity="common")
+    url = reverse("pokedex:detail", args=[1]) + "?view=challenges"
+    html = client.get(url, **HTMX).content.decode()
+    assert "Obtain it once" in html
+    assert "completed" not in html  # no save, no progress
+    assert "Claim" not in html
+    # No Pokémon to train for a visitor: no level nor candies
     html = client.get(reverse("pokedex:detail", args=[1]), **HTMX).content.decode()
-    assert "Tackle" in html
-    assert "Vine Whip" not in html
+    assert "1 = +" not in html  # the value of a candy
 
 
 def test_list_filters_by_name(client, bulbasaur, charmander):

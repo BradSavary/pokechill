@@ -1,41 +1,9 @@
-{% load static %}
 {% comment %}
-  One row per species: a rounded pill (red when selected) with a Poké Ball
-  when the species is owned, then its number and name.
-  Also returned alone by the `list` view (HTMX filtering).
-  owned_ids is None in the public catalogue (everything shown); otherwise
-  species the player doesn't own are named "???".
+  The species list (one row each, see _species_row.html). Also returned alone
+  by the `list` view (HTMX filtering).
 {% endcomment %}
 {% for s in species_list %}
-  <li class="{% if not s.is_available and owned_ids is not None %}opacity-50{% endif %}"
-      {% if not s.is_available and owned_ids is not None %}title="Not in the game yet"{% endif %}>
-    {% comment %}
-      A real link (works without JavaScript) enhanced by HTMX: hx-get loads only
-      the entry fragment into #entry, hx-push-url updates the address bar.
-    {% endcomment %}
-    <a href="{% url 'pokedex:detail' s.number %}"
-       hx-get="{% url 'pokedex:detail' s.number %}" hx-target="#entry" hx-push-url="true"
-       data-species-link
-       {% if s.number == selected %}aria-current="page"{% endif %}
-       class="dex-row group">
-      <span class="grid size-5 shrink-0 place-items-center">
-        {% if owned_ids is not None and s.id in owned_ids %}
-          <img src="{% static 'pokemon/poke-ball.png' %}" alt="Owned" width="20" height="20" class="pixelated size-5">
-        {% endif %}
-      </span>
-      <span class="text-muted group-aria-[current=page]:text-white/80">{{ s.number|stringformat:"03d" }}</span>
-      {% if owned_ids is None or s.id in owned_ids %}
-        <span class="flex-1 truncate text-lg">{{ s.name }}</span>
-        <span class="flex gap-1">
-          {% for type in s.types %}
-            <img src="{{ type.icon_url }}" alt="{{ type.name }}" title="{{ type.name }}" width="18" height="18" class="size-[18px]">
-          {% endfor %}
-        </span>
-      {% else %}
-        <span class="flex-1 truncate text-lg text-muted group-aria-[current=page]:text-white/80">???</span>
-      {% endif %}
-    </a>
-  </li>
+  {% include "pokedex/_species_row.html" %}
 {% empty %}
   <li class="p-3 text-sm text-muted">No Pokémon match this search.</li>
 {% endfor %}

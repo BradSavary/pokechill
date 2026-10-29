@@ -1,10 +1,12 @@
 """Tests of the player's Pokédex: known species, silhouettes, research stage 1."""
 
+import re
+
 import pytest
 from django.urls import reverse
 
 from pokedex.models import Species
-from ranch.models import OwnedPokemon, Player
+from ranch.models import CandyStock, OwnedPokemon, Player
 
 pytestmark = pytest.mark.django_db
 
@@ -48,8 +50,60 @@ def test_species_not_in_the_game_yet(player_client):
 def test_owned_entry_shows_the_research_stage(player_client):
     html = player_client.get(reverse("pokedex:detail", args=[1]), **HTMX).content.decode()
     assert "Encountered" in html
-    assert "Lv. 5" in html
-    assert "Speed" in html
+    assert re.search(r"Lv\.\s+5", html)  # its level, in the level and candies panel
+    assert "Speed" in html  # its nature
+
+
+def test_the_overview_leaves_out_description_cry_stats_and_moves(player_client, bulbasaur):
+    Species.objects.filter(pk=bulbasaur.pk).update(flavor_text="A strange seed.")
+    html = player_client.get(reverse("pokedex:detail", args=[1]), **HTMX).content.decode()
+    assert "A strange seed." not in html
+    assert "Cry" not in html
+    assert "Base stats" not in html
+    assert "?view=challenges" in html  # its only action button
+
+
+def test_the_challenges_action_lists_them_with_the_stage_bar(player_client):
+    url = reverse("pokedex:detail", args=[1]) + "?view=challenges"
+    html = player_client.get(url, **HTMX).content.decode()
+    assert "Obtain it once" in html
+    # As a starter, Bulbasaur already completed a few of its 10 challenges
+    assert re.search(r"\d+/10 challenges claimed", html)
+    assert 'class="stage-bar"' in html
+    assert 'aria-pressed="true"' in html  # its button is the active one
+
+
+def test_the_default_view_shows_level_and_candies(player_client):
+    html = player_client.get(reverse("pokedex:detail", args=[1]), **HTMX).content.decode()
+    assert re.search(r"Lv\.\s+5", html)
+    assert re.search(r"1 = \+\d+ XP", html)  # what a candy is worth
+    # No candies yet: the level up button is greyed out, and says why
+    assert re.search(r"<button class=\"btn\" disabled>\s*Level up", html)
+    assert "Not enough candies" in html
+
+
+def test_candies_roll_the_level_up(player_client, bulbasaur):
+    player = Player.objects.get()
+    CandyStock.objects.create(player=player, family=bulbasaur.evolution_chain, amount=50)
+    url = reverse("pokedex:candies", args=[1])
+    html = player_client.post(url, {"count": "level"}, **HTMX).content.decode()
+    assert 'class="level-roll"' in html  # the counter rolls from 5 to 6
+    assert "<span>5</span><span>6</span>" in html
+    assert "given" not in html  # no notice: the animation tells it
+
+
+def test_the_challenges_have_no_claim_all_button(player_client):
+    url = reverse("pokedex:detail", args=[1]) + "?view=challenges"
+    html = player_client.get(url, **HTMX).content.decode()
+    assert "Claim all" not in html
+    assert 'role="tooltip"' in html  # the rewards of the stages show on hover
+
+
+def test_the_list_marks_studied_and_mastered_species(player_client):
+    OwnedPokemon.objects.update(research_stage=2)
+    html = player_client.get(reverse("pokedex:index")).content.decode()
+    assert 'class="stage-mark is-studied"' in html
+    assert "Research points" in html
 
 
 def test_the_family_hides_unknown_members(player_client):

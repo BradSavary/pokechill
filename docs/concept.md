@@ -38,9 +38,13 @@ Chaque espèce possède sa propre fiche de recherche, qui progresse en trois sta
 | Stade | Condition | Ce que la fiche affiche | Récompense |
 | --- | --- | --- | --- |
 | 0 — Inconnu | Jamais rencontré | Silhouette noire et un premier indice | — |
-| 1 — Rencontré | Avoir obtenu le Pokémon au moins une fois | Sprite, types, description, liste des défis | Points de recherche |
-| 2 — Étudié | 5 défis complétés | Changement esthétique fiche | Points de recherche et un objet |
-| 3 — Maîtrisé | Tous les défis complétés | Fiche dorée débloqué&#32; | Bonus permanent propre à l'espèce ( dans les zones, roguelike ou certaines features de la pension) |
+| 1 — Rencontré | Avoir obtenu le Pokémon au moins une fois | Sprite, types, liste des défis | Points de recherche |
+| 2 — Étudié | 5 défis complétés | Une étoile grise dans la liste et sur la fiche | Points de recherche et bonbons de sa lignée (les objets viendront plus tard) |
+| 3 — Maîtrisé | Tous les défis complétés | Une étoile dorée | Bonus permanents propres à l'espèce, qui ne concernent que ce Pokémon |
+
+**Les récompenses se réclament.** Un défi complété ou un stade atteint ne paie pas tout seul : un « ! » apparaît sur le Pokédex du menu, sur l'espèce dans la liste et sur le bouton « Challenges » de sa fiche. Le joueur réclame chaque récompense (ou toutes d'un coup) et voit ce qu'elle rapporte. La barre des stades montre un cadeau à chaque stade, avec sa récompense.
+
+**La fiche d'une espèce** se concentre sur une action à la fois, choisie avec les boutons en bas : « Challenges » (les défis et la barre des stades) et « Level & candies » (le niveau, et les bonbons de sa lignée à lui donner). Les statistiques, les attaques, la description et le cri attendent qu'ils servent (expéditions).
 
 **Le bonus de maîtrise** donne une raison concrète d'aller jusqu'au bout. Il est lié à l'identité du Pokémon : Leveinard maîtrisé accélère les soins après une expédition, Miaouss augmente les gains d'argent, Ronflex agrandit la mangeoire.
 

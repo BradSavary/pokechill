@@ -1,0 +1,2 @@
+{# The star of a research stage: dark grey for studied (2), gold for mastered (3). Parameter: stage. #}
+{% if stage == 2 %}<span class="stage-mark is-studied" title="Studied">★</span>{% elif stage == 3 %}<span class="stage-mark is-mastered" title="Mastered">★</span>{% endif %}

@@ -125,9 +125,17 @@
 }
 
 @layer base {
-  /* Large screens: everything is 25% bigger, like a browser zoom at 125%.
-     Sizes are in rem (relative to this font size), so they all follow. */
-  @media (min-width: 1536px) {
+  /* Larger screens: everything gets bigger by steps, like a browser zoom.
+     Sizes are in rem (relative to this font size), so they all follow.
+     Each step also needs the height (of the window, not the screen): the
+     pages are made to fit without scrolling, a wide but low window keeps
+     the step below. Whole pixel sizes (18, 20 px) keep the pixel fonts sharp. */
+  @media (min-width: 1280px) and (min-height: 720px) {
+    html {
+      font-size: 112.5%;
+    }
+  }
+  @media (min-width: 1536px) and (min-height: 860px) {
     html {
       font-size: 125%;
     }
@@ -174,6 +182,11 @@
   .btn-secondary {
     @apply inline-block rounded-full bg-surface px-5 py-1.5 text-ink ring-2 ring-line;
   }
+  /* A button that can't be used (e.g. not enough candies): greyed out */
+  .btn:disabled,
+  .btn-secondary:disabled {
+    @apply cursor-not-allowed bg-sunken text-muted opacity-70 shadow-none ring-0;
+  }
 
   /* Side menu entry: a white disc holding a coloured icon (Sword/Shield style).
      The icon is an inline SVG drawn with currentColor: the text-menu-* class
@@ -195,6 +208,17 @@
   .menu-item.is-active .menu-disc {
     @apply outline-4 outline-offset-3 outline-outline phone:outline-3 phone:outline-offset-2;
   }
+  /* The "!" of a menu entry: a red disc on the top right of its own disc */
+  .menu-item {
+    @apply relative;
+  }
+  .menu-badge {
+    @apply absolute -top-1 -right-1 grid size-6 place-items-center rounded-full bg-accent text-sm font-bold text-white ring-2 ring-white phone:size-5 phone:text-xs;
+  }
+  .menu-badge[hidden] {
+    @apply hidden;
+  }
+
   .menu-item.is-locked {
     @apply cursor-not-allowed opacity-50;
   }
@@ -219,9 +243,178 @@
     background: linear-gradient(115deg, #f2525c 0 58%, var(--color-accent) 58%);
   }
 
+  /* The "!" of something to claim, in a list or on a button. On a red
+     background (selected row, active button) it turns white, or it would vanish */
+  .reward-badge {
+    @apply inline-grid size-5 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-white;
+  }
+  .dex-row[aria-current] .reward-badge,
+  .entry-action[aria-pressed="true"] .reward-badge {
+    @apply bg-white text-accent;
+  }
+
+  /* One challenge of an entry: its mark, its text, its progress or claim, its points */
+  .challenge-row {
+    @apply grid min-h-8 grid-cols-[1.25rem_1fr_6.5rem] items-center gap-2 rounded-lg px-2 text-sm;
+  }
+  .challenge-row.is-claimed {
+    @apply text-muted;
+  }
+  .challenge-row.is-ready {
+    @apply bg-sky;
+  }
+
+  /* The bar of the research stages: challenges completed, a gift at each
+     stage (its left: the share of challenges it needs) */
+  .stage-bar {
+    /* z-10: its bubbles stay above what follows (the "Challenges" band, cut
+       with a clip-path, is drawn in a layer of its own) */
+    @apply relative z-10 mx-5 my-3 h-2.5 rounded-full bg-sunken;
+  }
+  .stage-bar > .fill {
+    @apply block h-full rounded-full bg-menu-zones;
+  }
+  .stage-gift {
+    @apply absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5;
+  }
+  .stage-gift .gift {
+    @apply grid size-10 place-items-center rounded-full border-2 border-line bg-surface p-2 text-muted;
+  }
+  .stage-gift.is-ready .gift {
+    @apply animate-bounce border-accent bg-accent text-white;
+  }
+  .stage-gift.is-claimed .gift {
+    @apply border-menu-zones bg-menu-zones text-white;
+  }
+  /* Its reward: a bubble shown on hover, or when the gift has the focus */
+  .stage-gift > .label {
+    @apply pointer-events-none invisible absolute top-full z-10 mt-2 w-44 rounded-xl bg-ink px-3 py-2 text-center text-xs leading-snug text-white opacity-0 shadow-lg transition;
+  }
+  .stage-gift:hover > .label,
+  .stage-gift:focus-within > .label {
+    @apply visible opacity-100;
+  }
+  .stage-gift .label .text-muted {
+    @apply text-white/70;
+  }
+  /* The bubbles of the two ends stay inside the entry: aligned on its edges */
+  .stage-gift.is-first > .label {
+    @apply left-0 text-left;
+  }
+  .stage-gift.is-last > .label {
+    @apply right-0 text-right;
+  }
+
+  /* The two columns of challenges, with a thin line between them */
+  .challenge-columns {
+    @apply relative;
+  }
+  @media (width >= 40rem) {
+    .challenge-columns::before {
+      @apply absolute inset-y-1 left-1/2 w-px bg-line content-[''];
+    }
+  }
+
+  /* A bubble shown on hover of its host (or when the host has the focus, after a tap) */
+  .tip-host {
+    @apply relative;
+  }
+  .tip-host > .tip-bubble {
+    /* On the left of its host: above, it would hide the row before */
+    @apply pointer-events-none invisible absolute top-1/2 right-full z-10 mr-2 flex -translate-y-1/2 items-center gap-1 rounded-xl bg-ink px-3 py-1.5 text-xs whitespace-nowrap text-white opacity-0 shadow-lg transition;
+  }
+  .tip-host:hover > .tip-bubble,
+  .tip-host:focus-within > .tip-bubble {
+    @apply visible opacity-100;
+  }
+
+  /* Level up with candies: the level rolls up like a counter (a column of the
+     levels passed, sliding up by one line per level), an arrow rises next to
+     it, and the experience bar fills from where it was (--from) */
+  .level-roll {
+    @apply inline-block h-[1em] overflow-hidden leading-none;
+  }
+  .level-roll-track {
+    @apply flex flex-col;
+    animation: level-roll 0.9s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .level-roll-track > span {
+    @apply block h-[1em];
+  }
+  .level-up {
+    @apply text-lg text-menu-zones;
+    animation: level-up 1.8s ease-out both;
+  }
+  /* The research points a claim brought, rising next to the total */
+  .points-up {
+    @apply absolute top-0 left-full ml-1 text-base font-bold text-menu-zones;
+    animation: level-up 1.8s ease-out both;
+  }
+  /* A bar that fills from where it was (--from) to its width: the
+     experience after candies, the stages after a claim */
+  .fill-from {
+    animation: fill-from 0.9s 0.15s ease-out both;
+  }
+  @keyframes level-roll {
+    to {
+      transform: translateY(calc(var(--steps) * -1em));
+    }
+  }
+  @keyframes level-up {
+    0% {
+      opacity: 0;
+      transform: translateY(0.4em);
+    }
+    25% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-0.9em);
+    }
+  }
+  @keyframes fill-from {
+    from {
+      width: var(--from);
+    }
+  }
+  /* Without motion (system setting): the new level shows at once */
+  @media (prefers-reduced-motion: reduce) {
+    .level-roll-track,
+    .level-up,
+    .points-up,
+    .fill-from {
+      animation-duration: 1ms;
+      animation-delay: 0s;
+    }
+  }
+
+  /* The action buttons at the bottom of an entry (one is active) */
+  .entry-actions {
+    @apply sticky bottom-0 flex gap-2 border-t border-line bg-surface pt-3;
+  }
+  .entry-action {
+    @apply flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-line px-4 py-2 font-bold hover:bg-sky;
+  }
+  .entry-action[aria-pressed="true"] {
+    @apply border-accent bg-accent text-white hover:bg-accent;
+  }
+
+  /* Stage marks: a dark grey star (studied), a gold one (mastered) */
+  .stage-mark {
+    @apply text-sm leading-none;
+  }
+  .stage-mark.is-studied {
+    color: #55606b;
+  }
+  .stage-mark.is-mastered {
+    color: #e0a800;
+  }
+
   /* Pokédex list row: a rounded pill, red when selected */
   .dex-row {
-    @apply flex items-center gap-3 rounded-full px-3 py-1 hover:bg-sky;
+    @apply flex items-center gap-2 rounded-full px-2.5 py-1 hover:bg-surface;
   }
   .dex-row[aria-current="page"] {
     @apply bg-accent text-white hover:bg-accent;

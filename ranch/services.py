@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
-from game import balance
+from game import balance, experience
 from game.arrivals import NATURES, CatchUp, catch_up
 from game.clock import ONE_HOUR, floor_to_hour
 from game.collection import Obtention, OwnedState, resolve_obtention
@@ -245,11 +245,63 @@ def player_for(user) -> Player | None:
 
 
 def collection_of(player: Player) -> dict[int, OwnedPokemon]:
-    """The player's Pokémon, indexed by species id (for the Pokédex)."""
-    return {owned.species_id: owned for owned in player.pokemon.all()}
+    """The player's Pokémon, indexed by species id (for the Pokédex), with their species."""
+    return {owned.species_id: owned for owned in player.pokemon.select_related("species")}
 
 
 def candies_of(player: Player, family) -> int:
     """Candies of one evolution family (0 if none yet)."""
     stock = CandyStock.objects.filter(player=player, family=family).first()
     return stock.amount if stock else 0
+
+
+# --- Candies -----------------------------------------------------------------------------
+
+
+class CandyError(ValueError):
+    """Raised when candies can't be used (none left, maximum level...)."""
+
+
+@transaction.atomic
+def use_candies(player: Player, species: Species, count: int | None) -> tuple[int, int]:
+    """
+    Give candies of its family to the player's Pokémon of `species`: `count`
+    of them, or None for just enough to reach the next level. Returns
+    (candies eaten, levels gained). The rule is game.experience.feed_candies.
+    """
+    pokemon = (
+        OwnedPokemon.objects.select_for_update()
+        .select_related("species")
+        .filter(player=player, species=species)
+        .first()
+    )
+    if pokemon is None:
+        raise CandyError("You don't own this Pokémon.")
+    stock = (
+        CandyStock.objects.select_for_update()
+        .filter(player=player, family_id=species.evolution_chain_id)
+        .first()
+    )
+    available = stock.amount if stock else 0
+    curve, stage = species.growth_rate, species.evolution_stage
+    wanted = (
+        experience.candies_to_next_level(curve, pokemon.level, pokemon.experience, stage)
+        if count is None
+        else count
+    )
+    if pokemon.level >= experience.MAX_LEVEL:
+        raise CandyError(f"{species.name} is already at the maximum level.")
+    if wanted < 1:
+        raise CandyError("Choose how many candies to give.")
+    if wanted > available:
+        raise CandyError(f"Not enough candies: {wanted} needed, {available} left.")
+
+    old_level = pokemon.level
+    pokemon.level, pokemon.experience, eaten = experience.feed_candies(
+        curve, pokemon.level, pokemon.experience, stage, wanted
+    )
+    pokemon.save(update_fields=["level", "experience"])
+    CandyStock.objects.filter(pk=stock.pk).update(amount=F("amount") - eaten)
+    if pokemon.level > old_level:
+        research.record(player, [research.level_event(pokemon)])  # levels count for challenges
+    return eaten, pokemon.level - old_level

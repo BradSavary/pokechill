@@ -42,6 +42,10 @@ class Player(models.Model):
     # False for the saves made before the research (step 3): their challenges
     # are set up from their current state at their next visit (ranch.research)
     research_synced = models.BooleanField(default=True)
+    # Rewards of the research waiting to be claimed (a challenge completed, a
+    # stage reached): the "!" of the Pokédex menu, read without any query.
+    # Set by ranch.research.record, recomputed after each claim.
+    has_rewards = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return f"Player of {self.user.username}"
@@ -137,8 +141,9 @@ class OwnedPokemon(models.Model):
     unlocked_natures = models.JSONField(default=list)
     shiny_unlocked = models.BooleanField(default=False)
     obtained_at = models.DateTimeField(auto_now_add=True)
-    # Research stage of its species already rewarded (0 to 3): the rewards of
-    # a stage are given once, when the challenges first reach it
+    # Research stage of its species whose reward was claimed (0 to 3). The
+    # stage reached comes from its challenges; the player claims each stage's
+    # reward in turn (ranch.research.claim_stage).
     research_stage = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
@@ -178,6 +183,8 @@ class ObjectiveProgress(models.Model):
     progress = models.PositiveIntegerField(default=0)
     # When it was completed (null: not yet). Kept even if its target changes.
     completed_at = models.DateTimeField(null=True, blank=True)
+    # When its research points were claimed (null: waiting for the player)
+    claimed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [

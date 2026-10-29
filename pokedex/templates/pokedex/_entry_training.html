@@ -1,0 +1,66 @@
+{% comment %}
+  Level and candies, in the default view of an owned species (included by
+  _entry.html), in one box: its level and experience bar, then the candies
+  of its family to give it. A candy is worth hours of zone work at its
+  level, divided by its evolution stage (game.experience.candy_experience).
+  Each button is a POST answered by the entry again (HTMX), with `growth`:
+  the level then rolls up like a counter (from the old one to the new one)
+  with a rising arrow, and the bar fills from where it was. A button is
+  greyed out when candies lack, and the line below says how many.
+{% endcomment %}
+{% url 'pokedex:candies' species.number as candies_url %}
+<section class="flex flex-col gap-3 rounded-2xl bg-sky p-4" aria-label="Level and candies">
+  <p class="flex items-baseline justify-between">
+    <span class="flex items-baseline gap-2 text-3xl font-bold">
+      Lv.
+      {% if growth.levels %}
+        {# The levels passed, stacked: the column slides up to the new one #}
+        <span class="level-roll" style="--steps: {{ growth.levels }}" aria-label="{{ owned.level }}">
+          <span class="level-roll-track" aria-hidden="true">{% for level in growth.rolled %}<span>{{ level }}</span>{% endfor %}</span>
+        </span>
+        <span class="level-up" aria-hidden="true">▲ +{{ growth.levels }}</span>
+      {% else %}
+        {{ owned.level }}
+      {% endif %}
+    </span>
+    {% if training.at_max %}
+      <span class="text-muted">Maximum level</span>
+    {% else %}
+      <span class="text-sm text-muted">{{ training.xp }} / {{ training.xp_needed }} XP to level {{ owned.level|add:1 }}</span>
+    {% endif %}
+  </p>
+  {# --from: where the bar was before the candies (it fills from there) #}
+  <span class="gauge h-3"><span class="bg-menu-zones {% if growth %}fill-from{% endif %}" style="width: {{ training.xp_percent }}%; --from: {{ growth.xp_from|default:0 }}%"></span></span>
+
+  {# The candies: how many, what one is worth, and the two buttons on the same line #}
+  <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-line pt-3">
+    <p class="flex items-center gap-2">
+      <span class="candy-icon size-8"><img src="{{ species.evolution_chain.candy_url }}" alt=""></span>
+      <span class="text-xl font-bold">{{ candies }}</span>
+      <span class="text-sm text-muted">candies ( 1 = +{{ training.candy_xp }} XP{% if training.stage_multiplier > 1 %}{% endif %})</span>
+    </p>
+    {% if not training.at_max %}
+      <div class="flex gap-2">
+        <form method="post" action="{{ candies_url }}" hx-post="{{ candies_url }}" hx-target="#entry">
+          {% csrf_token %}
+          <input type="hidden" name="count" value="1">
+          <button class="btn-secondary" {% if not training.can_feed %}disabled{% endif %}>Give 1 candy</button>
+        </form>
+        <form method="post" action="{{ candies_url }}" hx-post="{{ candies_url }}" hx-target="#entry">
+          {% csrf_token %}
+          <input type="hidden" name="count" value="level">
+          <button class="btn" {% if not training.can_level %}disabled{% endif %}>
+            Level up: {{ training.to_next }} cand{{ training.to_next|pluralize:"y,ies" }}
+          </button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+  {% if training.missing %}
+    <p class="text-sm">
+      <span class="font-bold text-accent">Not enough candies: {{ training.missing }} more needed to level up.</span>
+    </p>
+  {% elif owned.pending_experience %}
+    <p class="text-xs text-muted">+{{ owned.pending_experience }} XP earned in its zone: collect the zone to add them.</p>
+  {% endif %}
+</section>
