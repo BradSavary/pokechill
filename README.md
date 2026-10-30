@@ -10,7 +10,14 @@ Un jeu web idle + roguelike dans la région de Kanto. Vous reprenez une pension 
 
 ![Révélation des arrivées](docs/images/reveal.png)
 
-Ce qu'on peut faire aujourd'hui : jouer sans compte, découvrir à chaque retour les Pokémon arrivés pendant l'absence (une arrivée par heure, avec une révélation animée), remplir son Pokédex personnel, gagner des bonbons avec les doublons, puis sauvegarder sa partie en créant un compte.
+Ce qu'on peut faire aujourd'hui :
+- jouer sans compte, puis sauvegarder sa partie en créant un compte ;
+- découvrir à chaque retour les Pokémon arrivés pendant l'absence (une arrivée par heure, avec une révélation animée) ;
+- faire travailler ses Pokémon dans deux zones, qui récoltent des ressources et leur font gagner de l'expérience ;
+- garnir la mangeoire pour attirer certains types ;
+- remplir son Pokédex de recherche : chaque espèce a ses défis, qui rapportent des points de recherche et la font passer jusqu'au stade 3 (ses bonus de maîtrise) ;
+- dépenser ces points dans les arbres de compétences du laboratoire du Professeur Chen ;
+- deviner, grâce aux indices, comment attirer les 55 espèces déjà disponibles.
 
 > Projet personnel d'apprentissage de Python et Django, réalisé pour mon portfolio.
 > Fan-game non officiel et non commercial. Non affilié à Nintendo, Game Freak ou The Pokémon Company.
@@ -24,8 +31,8 @@ Le jeu se construit en 8 étapes jouables, chacune déployée en ligne (concepti
 | 0 | Le socle : Django sur Vercel, import PokéAPI, Pokédex consultable | Terminée |
 | 1 | Les arrivées horaires, le mode invité et les comptes | Terminée |
 | 2 | Les zones de récolte et la mangeoire | Terminée |
-| 3 | La recherche : défis, arbre de compétences, maîtrise | Prochaine |
-| 4 | Les quêtes quotidiennes et hebdomadaires | Prévue |
+| 3 | La recherche : défis, arbre de compétences, maîtrise, indices | Terminée |
+| 4 | Les quêtes quotidiennes et hebdomadaires | Prochaine |
 | 5 | Le contenu complet de la pension (8 zones, CT, natures, shiny) | Prévue |
 | 6 | Les expéditions roguelike (2D, Phaser) | Prévue |
 | 7 | Les légendaires et les donjons en 3D (Three.js) | Prévue |
@@ -43,11 +50,13 @@ Le jeu se construit en 8 étapes jouables, chacune déployée en ligne (concepti
 
 - **Un moteur de jeu en Python pur.** Les règles (horloge, conditions d'arrivée, tirage pondéré par la rareté, conversion des doublons) vivent dans `game/`, sans aucun import Django : une vue charge l'état, appelle une fonction pure, puis enregistre le résultat. Un test fait échouer la CI si cette règle est enfreinte.
 - **Un temps de jeu rattrapé à la visite.** Aucun processus ne tourne en permanence (serverless) : à chaque visite, les heures écoulées sont rejouées dans l'ordre, chacune avec une graine aléatoire tirée du joueur et de l'heure. Le résultat est donc identique quel que soit le moment du calcul, ce que vérifient les tests. Un verrou de ligne et une contrainte d'unicité empêchent les doublons si deux onglets se rechargent en même temps.
-- **Des espèces pilotées par les données.** Chaque espèce disponible est un fichier JSON (rareté, niveau, arbre de conditions ET/OU), validé strictement et rechargé à chaque déploiement : ajouter une espèce ne demande aucun code.
+- **Des espèces pilotées par les données.** Chaque espèce disponible est un fichier JSON (rareté, niveau, arbre de conditions ET/OU, indice), validé strictement et rechargé à chaque déploiement : ajouter une espèce ne demande aucun code. Ses conditions s'affichent en anglais une fois l'espèce obtenue, écrites automatiquement à partir de l'arbre.
+- **Un moteur d'objectifs.** Les défis du Pokédex sont des objectifs alimentés par des événements de jeu (obtention, niveau, récolte...) ; les quêtes de l'étape 4 utiliseront le même moteur.
+- **Une économie réglée par simulation.** Les arbres de compétences sont des données, et le coût de leurs nœuds vient d'une formule à trois paramètres. Une commande (`simulate`) joue des semaines de jeu en quelques secondes avec les vraies règles, pour vérifier que la progression reste régulière.
 - **Mode invité.** On joue sans compte : un utilisateur sans mot de passe utilisable est créé à la première visite, puis converti sur place à l'inscription, ce qui conserve toute la partie.
 - **Import des données en une fois.** Une commande Django (`import_pokeapi`) récupère espèces, types, attaques et listes d'attaques de Rouge Feu/Vert Feuille depuis [PokéAPI](https://pokeapi.co). Les réponses sont mises en cache sur disque, l'analyse est faite par des fonctions pures, et tout est écrit dans une seule transaction : un import qui échoue ne laisse jamais de données à moitié écrites. L'import est idempotent : le relancer met les lignes à jour au lieu de les dupliquer.
 - **Amélioration progressive avec HTMX.** Chaque fiche du Pokédex a sa propre URL et fonctionne sans JavaScript. Avec HTMX, un clic ne remplace que le panneau de la fiche, et la même vue renvoie soit un fragment, soit la page complète selon l'en-tête `HX-Request`.
-- **Vues attentives aux requêtes SQL.** Une page Pokédex complète coûte 5 requêtes et une fiche 3, quel que soit le nombre d'attaques, grâce à `select_related` et `prefetch_related`.
+- **Vues attentives aux requêtes SQL.** Le nombre de requêtes d'une page ne dépend pas de la quantité de données, grâce à `select_related`, `prefetch_related` et des champs résumés sur le joueur ; des tests le plafonnent.
 - **Testé sans réseau.** Le client PokéAPI est injecté : les tests utilisent un faux client ou `httpx.MockTransport`. La CI vérifie le formatage, le lint, les contrôles Django, les migrations manquantes, les tests, et que le CSS commité correspond aux templates.
 
 Pour le détail de l'architecture, des choix et des procédures, voir la [synthèse technique](docs/technique.md).
@@ -77,20 +86,23 @@ Commandes utiles :
 | Recompiler le CSS à chaque modification de template | `uv run python scripts/build_css.py --watch` |
 | Compte administrateur (puis aller sur `/admin/`) | `uv run python manage.py createsuperuser` |
 | Simuler 10 h d'absence pour voir des arrivées | `uv run python manage.py rewind_clock 10` |
+| Simuler un joueur pendant 60 jours (équilibrage) | `uv run python manage.py simulate` |
 
 ## Structure du projet
 
 ```
+game/                Moteur de jeu en Python pur (règles, équilibrage, simulation)
 config/              Réglages Django (lus depuis les variables d'environnement) et URLs racines
-pokedex/             App Pokédex : modèles, vues, templates, admin
-  pokeapi/           Client PokéAPI (avec cache), parseurs et importeur
-  management/        La commande import_pokeapi
-templates/           Gabarit de base commun
-assets/css/          Source Tailwind, compilée dans static/css/main.css
-static/              CSS compilé, HTMX, sprites, cris et icônes de types
-scripts/             Script de compilation du CSS
+pokedex/             App Pokédex : catalogue, vues, import PokéAPI, chargement des espèces
+accounts/            Invité, inscription, connexion
+ranch/               La partie du joueur : Pension, zones, mangeoire, recherche, laboratoire
+data/                Fichiers d'espèces et arbres de compétences (JSON)
+templates/           Gabarit de base commun, menu, icônes
+assets/              Source Tailwind et planches de tuiles des cartes
+static/              CSS compilé, HTMX, scripts, polices, sprites, cris, cartes
+scripts/             Compilation du CSS, build Vercel, génération des cartes
 tests/               Suite de tests pytest
-docs/                Document de conception du jeu
+docs/                Concept du jeu et synthèse technique
 ```
 
 ## Crédits

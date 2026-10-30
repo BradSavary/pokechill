@@ -42,9 +42,9 @@ Chaque espèce possède sa propre fiche de recherche, qui progresse en trois sta
 | 2 — Étudié | 5 défis complétés | Une étoile grise dans la liste et sur la fiche | Points de recherche et bonbons de sa lignée (les objets viendront plus tard) |
 | 3 — Maîtrisé | Tous les défis complétés | Une étoile dorée | Bonus permanents propres à l'espèce, qui ne concernent que ce Pokémon |
 
-**Les récompenses se réclament.** Un défi complété ou un stade atteint ne paie pas tout seul : un « ! » apparaît sur le Pokédex du menu, sur l'espèce dans la liste et sur le bouton « Challenges » de sa fiche. Le joueur réclame chaque récompense (ou toutes d'un coup) et voit ce qu'elle rapporte. La barre des stades montre un cadeau à chaque stade, avec sa récompense.
+**Les récompenses se réclament.** Un défi complété ou un stade atteint ne paie pas tout seul : un « ! » apparaît sur le Pokédex du menu, sur l'espèce dans la liste et sur le bouton « Challenges » de sa fiche. Le joueur réclame chaque récompense une à une et voit ce qu'elle rapporte. La barre des stades montre un cadeau à chaque stade, avec sa récompense.
 
-**La fiche d'une espèce** se concentre sur une action à la fois, choisie avec les boutons en bas : « Challenges » (les défis et la barre des stades) et « Level & candies » (le niveau, et les bonbons de sa lignée à lui donner). Les statistiques, les attaques, la description et le cri attendent qu'ils servent (expéditions).
+**La fiche d'une espèce** montre d'abord son identité, comment elle arrive, son niveau et les bonbons de sa lignée à lui donner. Le bouton « Challenges » en bas ouvre ses défis, la barre des stades et ses bonus de maîtrise. Les statistiques, les attaques, la description et le cri attendent qu'ils servent (expéditions).
 
 **Les bonus de maîtrise** donnent une raison concrète d'aller jusqu'au bout. Atteindre le stade 3 demande tous les défis de l'espèce : chaque espèce maîtrisée reçoit donc les quatre bonus à la fois. Ils ne concernent que le Pokémon lui-même (les améliorations de la pension relèvent de l'arbre de compétences) :
 
@@ -57,7 +57,9 @@ Les valeurs sont dans `game/balance.py`. Des bonus d'expédition (statistiques) 
 
 ### Les défis
 
-Chaque espèce a entre 8 et 10 défis, tirés de catégories communes. Certains défis sont à paliers (obtenir 1, 5, puis 10 fois), chaque palier comptant comme un défi.
+Chaque espèce a entre 8 et 10 défis, tirés de catégories communes. Certains défis sont à paliers (l'obtenir 10, puis 20 fois), chaque palier comptant comme un défi.
+
+Les défis en place à l'étape 3 sont communs à toutes les espèces, ajustés à leur rareté et à leur niveau : l'obtenir plusieurs fois (deux paliers, moins pour une espèce rare), atteindre deux niveaux, débloquer 3 puis 6 natures, récolter 100 ressources en travaillant, travailler 48 heures dans une zone et posséder toute sa lignée. Le fichier d'une espèce peut en ajouter ou en retirer. Il n'y a pas de défi « l'obtenir une fois » : le stade 1 récompense déjà la première obtention.
 
 | Catégorie | Exemples |
 | --- | --- |
@@ -81,11 +83,15 @@ Toutes les conditions de déblocage du jeu (zones, quêtes supplémentaires, cer
 
 Il y a en fait plusieurs arbres, réunis dans un même menu d'améliorations. L'arbre **Zones** se divise en une branche par zone : ses nœuds améliorent les zones de diverses façons (emplacements, stockage, rendement, trouvailles, rencontres). Un nœud coûte la ressource de sa zone, ou celles de plusieurs zones pour un nœud commun ; les nœuds majeurs coûtent aussi des points de recherche. Les améliorations de zone arrivent donc avec l'arbre, à l'étape 3.
 
+**Le laboratoire du Professeur Chen** réunit les arbres. C'est un bâtiment de la Pension, fermé jusqu'à ce que le Pokédex compte 10 espèces : un premier objectif, atteint en un jour ou deux. Il est aussi accessible depuis le menu (une fiole), grisé avec sa condition tant qu'il est fermé. À la première visite, le Professeur Chen explique les défis, les points de recherche et les arbres.
+
+À l'étape 3, il y a quatre arbres : la **Pension** (places de l'Accueil, points de recherche, bonbons, stockage), la **Mangeoire** (ouverte par le niveau 2 de la Pension), et un arbre par zone, **Prairie** et **Verger** (rendement, stockage, expérience, emplacements, niveau de la zone). Un arbre se lit de gauche à droite : des petits gains sur les branches, qui se rejoignent sur des **étapes** aux grosses récompenses. Un nœud peut demander un nœud d'un autre arbre ; un joueur qui se concentre sur un seul arbre ne doit pas pour autant manquer une fonctionnalité importante.
+
 ### Les indices
 
-Les indices sont gratuits et affichés directement sur la fiche Pokédex. Une espèce jamais obtenue montre un indice sur ses conditions d'arrivée, par exemple : « On l'aperçoit parfois près de l'étang, après le coucher du soleil. »
+Les indices sont gratuits et affichés directement sur la fiche Pokédex. Une espèce jamais obtenue montre un indice sur ses conditions d'arrivée, glissé par le Professeur Chen, par exemple : « On l'aperçoit parfois près de l'étang, après le coucher du soleil. » L'indice laisse deviner le mécanisme sans nommer la règle exacte.
 
-Une fois l'espèce obtenue, la fiche affiche à la place toutes ses méthodes d'obtention.
+Une fois l'espèce obtenue, la fiche affiche à la place ses vraies conditions d'arrivée, écrites automatiquement à partir de ses données.
 
 ## Les arrivées de Pokémon
 
@@ -246,7 +252,7 @@ L'expérience nécessaire suit les **courbes des jeux** : chaque espèce a la si
 
 ### Les bonbons
 
-Chaque nouvelle obtention d'une espèce déjà possédée donne des bonbons de sa lignée : 3 pour une espèce commune, davantage pour une rare. Comme dans Pokémon GO, les bonbons sont partagés par toute la lignée : les bonbons Salamèche font monter de niveau Salamèche, Reptincel et Dracaufeu. Le coût augmente avec le stade d'évolution, par exemple ×1 pour la forme de base, ×2 pour la deuxième forme et ×3 pour la troisième. Il n'existe pas de bonbon d'expérience universel : les légendaires progressent grâce aux bonbons obtenus en les capturant de nouveau en expédition.
+Chaque nouvelle obtention d'une espèce déjà possédée donne des bonbons de sa lignée : 3 pour une espèce commune, davantage pour une rare. Comme dans Pokémon GO, les bonbons sont partagés par toute la lignée : les bonbons Salamèche font monter de niveau Salamèche, Reptincel et Dracaufeu. Le coût augmente avec le stade d'évolution : un bonbon vaut 2 heures de travail en zone au niveau actuel du Pokémon, divisées par son stade d'évolution (1, 2 ou 3). Il reste ainsi utile à tous les niveaux. Il n'existe pas de bonbon d'expérience universel : les légendaires progressent grâce aux bonbons obtenus en les capturant de nouveau en expédition.
 
 ### Les attaques
 
@@ -299,7 +305,7 @@ Le jeu est une application web conçue comme un jeu mobile **en paysage**, insta
 
 ### La navigation
 
-Une barre verticale sur le côté donne accès à 4 onglets : **Pension**, **Zones**, **Pokédex** et **Expéditions** (verrouillé jusqu'à l'étape 6). Une barre en haut affiche les ressources, les points de recherche et le compte à rebours de la prochaine arrivée. Sur ordinateur, la barre latérale peut afficher les libellés à côté des icônes.
+Une barre verticale sur le côté donne accès à 5 onglets : **Pension**, **Zones**, **Pokédex**, **Laboratoire** (ouvert à 10 espèces) et **Expéditions** (verrouillé jusqu'à l'étape 6). Une barre en haut affiche les ressources, les points de recherche et le compte à rebours de la prochaine arrivée. Sur ordinateur, la barre latérale peut afficher les libellés à côté des icônes.
 
 ### Les pages
 
@@ -374,10 +380,11 @@ Les six premières étapes construisent toute la pension. Les expéditions n'arr
 
 ### Étape 3 — La recherche
 
-- Le moteur d'objectifs et les défis (hors expédition).
+- Le moteur d'objectifs et les défis (hors expédition), avec des récompenses à réclamer.
 - Les stades 2 et 3, les bonus de maîtrise.
-- L'arbre de compétences, qui débloque désormais le contenu, dont l'arbre Zones pour améliorer les zones.
+- Le laboratoire du Professeur Chen (ouvert à 10 espèces) et ses arbres de compétences : Pension, Mangeoire, Prairie, Verger.
 - Les indices et les bonbons de lignée.
+- Un joueur simulé pour régler l'économie.
 
 **Jouable** : un objectif à long terme et une progression guidée.
 
