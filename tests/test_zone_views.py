@@ -150,3 +150,14 @@ def test_the_cards_show_production_and_time_before_full(guest):
     assert f"Full in {balance.ZONE_WORK_HOURS_CAP - 3} h" in html
     # A level 10 Grass Pokémon in the Orchard: 1 an hour, +10 %
     assert "1.10<span" in html  # floatformat:"-2": two decimals unless whole
+
+
+def test_a_mastered_pokemon_works_at_full_rate_anywhere(guest):
+    client, player = guest
+    OwnedPokemon.objects.filter(player=player, species__slug="charmander").update(research_stage=3)
+    html = client.get(reverse("zones:detail", args=["orchard"])).content.decode()
+    # Charmander (Fire) is mastered: favoured in the Orchard too, with its star,
+    # and its harvest bonus puts it ahead of Bulbasaur
+    assert html.count('class="xp-badge') == 2
+    assert 'class="stage-mark is-mastered"' in html
+    assert html.index("Charmander") < html.index("Bulbasaur")

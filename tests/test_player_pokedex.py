@@ -120,3 +120,20 @@ def test_visitors_without_a_save_see_the_whole_catalogue(client, bulbasaur, ivys
     html = client.get(reverse("pokedex:index")).content.decode()
     assert "Ivysaur" in html
     assert "???" not in html
+
+
+def test_the_mastery_bonuses_wait_for_the_last_stage(player_client):
+    url = reverse("pokedex:detail", args=[1]) + "?view=challenges"
+    html = player_client.get(url, **HTMX).content.decode()
+    assert 'class="mastery-box "' in html  # greyed out: not mastered yet
+    assert "At the stage Mastered" in html
+    # Under the challenges, and in the bubble of the gift of the stage 3
+    assert html.count("Works at full rate in every zone") == 2
+    assert html.index('class="challenge-columns') < html.index('class="mastery-box')
+    # Not in the default view
+    overview = player_client.get(reverse("pokedex:detail", args=[1]), **HTMX).content.decode()
+    assert "mastery-box" not in overview
+    OwnedPokemon.objects.filter(species__number=1).update(research_stage=3)
+    html = player_client.get(url, **HTMX).content.decode()
+    assert 'class="mastery-box is-mastered"' in html
+    assert "Active" in html

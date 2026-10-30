@@ -143,6 +143,7 @@
                 <span class="flex min-w-0 items-center gap-2">
                   <img src="{{ candidate.pokemon.species.icon_url }}" alt="" class="pixelated h-[30px] w-[40px] shrink-0">
                   <span class="truncate font-bold">{{ candidate.pokemon.species.name }}</span>
+                  {% if candidate.mastered %}{% include "pokedex/_stage_mark.html" with stage=3 %}{% endif %}
                   {% if candidate.efficient %}<span class="xp-badge shrink-0">+{{ xp_bonus }} % XP</span>{% endif %}
                 </span>
                 <span class="text-right text-sm text-muted">{{ candidate.pokemon.level }}</span>
@@ -161,7 +162,7 @@
   {% for worker in workers %}
     {% with pokemon=worker.pokemon %}
     <dialog id="worker-{{ pokemon.pk }}" autofocus class="dialog-panel max-w-sm">
-      <h2 class="title-band -ml-6 self-start">{{ pokemon.species.name }}</h2>
+      <h2 class="title-band -ml-6 self-start">{{ pokemon.species.name }}{% if worker.mastered %} ★{% endif %}</h2>
       <div class="flex items-center gap-4">
         <img src="{{ pokemon.species.icon_url }}" alt="" class="pixelated h-[60px] w-[80px]">
         <div class="flex flex-1 flex-col gap-1">

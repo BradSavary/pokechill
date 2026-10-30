@@ -45,6 +45,7 @@ def at_work(zone: PlayerZone, pokemon: OwnedPokemon) -> dict:
     return {
         "pokemon": pokemon,
         "efficient": is_efficient(zone.spec, worker),
+        "mastered": worker.mastered,  # its gold star (it works at full rate anywhere)
         "per_hour": production_per_hour(zone.spec, worker, zone.yield_percent) / 100,
         "xp_per_hour": experience_per_hour(zone.spec, worker, zone.xp_percent),
         # Towards the next level: "245 / 860 XP" and the blue bar of the games
@@ -64,7 +65,9 @@ def rule_tips(zone: PlayerZone) -> dict:
             f"{zone.spec.resource_plural} gathered each hour: 1 for a Pokémon of a favoured "
             f"type, {balance.OFF_TYPE_PRODUCTION_PERCENT} % of that for the others, "
             f"+{balance.PRODUCTION_BONUS_PER_LEVEL_PERCENT} % per level. Favoured types "
-            f"also earn {balance.XP_TYPE_BONUS_PERCENT} % more experience."
+            f"also earn {balance.XP_TYPE_BONUS_PERCENT} % more experience. A mastered "
+            f"Pokémon (★) counts as favoured everywhere, and gathers "
+            f"{balance.MASTERY_YIELD_PERCENT} % more."
         ),
         "storage": (
             f"The Pokémon work up to {zone.work_cap} hours between two "

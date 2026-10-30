@@ -525,6 +525,25 @@
     @apply border-accent bg-accent text-white hover:bg-accent;
   }
 
+  /* The mastery bonuses of an entry: greyed out until the species is
+     mastered, then on a golden frame */
+  .mastery-box {
+    @apply flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border-2 border-dashed border-line px-4 py-1.5;
+  }
+  .mastery-box:not(.is-mastered) li {
+    @apply text-muted;
+  }
+  .mastery-box:not(.is-mastered) li > img {
+    @apply opacity-60 grayscale;
+  }
+  /* At the bottom of the entry: the bubbles open above their bonus */
+  .mastery-box .tip-host > .tip-bubble {
+    @apply top-auto right-0 bottom-full mr-0 mb-2 translate-y-0;
+  }
+  .mastery-box.is-mastered {
+    @apply border-solid border-[#e0b230] bg-[#fdf6e0];
+  }
+
   /* Stage marks: a dark grey star (studied), a gold one (mastered) */
   .stage-mark {
     @apply text-sm leading-none;

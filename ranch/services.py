@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
-from game import balance, experience
+from game import balance, experience, mastery
 from game.arrivals import NATURES, CatchUp, catch_up
 from game.clock import ONE_HOUR, floor_to_hour
 from game.collection import Obtention, OwnedState, resolve_obtention
@@ -268,6 +268,15 @@ def candies_of(player: Player, family) -> int:
 # --- Candies -----------------------------------------------------------------------------
 
 
+def candy_bonus(player: Player, pokemon: OwnedPokemon) -> int:
+    """
+    Experience bonus of the candies given to a Pokémon, in percent: the skill
+    tree's sweeter candies, plus its mastery bonus.
+    """
+    mastered = mastery.is_mastered(pokemon.research_stage)
+    return player.skill_bonuses.candy_xp_percent + mastery.candy_percent(mastered)
+
+
 class CandyError(ValueError):
     """Raised when candies can't be used (none left, maximum level...)."""
 
@@ -294,7 +303,7 @@ def use_candies(player: Player, species: Species, count: int | None) -> tuple[in
     )
     available = stock.amount if stock else 0
     curve, stage = species.growth_rate, species.evolution_stage
-    bonus = player.skill_bonuses.candy_xp_percent  # the skill tree's sweeter candies
+    bonus = candy_bonus(player, pokemon)
     wanted = (
         experience.candies_to_next_level(curve, pokemon.level, pokemon.experience, stage, bonus)
         if count is None

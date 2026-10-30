@@ -30,6 +30,7 @@ from .arrivals import SpeciesRule, catch_up
 from .challenges import ChallengeSpecies, challenge_points, challenges_for, stage
 from .clock import ONE_HOUR, floor_to_hour
 from .collection import OwnedState, resolve_obtention
+from .mastery import candy_percent, is_mastered
 from .objectives import FAMILY, HARVESTED, LEVEL, NATURES, OBTAINED, WORKED, Event, apply
 from .skill_tree import RESEARCH, SkillTree
 from .zones import ZONES, Worker, production_per_hour, work
@@ -82,6 +83,7 @@ class DayReport:
     nodes: int  # unlocked since the start
     bought: tuple[str, ...]  # the nodes unlocked this day
     resources: dict[str, int]
+    mastered: int = 0  # species at their stage 3 (their mastery bonuses work)
 
 
 class Player:
@@ -169,12 +171,17 @@ class Player:
         self.arrivals = result.arrivals
         return hours
 
+    def worker(self, mon) -> Worker:
+        """A Pokémon as the zones see it (mastered once its stage 3 is claimed)."""
+        mastered = is_mastered(self.claimed_stage[mon.species.slug])
+        return Worker(mon.species.types, mon.level, mastered)
+
     def work_zones(self, hours: int) -> None:
         for zone_slug, slugs in self.assignment.items():
             zone, mons = ZONES[zone_slug], [self.mons[slug] for slug in slugs]
             done = work(
                 zone,
-                [Worker(mon.species.types, mon.level) for mon in mons],
+                [self.worker(mon) for mon in mons],
                 self.zone_hours[zone_slug],
                 hours,
                 cap_hours=balance.ZONE_WORK_HOURS_CAP
@@ -275,9 +282,10 @@ class Player:
         """Raise the Pokémon one level at a time while the candies allow: workers first."""
         working = {slug for slugs in self.assignment.values() for slug in slugs}
         order = sorted(self.mons.values(), key=lambda m: (m.species.slug not in working, m.level))
-        bonus = self.bonuses.candy_xp_percent
         for mon in order:
             family = mon.species.family
+            mastered = is_mastered(self.claimed_stage[mon.species.slug])
+            bonus = self.bonuses.candy_xp_percent + candy_percent(mastered)
             while mon.level < experience.MAX_LEVEL:
                 curve, stage_ = mon.species.growth_rate, mon.species.evolution_stage
                 need = experience.candies_to_next_level(curve, mon.level, mon.xp, stage_, bonus)
@@ -325,11 +333,7 @@ class Player:
             spots = balance.ZONE_SLOTS_BASE + self.bonuses.of_zone("zone_slots", zone_slug)
             best = sorted(
                 free,
-                key=lambda slug: (
-                    -production_per_hour(
-                        zone, Worker(self.mons[slug].species.types, self.mons[slug].level)
-                    )
-                ),
+                key=lambda slug: -production_per_hour(zone, self.worker(self.mons[slug])),
             )[:spots]
             self.assignment[zone_slug] = best
             free -= set(best)
@@ -368,6 +372,7 @@ def simulate(
             DayReport(
                 day=day,
                 owned=len(player.mons),
+                mastered=sum(is_mastered(stage) for stage in player.claimed_stage.values()),
                 research_earned=player.research_earned,
                 research_left=player.research,
                 nodes=len(player.unlocked),

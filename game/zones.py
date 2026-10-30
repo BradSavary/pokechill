@@ -2,8 +2,9 @@
 Harvest zones: what they are, and what their Pokémon produce.
 
 A zone favours some types: a Pokémon of one of them works at full rate (and
-earns a bit more experience), any other at a reduced rate. Each zone
-produces one resource.
+earns a bit more experience), any other at a reduced rate. A mastered
+Pokémon (game.mastery) works at full rate everywhere, and gathers and learns
+more. Each zone produces one resource.
 
 While the player is away nothing changes in a zone (same Pokémon, same
 levels: experience is only applied when collecting), so its work over a
@@ -71,22 +72,25 @@ class Worker:
 
     types: tuple[str, ...]
     level: int
+    mastered: bool = False  # its species is mastered (research stage 3)
 
 
 def is_efficient(zone: Zone, worker: Worker) -> bool:
-    """True if one of the Pokémon's types is favoured by the zone."""
-    return not zone.types.isdisjoint(worker.types)
+    """True if one of the Pokémon's types is favoured by the zone, or if it is mastered."""
+    return worker.mastered or not zone.types.isdisjoint(worker.types)
 
 
 def production_per_hour(zone: Zone, worker: Worker, bonus_percent: int = 0) -> int:
     """
     Resource made in one hour, in hundredths (100 = 1 resource). `bonus_percent`:
-    the yield bonus of the zone (its skill tree), on top of the level bonus.
+    the yield bonus of the zone (its skill tree), on top of the level bonus;
+    a mastered Pokémon adds its own.
     """
     rate = 100 if is_efficient(zone, worker) else balance.OFF_TYPE_PRODUCTION_PERCENT
     level_bonus = 100 + worker.level * balance.PRODUCTION_BONUS_PER_LEVEL_PERCENT
     made = balance.PRODUCTION_PER_HOUR_CENTI * rate * level_bonus // 10_000
-    return made * (100 + bonus_percent) // 100
+    mastery = balance.MASTERY_YIELD_PERCENT if worker.mastered else 0
+    return made * (100 + bonus_percent + mastery) // 100
 
 
 def base_experience_per_hour(level: int) -> int:
@@ -98,7 +102,8 @@ def experience_per_hour(zone: Zone, worker: Worker, bonus_percent: int = 0) -> i
     """Experience earned in one hour of work (`bonus_percent`: the zone's skill tree)."""
     base = base_experience_per_hour(worker.level)
     bonus = balance.XP_TYPE_BONUS_PERCENT if is_efficient(zone, worker) else 0
-    return base * (100 + bonus + bonus_percent) // 100
+    mastery = balance.MASTERY_XP_PERCENT if worker.mastered else 0
+    return base * (100 + bonus + bonus_percent + mastery) // 100
 
 
 @dataclass(frozen=True)

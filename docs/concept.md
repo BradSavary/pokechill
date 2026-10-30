@@ -46,7 +46,14 @@ Chaque espèce possède sa propre fiche de recherche, qui progresse en trois sta
 
 **La fiche d'une espèce** se concentre sur une action à la fois, choisie avec les boutons en bas : « Challenges » (les défis et la barre des stades) et « Level & candies » (le niveau, et les bonbons de sa lignée à lui donner). Les statistiques, les attaques, la description et le cri attendent qu'ils servent (expéditions).
 
-**Le bonus de maîtrise** donne une raison concrète d'aller jusqu'au bout. Il est lié à l'identité du Pokémon : Leveinard maîtrisé accélère les soins après une expédition, Miaouss augmente les gains d'argent, Ronflex agrandit la mangeoire.
+**Les bonus de maîtrise** donnent une raison concrète d'aller jusqu'au bout. Atteindre le stade 3 demande tous les défis de l'espèce : chaque espèce maîtrisée reçoit donc les quatre bonus à la fois. Ils ne concernent que le Pokémon lui-même (les améliorations de la pension relèvent de l'arbre de compétences) :
+
+- **affinité** : il travaille à plein rendement dans toutes les zones, comme si elles favorisaient ses types ;
+- **récolte** : il récolte davantage ;
+- **expérience** : il gagne davantage d'expérience en zone ;
+- **bonbons** : ses bonbons lui donnent davantage d'expérience.
+
+Les valeurs sont dans `game/balance.py`. Des bonus d'expédition (statistiques) pourront s'y ajouter à l'étape 6.
 
 ### Les défis
 

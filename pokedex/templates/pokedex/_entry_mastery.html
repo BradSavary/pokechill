@@ -1,0 +1,23 @@
+{% comment %}
+  The four mastery bonuses (game.mastery), at the bottom of the challenges
+  of an owned species (included by _entry_challenges.html). Lit once the
+  species is mastered (its stage 3 claimed); greyed out before, to show what
+  the last stage brings. One line, so that the challenges still fit on a
+  laptop screen: each bonus in a few words, its sentence on hover (or on
+  focus, after a tap).
+{% endcomment %}
+<section class="mastery-box {% if mastery.mastered %}is-mastered{% endif %}" aria-label="Mastery bonuses">
+  <p class="flex flex-row leading-tight gap-2">
+    <span class="font-bold whitespace-nowrap self-end">Mastery bonuses {% if mastery.mastered %}{% include "pokedex/_stage_mark.html" with stage=3 %}{% endif %}</span>
+    <span class="text-xs text-muted self-end">{% if mastery.mastered %}Active{% else %}At the stage Mastered{% endif %}</span>
+  </p>
+  <ul class="flex flex-1 flex-wrap items-center justify-end gap-x-4 gap-y-1">
+    {% for bonus in mastery.bonuses %}
+      <li class="tip-host flex items-center gap-1 text-sm whitespace-nowrap" tabindex="0">
+        <img src="{{ bonus.icon }}" alt="" width="30" height="30" class="pixelated size-6 shrink-0">
+        {{ bonus.label }}
+        <span class="tip-bubble" role="tooltip">{{ bonus.text }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+</section>

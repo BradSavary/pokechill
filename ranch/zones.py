@@ -13,7 +13,7 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
-from game import balance, experience
+from game import balance, experience, mastery
 from game.zones import ZONE_OF_RESOURCE, Worker, work
 
 from . import research
@@ -33,7 +33,11 @@ def give_starting_zones(player: Player) -> None:
 
 def as_worker(pokemon: OwnedPokemon) -> Worker:
     """A Pokémon as the engine sees it at work: its types and level."""
-    return Worker(types=tuple(t.slug for t in pokemon.species.types), level=pokemon.level)
+    return Worker(
+        types=tuple(t.slug for t in pokemon.species.types),
+        level=pokemon.level,
+        mastered=mastery.is_mastered(pokemon.research_stage),
+    )
 
 
 def workers_of(zone: PlayerZone) -> list[OwnedPokemon]:

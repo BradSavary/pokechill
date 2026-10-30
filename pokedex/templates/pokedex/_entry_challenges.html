@@ -7,6 +7,7 @@
   when the gift has the focus, after a tap). A gift reached waits to be
   claimed (it bounces): a click claims it. Below, the challenges in two
   columns: a completed one shows its "Claim" button until it is claimed.
+  At the bottom, the mastery bonuses that the last stage brings.
   Every claim is a POST answered by the entry again (HTMX), with the "!" of
   the menu and of the list refreshed (see _entry_action.html).
   A visitor (no save) sees the challenges only.
@@ -33,10 +34,13 @@
             {# tabindex: a tap gives it the focus, which shows its reward #}
             <span class="gift" tabindex="0">{% include "icons/gift.svg" %}</span>
           {% endif %}
-          <span class="label" role="tooltip">
+          {# The four mastery bonuses need a wider bubble: one line each #}
+          <span class="label {% if stage.reward.mastery %}w-max{% endif %}" role="tooltip">
             <strong>{{ stage.name }}</strong>
             <span class="text-muted">· {% if stage.state == "claimed" %}claimed{% elif stage.state == "ready" %}click to claim{% elif stage.state == "waiting" %}claim the stage before{% elif stage.reward.mastery %}all challenges{% else %}{{ stage.reward.at }} challenges{% endif %}</span><br>
-            {% if stage.reward.mastery %}Mastery bonuses{% else %}
+            {% if stage.reward.mastery %}
+              {% for bonus in mastery.bonuses %}{{ bonus.text }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+            {% else %}
               {% include "_research_points.html" with amount=stage.reward.points size="size-4" %}
               {% if stage.reward.candies %}
                 <span class="inline-flex items-center gap-0.5 font-bold"><span class="candy-icon size-4"><img src="{{ species.evolution_chain.candy_url }}" alt="candies"></span>{{ stage.reward.candies }}</span>
@@ -84,4 +88,6 @@
       </li>
     {% endfor %}
   </ul>
+
+  {% if mastery %}{% include "pokedex/_entry_mastery.html" %}{% endif %}
 </section>

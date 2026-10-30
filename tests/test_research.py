@@ -269,3 +269,13 @@ def test_claiming_a_challenge_fills_the_stage_bar_from_where_it_was(client, in_g
     html = client.post(url, {"what": "natures-3"}, **HTMX).content.decode()
     # The bar of the stages counts the claimed challenges: 1 of 9, from 0
     assert re.search(r'class="fill fill-from" style="width: 11%; --from: 0%"', html)
+
+
+def test_the_candies_of_a_mastered_species_give_more_experience(player, in_game):
+    bulbasaur, _ = in_game
+    obtain(player, bulbasaur)
+    OwnedPokemon.objects.filter(player=player).update(level=10)
+    CandyStock.objects.create(player=player, family=bulbasaur.evolution_chain, amount=50)
+    plain = use_candies(player, bulbasaur, None)[0]
+    OwnedPokemon.objects.filter(player=player).update(level=10, experience=0, research_stage=3)
+    assert use_candies(player, bulbasaur, None)[0] < plain  # fewer candies for one level

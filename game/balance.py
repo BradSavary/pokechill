@@ -145,6 +145,12 @@ STAGE_1_RESEARCH_POINTS = 10
 STAGE_2_RESEARCH_POINTS = 50
 STAGE_2_CANDIES = 50
 
+# The mastery bonuses of a species at stage 3 (game.mastery), in percent; it
+# also works at full rate in every zone. Added to the skill tree's bonuses.
+MASTERY_YIELD_PERCENT = 25  # resources it gathers
+MASTERY_XP_PERCENT = 25  # experience it earns in its zone
+MASTERY_CANDY_PERCENT = 50  # experience its candies give
+
 # --- Skill tree (game.skill_tree, data/skill_tree.json) -------------------------
 
 # Professor Oak's lab (the skill tree) opens once the Pokédex holds this many

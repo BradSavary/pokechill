@@ -17,10 +17,11 @@ the pokedex models never depend on ranch (no circular dependency).
 from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.templatetags.static import static
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from game import experience
+from game import experience, mastery
 from ranch import tutorial
 from ranch.research import (
     ClaimError,
@@ -29,7 +30,14 @@ from ranch.research import (
     species_with_rewards,
     sync_research,
 )
-from ranch.services import CandyError, candies_of, collection_of, player_for, use_candies
+from ranch.services import (
+    CandyError,
+    candies_of,
+    candy_bonus,
+    collection_of,
+    player_for,
+    use_candies,
+)
 
 from .models import Species, Type
 
@@ -125,7 +133,7 @@ def experience_percent(species: Species, owned) -> int:
 def training_context(species: Species, owned, candies: int) -> dict:
     """The "Level & candies" action: the experience bar and what candies give."""
     curve, stage = species.growth_rate, species.evolution_stage
-    bonus = owned.player.skill_bonuses.candy_xp_percent  # the skill tree's sweeter candies
+    bonus = candy_bonus(owned.player, owned)  # sweeter candies (skill tree, mastery)
     at_max = owned.level >= experience.MAX_LEVEL
     needed = (
         0
@@ -148,6 +156,26 @@ def training_context(species: Species, owned, candies: int) -> dict:
     }
 
 
+# The sprite of each mastery bonus (game.mastery)
+MASTERY_ICONS = {
+    "affinity": "pokemon/items/soothe-bell.png",
+    "harvest": "pokemon/items/amulet-coin.png",
+    "experience": "pokemon/items/lucky-egg.png",
+    "candies": "pokemon/items/rare-candy.png",
+}
+
+
+def mastery_context(owned) -> dict:
+    """The four mastery bonuses of an entry: lit once the species is mastered."""
+    return {
+        "mastered": mastery.is_mastered(owned.research_stage),
+        "bonuses": [
+            {"label": bonus.label, "text": bonus.text, "icon": static(MASTERY_ICONS[bonus.effect])}
+            for bonus in mastery.bonuses()
+        ],
+    }
+
+
 def entry_context(species: Species, dex: dict, view: str | None = None) -> dict:
     """Template values of a species entry, focused on the action `view`."""
     owned = dex["collection"].get(species.id) if dex["player"] else None
@@ -166,6 +194,8 @@ def entry_context(species: Species, dex: dict, view: str | None = None) -> dict:
         "research": entry_research(dex["player"], species, owned),
         # The default view of an owned species shows its level and candies
         "training": training_context(species, owned, candies) if owned and not view else None,
+        # Its mastery bonuses (under the challenges, and the gift of the stage 3)
+        "mastery": mastery_context(owned) if owned else None,
     }
 
 

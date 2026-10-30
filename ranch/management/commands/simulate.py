@@ -3,7 +3,7 @@ Django command: `uv run python manage.py simulate [--days 60] [--visits 7,12,19]
 
 Plays a simulated player for weeks (game.simulation), with the species of
 the game and the skill tree, and prints its progress day by day: species
-owned, research points earned and left, nodes unlocked. Run it after any
+owned and mastered, research points earned and left, nodes unlocked. Run it after any
 change of the balance (game/balance.py) or of the tree
 (data/skill_tree.json), to check that the progress stays smooth.
 """
@@ -58,12 +58,15 @@ class Command(BaseCommand):
         reports = simulate(catalog(), tree, days=days, visit_hours=hours, seed=seed)
         names = {node_id: node.name for node_id, node in tree.nodes.items()}
 
-        self.stdout.write(f"{'day':>4} {'owned':>5} {'earned':>7} {'left':>6} {'nodes':>6}  bought")
+        self.stdout.write(
+            f"{'day':>4} {'owned':>5} {'mast.':>5} {'earned':>7} {'left':>6} {'nodes':>6}  bought"
+        )
         for report in reports:
             bought = ", ".join(names[node_id] for node_id in report.bought)
             self.stdout.write(
-                f"{report.day:>4} {report.owned:>5} {report.research_earned:>7} "
-                f"{report.research_left:>6} {report.nodes:>3}/{len(tree.nodes):<3} {bought}"
+                f"{report.day:>4} {report.owned:>5} {report.mastered:>5} "
+                f"{report.research_earned:>7} {report.research_left:>6} "
+                f"{report.nodes:>3}/{len(tree.nodes):<3} {bought}"
             )
         last = reports[-1]
         self.stdout.write("")
