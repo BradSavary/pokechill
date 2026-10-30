@@ -2,6 +2,7 @@
   "species": "butterfree",
   "rarity": "rare",
   "min_level": 10,
+  "hint": "Wings flutter over a busy orchard in the daytime, once a cocoon has been found.",
   "conditions": {
     "all": [
       {

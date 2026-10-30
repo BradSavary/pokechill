@@ -2,5 +2,6 @@
   "species": "rattata",
   "rarity": "common",
   "min_level": 1,
+  "hint": "It scurries in at any hour. Hard to miss.",
   "conditions": null
 }

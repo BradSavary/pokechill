@@ -2,6 +2,7 @@
   "species": "wigglytuff",
   "rarity": "rare",
   "min_level": 16,
+  "hint": "Soft fur bounces through a busy meadow, where a round singer already lives.",
   "conditions": {
     "all": [
       {

@@ -4,7 +4,14 @@ from datetime import UTC, datetime
 
 import pytest
 
-from game.conditions import ConditionError, GameContext, evaluate, validate
+from game.conditions import (
+    ConditionError,
+    GameContext,
+    describe,
+    evaluate,
+    species_named,
+    validate,
+)
 
 # 12:00 UTC is daytime in Paris, 23:00 UTC is night, all year round
 DAY = GameContext(slot=datetime(2026, 1, 15, 12, tzinfo=UTC))
@@ -117,3 +124,56 @@ def test_invalid_trees_are_rejected(tree):
 def test_evaluating_an_unknown_condition_fails_loudly():
     with pytest.raises(ConditionError):
         evaluate({"weather": "rain"}, DAY)
+
+
+# --- In plain English ----------------------------------------------------------------------
+
+
+NAMES = {"paras": "Paras", "ivysaur": "Ivysaur", "bulbasaur": "Bulbasaur"}.get
+
+
+def test_no_condition_has_no_line():
+    assert describe(None, NAMES) == []
+
+
+def test_each_condition_of_the_top_all_is_a_line():
+    parasect = {"all": [AT_NIGHT, {"works_in": {"species": "paras", "zone": "orchard"}}]}
+    assert describe(parasect, NAMES) == [
+        "at night (21:00–6:00)",
+        "a Paras at work in the Orchard",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("node", "text"),
+    [
+        (BY_DAY, "during the day (6:00–21:00)"),
+        ({"feeder": "apricorn"}, "apricorns in the feeder"),
+        ({"feeder": "mystic-dust"}, "mystic dust in the feeder"),  # a planned resource
+        ({"owns": "bulbasaur"}, "Bulbasaur in your Pokédex"),
+        ({"zone_occupied": "meadow"}, "a Pokémon at work in the Meadow"),
+        ({"works_in": {"species": "ivysaur", "zone": "pond"}}, "an Ivysaur at work in the Pond"),
+        ({"zone_level": {"zone": "meadow", "level": 2}}, "the Meadow at level 2"),
+        ({"not": AT_NIGHT}, "not at night (21:00–6:00)"),
+    ],
+)
+def test_every_leaf_has_its_text(node, text):
+    assert describe(node, NAMES) == [text]
+
+
+def test_groups_are_joined_and_bracketed_when_nested():
+    either = {"any": [{"owns": "bulbasaur"}, {"all": [AT_NIGHT, {"feeder": "berry"}]}]}
+    assert describe(either, NAMES) == [
+        "Bulbasaur in your Pokédex or (at night (21:00–6:00) and berries in the feeder)"
+    ]
+
+
+def test_the_species_a_condition_names():
+    venusaur = {
+        "all": [
+            {"owns": "ivysaur"},
+            {"any": [{"works_in": {"species": "bulbasaur", "zone": "orchard"}}, BY_DAY]},
+        ]
+    }
+    assert species_named(venusaur) == {"ivysaur", "bulbasaur"}
+    assert species_named(None) == set()

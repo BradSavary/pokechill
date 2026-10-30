@@ -2,6 +2,7 @@
   "species": "golbat",
   "rarity": "uncommon",
   "min_level": 22,
+  "hint": "A bigger mouth flies at night, behind a smaller bat.",
   "conditions": {
     "all": [
       {

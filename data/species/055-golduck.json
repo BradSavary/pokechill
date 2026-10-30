@@ -2,6 +2,7 @@
   "species": "golduck",
   "rarity": "rare",
   "min_level": 33,
+  "hint": "A graceful swimmer by day, where a puzzled duck works in the water.",
   "conditions": {
     "all": [
       {

@@ -2,6 +2,7 @@
   "species": "metapod",
   "rarity": "uncommon",
   "min_level": 7,
+  "hint": "A still cocoon hangs in the trees of a busy orchard by day. It must have been a crawler once.",
   "conditions": {
     "all": [
       {

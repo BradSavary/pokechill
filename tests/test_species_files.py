@@ -6,6 +6,7 @@ import pytest
 from django.conf import settings
 from django.core.management import CommandError, call_command
 
+from game.conditions import species_named
 from pokedex.models import Species
 from pokedex.species_files import SpeciesFileError, parse_species_data, read_species_files
 
@@ -41,6 +42,8 @@ def test_conditions_are_optional():
         ({"min_level": True}, "min_level must be an integer"),
         ({"conditions": {"weather": "rain"}}, "invalid conditions"),
         ({"rarety": "rare"}, "unknown keys: rarety"),  # the classic typo
+        ({"hint": "  "}, "hint must be a non-empty text"),
+        ({"hint": 3}, "hint must be a non-empty text"),
     ],
 )
 def test_invalid_values_are_reported(change, message):
@@ -75,28 +78,18 @@ def test_repository_species_files_are_valid():
     assert len(files) >= 55
 
 
-def species_named_in(node):
-    """The species slugs a condition tree refers to (owns, works_in)."""
-    if not node:
-        return set()
-    key, value = next(iter(node.items()))
-    if key in ("all", "any"):
-        return set().union(*(species_named_in(child) for child in value))
-    if key == "not":
-        return species_named_in(value)
-    if key == "owns":
-        return {value}
-    if key == "works_in":
-        return {value["species"]}
-    return set()
-
-
 def test_repository_conditions_only_name_species_of_the_game():
     # "owns": "nidoran-f" can only be met if Nidoran♀ can come (a file of its own)
     files = read_species_files(settings.BASE_DIR / "data" / "species")
     slugs = {data.slug for data in files}
     for data in files:
-        assert species_named_in(data.conditions) <= slugs, data.slug
+        assert species_named(data.conditions) <= slugs, data.slug
+
+
+def test_repository_species_all_have_a_hint():
+    # The hint is the only clue on the silhouette of a species not met yet
+    files = read_species_files(settings.BASE_DIR / "data" / "species")
+    assert all(data.hint for data in files)
 
 
 # --- The load_species command ---------------------------------------------
@@ -104,13 +97,15 @@ def test_repository_conditions_only_name_species_of_the_game():
 
 @pytest.mark.django_db
 def test_command_loads_files_and_disables_the_others(tmp_path, bulbasaur, charmander):
-    write(tmp_path, "001-bulbasaur.json", VALID | {"conditions": {"time_of_day": "night"}})
+    night = {"conditions": {"time_of_day": "night"}, "hint": " A seed, after dark. "}
+    write(tmp_path, "001-bulbasaur.json", VALID | night)
     call_command("load_species", directory=tmp_path)
 
     bulbasaur.refresh_from_db()
     charmander.refresh_from_db()
     assert bulbasaur.is_available
     assert bulbasaur.to_rule().conditions == {"time_of_day": "night"}
+    assert bulbasaur.hint == "A seed, after dark."  # trimmed
     assert not charmander.is_available
 
 

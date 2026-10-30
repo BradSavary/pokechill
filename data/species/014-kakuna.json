@@ -2,6 +2,7 @@
   "species": "kakuna",
   "rarity": "uncommon",
   "min_level": 7,
+  "hint": "A cocoon hangs in a busy orchard by day. A stinging crawler may know about it.",
   "conditions": {
     "all": [
       {

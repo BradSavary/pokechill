@@ -2,6 +2,7 @@
   "species": "zubat",
   "rarity": "common",
   "min_level": 1,
+  "hint": "It flutters in the dark, guided by sound.",
   "conditions": {
     "time_of_day": "night"
   }

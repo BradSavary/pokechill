@@ -1,0 +1,10 @@
+{% load static %}
+{% comment %}
+  The hint of a species not obtained yet (the "hint" of its data file):
+  Professor Oak whispers it, in his text box. A vague sentence, to guess
+  how it comes; its true conditions show once it is obtained.
+{% endcomment %}
+<div class="flex items-center gap-3">
+  <img src="{% static 'img/professor-oak.png' %}" alt="Professor Oak" width="96" height="96" class="pixelated size-16 shrink-0">
+  <p class="oak-dialogue flex-1 text-sm italic">“{{ species.hint }}”</p>
+</div>

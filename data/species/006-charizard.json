@@ -2,6 +2,7 @@
   "species": "charizard",
   "rarity": "very_rare",
   "min_level": 36,
+  "hint": "It soars over burning lands at night, watching its young kin at work in the heat.",
   "conditions": {
     "all": [
       {

@@ -18,7 +18,7 @@ DATA_DIR = settings.BASE_DIR / "data" / "species"
 
 
 class Command(BaseCommand):
-    help = "Load rarity, level, arrival conditions and challenges from data/species/*.json."
+    help = "Load rarity, level, conditions, challenges and hints from data/species/*.json."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -49,6 +49,7 @@ class Command(BaseCommand):
                 min_level=1,
                 arrival_conditions=None,
                 custom_challenges={},
+                hint="",
             )
             for data in files:
                 species = species_by_slug[data.slug]
@@ -57,9 +58,17 @@ class Command(BaseCommand):
                 species.min_level = data.min_level
                 species.arrival_conditions = data.conditions
                 species.custom_challenges = data.challenges
+                species.hint = data.hint
             Species.objects.bulk_update(
                 [species_by_slug[data.slug] for data in files],
-                ["is_available", "rarity", "min_level", "arrival_conditions", "custom_challenges"],
+                [
+                    "is_available",
+                    "rarity",
+                    "min_level",
+                    "arrival_conditions",
+                    "custom_challenges",
+                    "hint",
+                ],
             )
 
         self.stdout.write(self.style.SUCCESS(f"Loaded {len(files)} available species."))

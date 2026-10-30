@@ -2,6 +2,7 @@
   "species": "ninetales",
   "rarity": "rare",
   "min_level": 16,
+  "hint": "Nine golden tails, seen by day by those who cared for a little fox.",
   "conditions": {
     "all": [
       {

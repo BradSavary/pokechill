@@ -2,6 +2,7 @@
   "species": "raichu",
   "rarity": "very_rare",
   "min_level": 16,
+  "hint": "A brighter spark visits by day, where a little mouse already lives.",
   "conditions": {
     "all": [
       {

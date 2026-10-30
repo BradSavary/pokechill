@@ -12,6 +12,9 @@
     opened by the button at its bottom: a small header then leaves the room
     to the challenges. Clicking the button again goes back.
   - research: ranch.research.entry_research; training: pokedex.views.
+  - arrival: how it comes (its true conditions, in plain English), in the
+    default view of an owned species. A species not obtained yet shows the
+    hint of its data file instead, on its silhouette.
   - error: why the last action failed (nothing to claim, no candies...).
     A success shows by itself: the points rise, the bars fill.
   Stats, moves and the description are left out until they matter.
@@ -86,6 +89,26 @@
     </header>
   {% endif %}
 
+  {% if arrival is not None %}
+    {% comment %}
+      How it comes, now that the player knows it: its conditions side by side
+      (they wrap if needed), to keep the entry short enough for the screen.
+    {% endcomment %}
+    <section class="flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-2xl bg-sky px-4 py-2 text-sm" aria-label="How it comes">
+      <h3 class="font-bold">How it comes</h3>
+      {% if arrival %}
+        <ul class="contents">
+          {% for line in arrival %}<li class="flex gap-1.5"><span class="text-accent">▸</span>{{ line|capfirst }}</li>{% endfor %}
+        </ul>
+      {% else %}
+        <p>At any time: no special condition.</p>
+      {% endif %}
+    </section>
+  {% elif not owned and not view and species.hint %}
+    {# The public catalogue (no save): the hint, not the answer #}
+    {% include "pokedex/_hint.html" %}
+  {% endif %}
+
   {% if error %}<p class="rounded-xl bg-sky px-3 py-2 font-bold text-accent" role="alert">{{ error }}</p>{% endif %}
 
   {% if view == "challenges" %}
@@ -123,6 +146,7 @@
       <h2 class="text-3xl font-bold text-muted">???</h2>
       {% if species.is_available %}
         <p>You haven't met this Pokémon yet.</p>
+        {% if species.hint %}{% include "pokedex/_hint.html" %}{% endif %}
       {% else %}
         <p>This Pokémon is not in the game yet.</p>
       {% endif %}

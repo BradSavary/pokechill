@@ -2,6 +2,7 @@
   "species": "gloom",
   "rarity": "uncommon",
   "min_level": 21,
+  "hint": "A dreadful smell drifts through the night. A little weed knows where it comes from.",
   "conditions": {
     "all": [
       {

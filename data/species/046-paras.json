@@ -2,6 +2,7 @@
   "species": "paras",
   "rarity": "common",
   "min_level": 1,
+  "hint": "Mushrooms on its back, it creeps out after dark.",
   "conditions": {
     "time_of_day": "night"
   }

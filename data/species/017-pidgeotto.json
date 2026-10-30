@@ -2,6 +2,7 @@
   "species": "pidgeotto",
   "rarity": "uncommon",
   "min_level": 18,
+  "hint": "It circles above a busy meadow by day, following a small bird.",
   "conditions": {
     "all": [
       {

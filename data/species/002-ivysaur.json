@@ -2,6 +2,7 @@
   "species": "ivysaur",
   "rarity": "rare",
   "min_level": 16,
+  "hint": "Its bud only opens in the sunlight, for those who already know its younger self.",
   "conditions": {
     "all": [
       {

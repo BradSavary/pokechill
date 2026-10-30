@@ -137,3 +137,34 @@ def test_the_mastery_bonuses_wait_for_the_last_stage(player_client):
     html = player_client.get(url, **HTMX).content.decode()
     assert 'class="mastery-box is-mastered"' in html
     assert "Active" in html
+
+
+def test_a_species_not_met_yet_shows_its_hint(player_client, ivysaur):
+    Species.objects.filter(pk=ivysaur.pk).update(hint="Its bud opens in the sunlight.")
+    html = player_client.get(reverse("pokedex:detail", args=[2]), **HTMX).content.decode()
+    assert "Its bud opens in the sunlight." in html
+    assert "How it comes" not in html  # the answer waits until it is obtained
+
+
+def test_an_owned_species_shows_how_it_comes(player_client, bulbasaur, ivysaur):
+    conditions = {"all": [{"time_of_day": "day"}, {"owns": "ivysaur"}]}
+    Species.objects.filter(pk=bulbasaur.pk).update(arrival_conditions=conditions, hint="A seed.")
+    html = player_client.get(reverse("pokedex:detail", args=[1]), **HTMX).content.decode()
+    assert 'aria-label="How it comes"' in html
+    assert "During the day (6:00–21:00)" in html
+    assert "Ivysaur in your Pokédex" in html  # its name, looked up
+    assert "A seed." not in html  # no more hint: the true conditions
+
+
+def test_a_species_without_conditions_comes_at_any_time(player_client):
+    html = player_client.get(reverse("pokedex:detail", args=[1]), **HTMX).content.decode()
+    assert "At any time: no special condition." in html
+
+
+def test_visitors_see_the_hint_not_the_conditions(client, bulbasaur):
+    Species.objects.filter(pk=bulbasaur.pk).update(
+        arrival_conditions={"time_of_day": "night"}, hint="A seed, after dark."
+    )
+    html = client.get(reverse("pokedex:detail", args=[1]), **HTMX).content.decode()
+    assert "A seed, after dark." in html
+    assert "How it comes" not in html

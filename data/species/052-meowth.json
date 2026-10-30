@@ -2,18 +2,19 @@
   "species": "meowth",
   "rarity": "uncommon",
   "min_level": 1,
+  "hint": "Anything shiny in the feeder catches its eye.",
   "conditions": {
-      "any": [
-          {
-            "feeder": "pearl"
-          },
-          {
-            "feeder": "ore"
-          },
-          {
-            "feeder": "mystic-dust"
-          }
-        ]
+    "any": [
+      {
+        "feeder": "pearl"
       },
+      {
+        "feeder": "ore"
+      },
+      {
+        "feeder": "mystic-dust"
+      }
+    ]
+  },
   "notes": "Lured by shiny things: pearls, ore or mystic dust in the feeder (later zones)."
 }

@@ -2,6 +2,7 @@
   "species": "nidoking",
   "rarity": "rare",
   "min_level": 31,
+  "hint": "A king only answers to those who raised his younger self.",
   "conditions": {
     "owns": "nidorino"
   },

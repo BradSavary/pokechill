@@ -2,6 +2,7 @@
   "species": "blastoise",
   "rarity": "very_rare",
   "min_level": 36,
+  "hint": "It only appears where the water runs deep and a young turtle works hard.",
   "conditions": {
     "all": [
       {

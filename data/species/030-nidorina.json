@@ -2,6 +2,7 @@
   "species": "nidorina",
   "rarity": "uncommon",
   "min_level": 16,
+  "hint": "She grows up from a gentle poison pin, and visits those who have one.",
   "conditions": {
     "owns": "nidoran-f"
   }

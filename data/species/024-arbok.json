@@ -2,6 +2,7 @@
   "species": "arbok",
   "rarity": "rare",
   "min_level": 22,
+  "hint": "The pattern on its belly frightens visitors at night. A smaller snake shows the way.",
   "conditions": {
     "all": [
       {

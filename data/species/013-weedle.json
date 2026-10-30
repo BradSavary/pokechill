@@ -2,6 +2,7 @@
   "species": "weedle",
   "rarity": "common",
   "min_level": 1,
+  "hint": "A stinging little crawler that only wanders out in daylight.",
   "conditions": {
     "time_of_day": "day"
   }

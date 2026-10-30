@@ -2,6 +2,7 @@
   "species": "charmeleon",
   "rarity": "rare",
   "min_level": 16,
+  "hint": "Its tail burns brighter in the dark. Only those who raised a small flame will see it.",
   "conditions": {
     "all": [
       {

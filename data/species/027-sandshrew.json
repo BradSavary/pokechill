@@ -2,6 +2,7 @@
   "species": "sandshrew",
   "rarity": "uncommon",
   "min_level": 1,
+  "hint": "It curls up in dry ground, and wanders out under the sun.",
   "conditions": {
     "time_of_day": "day"
   }

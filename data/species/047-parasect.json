@@ -2,6 +2,7 @@
   "species": "parasect",
   "rarity": "rare",
   "min_level": 24,
+  "hint": "Something grows on the backs of those who dig among the orchard's roots... Look again at night.",
   "conditions": {
     "all": [
       {

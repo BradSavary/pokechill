@@ -2,6 +2,7 @@
   "species": "pikachu",
   "rarity": "rare",
   "min_level": 1,
+  "hint": "A rare spark, seen only in daylight. Patience pays.",
   "conditions": {
     "time_of_day": "day"
   },

@@ -2,6 +2,7 @@
   "species": "dugtrio",
   "rarity": "uncommon",
   "min_level": 26,
+  "hint": "Three heads pop up by day, where a lone digger works the stone.",
   "conditions": {
     "all": [
       {

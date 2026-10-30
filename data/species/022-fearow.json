@@ -2,6 +2,7 @@
   "species": "fearow",
   "rarity": "rare",
   "min_level": 20,
+  "hint": "Its long beak searches a busy meadow by day. It followed a smaller bird.",
   "conditions": {
     "all": [
       {

@@ -60,10 +60,41 @@ PLANNED_ZONES = {
     "tower": "mystic-dust",
 }
 
+# Their names, for the texts of the game (the conditions of a species, in
+# its Pokédex entry)
+PLANNED_ZONE_NAMES = {
+    "pond": "Pond",
+    "quarry": "Quarry",
+    "volcano": "Volcano",
+    "power-plant": "Power Plant",
+    "swamp": "Swamp",
+    "tower": "Tower",
+}
+PLANNED_RESOURCE_PLURALS = {
+    "pearl": "Pearls",
+    "ore": "Ore",
+    "ember": "Embers",
+    "energy": "Energy",
+    "root": "Roots",
+    "mystic-dust": "Mystic dust",
+}
+
 # Everything a condition may name: the zones and resources of the game, and
 # the planned ones
 KNOWN_ZONES = frozenset(ZONES) | frozenset(PLANNED_ZONES)
 KNOWN_RESOURCES = frozenset(ZONE_OF_RESOURCE) | frozenset(PLANNED_ZONES.values())
+
+
+def zone_name(slug: str) -> str:
+    """The name of a zone of the game, or of a planned one: "Orchard", "Pond"."""
+    return ZONES[slug].name if slug in ZONES else PLANNED_ZONE_NAMES[slug]
+
+
+def resource_plural(slug: str) -> str:
+    """The name of a resource, in the plural: "Berries", "Pearls"."""
+    if slug in ZONE_OF_RESOURCE:
+        return ZONE_OF_RESOURCE[slug].resource_plural
+    return PLANNED_RESOURCE_PLURALS[slug]
 
 
 @dataclass(frozen=True)

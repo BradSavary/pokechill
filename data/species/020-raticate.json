@@ -2,6 +2,7 @@
   "species": "raticate",
   "rarity": "rare",
   "min_level": 20,
+  "hint": "Its big fangs come out at night, drawn by a sweet smell and a smaller cousin's tracks.",
   "conditions": {
     "all": [
       {

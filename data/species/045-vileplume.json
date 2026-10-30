@@ -2,6 +2,7 @@
   "species": "vileplume",
   "rarity": "rare",
   "min_level": 36,
+  "hint": "Its huge petals open at night over a busy orchard. Ask the one with the dreadful smell.",
   "conditions": {
     "all": [
       {

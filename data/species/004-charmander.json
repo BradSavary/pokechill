@@ -2,6 +2,7 @@
   "species": "charmander",
   "rarity": "uncommon",
   "min_level": 1,
+  "hint": "A little flame that may flicker in at any hour.",
   "conditions": null,
   "notes": "Starter: owned from the start, may also arrive at the Welcome area (candies)."
 }

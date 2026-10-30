@@ -2,6 +2,7 @@
   "species": "venonat",
   "rarity": "common",
   "min_level": 1,
+  "hint": "Big eyes shine in the dark, drawn to the night.",
   "conditions": {
     "time_of_day": "night"
   }

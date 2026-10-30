@@ -137,6 +137,9 @@ class Species(models.Model):
     # Its own Pokédex challenges, on top of the generic ones (game.challenges):
     # {"add": [...], "skip": [...]}, empty for most species
     custom_challenges = models.JSONField(default=dict, blank=True)
+    # A vague sentence on its Pokédex silhouette, to guess how it comes (its
+    # true conditions show once it is obtained)
+    hint = models.TextField(blank=True)
 
     class Meta:
         ordering = ["number"]

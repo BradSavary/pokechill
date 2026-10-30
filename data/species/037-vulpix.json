@@ -2,6 +2,7 @@
   "species": "vulpix",
   "rarity": "uncommon",
   "min_level": 1,
+  "hint": "Six curled tails glow warm in the daylight.",
   "conditions": {
     "time_of_day": "day"
   }

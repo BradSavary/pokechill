@@ -2,6 +2,7 @@
   "species": "venusaur",
   "rarity": "very_rare",
   "min_level": 32,
+  "hint": "Its great flower blooms by day, while one of its kin tends the orchard.",
   "conditions": {
     "all": [
       {

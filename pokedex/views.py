@@ -22,6 +22,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from game import experience, mastery
+from game.conditions import describe, species_named
 from ranch import tutorial
 from ranch.research import (
     ClaimError,
@@ -176,6 +177,18 @@ def mastery_context(owned) -> dict:
     }
 
 
+def arrival_lines(species: Species) -> list[str]:
+    """
+    How a species comes to the ranch, one line per condition, in plain English
+    (game.conditions.describe). The names of the species it mentions come
+    from one query, only when it mentions some.
+    """
+    names = {}
+    if slugs := species_named(species.arrival_conditions):
+        names = dict(Species.objects.filter(slug__in=slugs).values_list("slug", "name"))
+    return describe(species.arrival_conditions, lambda slug: names.get(slug, slug))
+
+
 def entry_context(species: Species, dex: dict, view: str | None = None) -> dict:
     """Template values of a species entry, focused on the action `view`."""
     owned = dex["collection"].get(species.id) if dex["player"] else None
@@ -194,6 +207,9 @@ def entry_context(species: Species, dex: dict, view: str | None = None) -> dict:
         "research": entry_research(dex["player"], species, owned),
         # The default view of an owned species shows its level and candies
         "training": training_context(species, owned, candies) if owned and not view else None,
+        # How it comes: its true conditions once obtained (before, the hint of
+        # its file), in the default view
+        "arrival": arrival_lines(species) if owned and not view else None,
         # Its mastery bonuses (under the challenges, and the gift of the stage 3)
         "mastery": mastery_context(owned) if owned else None,
     }

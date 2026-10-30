@@ -2,6 +2,7 @@
   "species": "clefable",
   "rarity": "rare",
   "min_level": 16,
+  "hint": "Under the moonlight, the elder of a shy dancer may follow.",
   "conditions": {
     "all": [
       {

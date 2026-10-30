@@ -2,6 +2,7 @@
   "species": "nidoqueen",
   "rarity": "rare",
   "min_level": 31,
+  "hint": "A queen only comes to those who welcomed her younger self.",
   "conditions": {
     "owns": "nidorina"
   },

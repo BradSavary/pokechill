@@ -2,6 +2,7 @@
   "species": "persian",
   "rarity": "rare",
   "min_level": 28,
+  "hint": "An elegant cat prowls at night, following a coin-loving one.",
   "conditions": {
     "all": [
       {

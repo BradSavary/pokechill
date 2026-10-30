@@ -2,6 +2,7 @@
   "species": "venomoth",
   "rarity": "rare",
   "min_level": 31,
+  "hint": "Dusty wings flutter at night, following big, shining eyes.",
   "conditions": {
     "all": [
       {

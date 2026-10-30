@@ -26,7 +26,12 @@ Zones and resources may be planned ones (game.zones.PLANNED_ZONES): the
 condition is valid, and never met until that zone is in the game.
 
 Leaves are declared in the LEAVES registry below: supporting a new kind of
-condition (day of the week, Pokémon level...) only means adding an entry.
+condition (day of the week, Pokémon level...) only means adding an entry,
+with its check, its validation and its text.
+
+describe() writes a tree in plain English, for the Pokédex entry of a
+species the player owns ("at night", "apricorns in the feeder"): no text to
+maintain by hand, it always matches the data.
 """
 
 from collections.abc import Callable, Mapping
@@ -34,8 +39,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from . import clock
-from .zones import KNOWN_RESOURCES, KNOWN_ZONES
+from . import balance, clock
+from .zones import KNOWN_RESOURCES, KNOWN_ZONES, resource_plural, zone_name
 
 COMBINATORS = ("all", "any", "not")
 
@@ -73,12 +78,31 @@ class GameContext:
         return frozenset(zone for zone, _ in self.workers)
 
 
+# Gives the name of a species from its slug ("paras" -> "Paras"): the
+# engine knows no names, the caller looks them up
+Names = Callable[[str], str]
+
+
 @dataclass(frozen=True)
 class Leaf:
-    """A kind of simple condition: how to check it, and how to validate its value."""
+    """A kind of simple condition: how to check it, validate its value, and say it."""
 
     check: Callable[[Any, GameContext], bool]
     validate: Callable[[Any], None]
+    # Its text, as the middle of a sentence ("at night", "a Paras at work in
+    # the Orchard"): the interface capitalises the first letter
+    text: Callable[[Any, Names], str]
+
+
+def _with_article(name: str) -> str:
+    """ "a Paras", "an Ivysaur"."""
+    return f"{'an' if name[:1] in 'AEIOU' else 'a'} {name}"
+
+
+def _time_text(value: str, names: Names) -> str:
+    day = f"{balance.NIGHT_END_HOUR}:00–{balance.NIGHT_START_HOUR}:00"
+    night = f"{balance.NIGHT_START_HOUR}:00–{balance.NIGHT_END_HOUR}:00"
+    return f"during the day ({day})" if value == "day" else f"at night ({night})"
 
 
 def _validate_time_of_day(value: Any) -> None:
@@ -121,26 +145,34 @@ LEAVES: dict[str, Leaf] = {
     "time_of_day": Leaf(
         check=lambda value, context: context.time_of_day == value,
         validate=_validate_time_of_day,
+        text=_time_text,
     ),
     "feeder": Leaf(
         check=lambda value, context: value in context.feeder,
         validate=_one_of("feeder", KNOWN_RESOURCES),
+        text=lambda value, names: f"{resource_plural(value).lower()} in the feeder",
     ),
     "owns": Leaf(
         check=lambda value, context: value in context.owned,
         validate=_validate_species_slug,
+        text=lambda value, names: f"{names(value)} in your Pokédex",
     ),
     "zone_occupied": Leaf(
         check=lambda value, context: value in context.occupied_zones,
         validate=_one_of("zone_occupied", KNOWN_ZONES),
+        text=lambda value, names: f"a Pokémon at work in the {zone_name(value)}",
     ),
     "works_in": Leaf(
         check=lambda value, context: (value["zone"], value["species"]) in context.workers,
         validate=_validate_works_in,
+        text=lambda value, names: (
+            f"{_with_article(names(value['species']))} at work in the {zone_name(value['zone'])}"
+        ),
     ),
     "zone_level": Leaf(
         check=lambda value, context: context.zone_levels.get(value["zone"], 0) >= value["level"],
         validate=_validate_zone_level,
+        text=lambda value, names: f"the {zone_name(value['zone'])} at level {value['level']}",
     ),
 }
 
@@ -182,3 +214,47 @@ def evaluate(node: dict | None, context: GameContext) -> bool:
     if key in LEAVES:
         return LEAVES[key].check(value, context)
     raise ConditionError(f"Unknown condition {key!r}")
+
+
+def describe(node: dict | None, names: Names) -> list[str]:
+    """
+    A condition tree in plain English: one line per condition that must hold
+    (the conditions of the top "all"), e.g. for Parasect
+    ["at night (21:00–6:00)", "a Paras at work in the Orchard"].
+    No condition (None) gives no line: the species may come at any time.
+    """
+    if node is None:
+        return []
+    key, value = _single_key(node)
+    if key == "all":
+        return [_phrase(child, names) for child in value]
+    return [_phrase(node, names)]
+
+
+def _phrase(node: dict, names: Names, nested: bool = False) -> str:
+    """One condition as words; a group inside another one goes in brackets."""
+    key, value = _single_key(node)
+    if key in ("all", "any"):
+        joined = (" and " if key == "all" else " or ").join(
+            _phrase(child, names, nested=True) for child in value
+        )
+        return f"({joined})" if nested and len(value) > 1 else joined
+    if key == "not":
+        return f"not {_phrase(value, names, nested=True)}"
+    return LEAVES[key].text(value, names)
+
+
+def species_named(node: dict | None) -> set[str]:
+    """The species slugs a condition tree refers to (owns, works_in)."""
+    if node is None:
+        return set()
+    key, value = _single_key(node)
+    if key in ("all", "any"):
+        return set().union(*(species_named(child) for child in value))
+    if key == "not":
+        return species_named(value)
+    if key == "owns":
+        return {value}
+    if key == "works_in":
+        return {value["species"]}
+    return set()

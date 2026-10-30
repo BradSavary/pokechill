@@ -2,6 +2,7 @@
   "species": "pidgeot",
   "rarity": "very_rare",
   "min_level": 36,
+  "hint": "Its glossy plumes catch the sunlight. It only trusts those who raised its younger self.",
   "conditions": {
     "all": [
       {

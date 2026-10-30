@@ -2,6 +2,7 @@
   "species": "caterpie",
   "rarity": "common",
   "min_level": 1,
+  "hint": "A hungry little crawler, out and about in daylight.",
   "conditions": {
     "time_of_day": "day"
   }

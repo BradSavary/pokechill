@@ -2,5 +2,6 @@
   "species": "diglett",
   "rarity": "uncommon",
   "min_level": 1,
+  "hint": "It pops out of the ground whenever it likes.",
   "conditions": null
 }

@@ -2,9 +2,10 @@
 Species data files: reading and validation of data/species/*.json.
 
 Each file describes how one species behaves in the game (rarity, level on
-arrival, arrival conditions). Adding a species to the game means adding a
-file, never code. Validation is strict and reports every problem at once,
-so a typo in a file is caught before anything reaches the database.
+arrival, arrival conditions, and the hint shown on its silhouette). Adding
+a species to the game means adding a file, never code. Validation is strict
+and reports every problem at once, so a typo in a file is caught before
+anything reaches the database.
 """
 
 import json
@@ -16,7 +17,7 @@ from game.challenges import ChallengeError, validate_custom
 from game.conditions import ConditionError, validate
 
 REQUIRED_KEYS = {"species", "rarity", "min_level"}
-OPTIONAL_KEYS = {"conditions", "challenges", "notes"}
+OPTIONAL_KEYS = {"conditions", "challenges", "notes", "hint"}
 
 
 class SpeciesFileError(ValueError):
@@ -36,6 +37,8 @@ class SpeciesData:
     min_level: int
     conditions: dict | None
     challenges: dict  # its own challenges: {"add": [...], "skip": [...]} or {}
+    # A vague sentence on its Pokédex silhouette, to guess how it comes
+    hint: str = ""
 
 
 def parse_species_data(raw: object) -> SpeciesData:
@@ -68,6 +71,10 @@ def parse_species_data(raw: object) -> SpeciesData:
         except ConditionError as error:
             errors.append(f"invalid conditions: {error}")
 
+    hint = raw.get("hint", "")
+    if not isinstance(hint, str) or ("hint" in raw and not hint.strip()):
+        errors.append(f"hint must be a non-empty text, got {hint!r}")
+
     challenges = raw.get("challenges", {})
     try:
         validate_custom(challenges)
@@ -82,6 +89,7 @@ def parse_species_data(raw: object) -> SpeciesData:
         min_level=level,
         conditions=conditions,
         challenges=challenges,
+        hint=hint.strip(),
     )
 
 

@@ -2,6 +2,7 @@
   "species": "clefairy",
   "rarity": "uncommon",
   "min_level": 1,
+  "hint": "On quiet nights, a shy visitor comes down for something sweet.",
   "conditions": {
     "all": [
       {

@@ -2,6 +2,7 @@
   "species": "spearow",
   "rarity": "common",
   "min_level": 1,
+  "hint": "A noisy little bird, up and about with the sun.",
   "conditions": {
     "time_of_day": "day"
   }

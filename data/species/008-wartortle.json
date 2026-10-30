@@ -2,6 +2,7 @@
   "species": "wartortle",
   "rarity": "rare",
   "min_level": 16,
+  "hint": "Its furry tail is a sign of age. By day, it visits those who cared for its younger self.",
   "conditions": {
     "all": [
       {

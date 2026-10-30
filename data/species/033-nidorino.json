@@ -2,6 +2,7 @@
   "species": "nidorino",
   "rarity": "uncommon",
   "min_level": 16,
+  "hint": "A proud horn follows the steps of a smaller one.",
   "conditions": {
     "owns": "nidoran-m"
   }

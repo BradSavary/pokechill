@@ -2,6 +2,7 @@
   "species": "sandslash",
   "rarity": "rare",
   "min_level": 22,
+  "hint": "Its spikes glint in the sun. It follows the trail of a smaller digger.",
   "conditions": {
     "all": [
       {

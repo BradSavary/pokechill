@@ -2,6 +2,7 @@
   "species": "jigglypuff",
   "rarity": "uncommon",
   "min_level": 1,
+  "hint": "A round singer drops by for a sweet snack, day or night.",
   "conditions": {
     "feeder": "berry"
   }

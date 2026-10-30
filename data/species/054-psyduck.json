@@ -2,6 +2,7 @@
   "species": "psyduck",
   "rarity": "uncommon",
   "min_level": 1,
+  "hint": "A puzzled duck waddles in by day, holding its head.",
   "conditions": {
     "time_of_day": "day"
   }
