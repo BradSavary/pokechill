@@ -60,7 +60,16 @@ def work_zones(player: Player, hours_elapsed: int) -> None:
     events = []
     for zone in player.zones.select_for_update():
         workers = workers_of(zone)
-        done = work(zone.spec, [as_worker(p) for p in workers], zone.hours_worked, hours_elapsed)
+        done = work(
+            zone.spec,
+            [as_worker(p) for p in workers],
+            zone.hours_worked,
+            hours_elapsed,
+            # The skill tree of the zone: storage, yield, experience
+            cap_hours=zone.work_cap,
+            yield_percent=zone.yield_percent,
+            xp_percent=zone.xp_percent,
+        )
         if not done.hours:
             continue  # empty zone, or storage already full
         zone.hours_worked += done.hours
@@ -195,8 +204,8 @@ def fill_feeder(player: Player, resource: str, units: int) -> None:
     balance.FEEDER_MAX_UNITS units (one point of chance each): more would
     add nothing.
     """
-    if not 1 <= units <= balance.FEEDER_MAX_UNITS:
-        raise ZoneError(f"A slot holds 1 to {balance.FEEDER_MAX_UNITS} units.")
+    if not 1 <= units <= player.feeder_max_units:
+        raise ZoneError(f"A slot holds 1 to {player.feeder_max_units} units.")
     zone = ZONE_OF_RESOURCE.get(resource)
     if zone is None or not player.zones.filter(zone=zone.slug).exists():
         raise ZoneError("This resource doesn't come from one of your zones.")

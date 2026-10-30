@@ -66,6 +66,7 @@ class Tree:
     requires: str | None  # the node that opens the tree (None: open at the start)
     currencies: tuple[str, ...]  # what its nodes cost
     milestone_currencies: tuple[str, ...]  # what its milestones cost
+    description: str = ""  # one sentence, under its name in the lab
 
 
 @dataclass(frozen=True)
@@ -198,6 +199,7 @@ def parse(raw: Any) -> SkillTree:
             requires=item.get("requires"),
             currencies=tuple(item["currencies"]),
             milestone_currencies=tuple(item.get("milestone_currencies", item["currencies"])),
+            description=item.get("description", ""),
         )
         if tree.id in trees:
             raise SkillTreeError(f"two trees are called {tree.id!r}")
@@ -251,3 +253,46 @@ def parse(raw: Any) -> SkillTree:
 def load(path: Path) -> SkillTree:
     """Read and validate the skill tree file."""
     return parse(json.loads(Path(path).read_text(encoding="utf-8")))
+
+
+# --- What a node does, in words (for the lab page) ----------------------------------------
+
+
+def describe(tree: SkillTree, node_id: str) -> list[str]:
+    """The effects of a node in English, one line each, e.g. "+5 % berries in the Meadow"."""
+    node = tree.nodes[node_id]
+    zone_slug = node.zone or tree.trees[node.tree].zone
+    where = (
+        "in every zone"
+        if node.zone == "all"
+        else f"in the {ZONES[zone_slug].name}"
+        if zone_slug
+        else ""
+    )
+    lines = []
+    for effect, value in node.effects.items():
+        if effect == "welcome_places":
+            lines.append(f"+{value} place{'s' if value > 1 else ''} in the Welcome area")
+        elif effect == "feeder_slots":
+            lines.append(f"+{value} feeder slot{'s' if value > 1 else ''}")
+        elif effect == "feeder_max_units":
+            lines.append(f"+{value} units per feeder slot")
+        elif effect == "feeder_unit_tenths":
+            lines.append(f"Each unit in the feeder lures +{value / 10:g} point more")
+        elif effect == "research_percent":
+            lines.append(f"+{value} % research points")
+        elif effect == "candy_xp_percent":
+            lines.append(f"+{value} % experience from candies")
+        elif effect == "zone_slots":
+            lines.append(f"+{value} Pokémon {where}")
+        elif effect == "zone_storage_hours":
+            lines.append(f"+{value} h of storage {where}")
+        elif effect == "zone_yield_percent":
+            what = ZONES[zone_slug].resource_plural.lower() if node.zone != "all" else "resources"
+            lines.append(f"+{value} % {what} {where}")
+        elif effect == "zone_xp_percent":
+            lines.append(f"+{value} % experience {where}")
+        elif effect == "zone_level":
+            lines.append(f"The {ZONES[zone_slug].name} levels up: new Pokémon may come")
+    lines += [f"Opens the {t.name} tree" for t in tree.trees.values() if t.requires == node_id]
+    return lines

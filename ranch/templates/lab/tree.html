@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load assets %}
+
+{% block title %}{{ view.tree.name }} · Lab · PokéChill{% endblock %}
+
+{% block scripts %}
+  <script src="{% asset 'js/lab.js' %}" defer></script>
+{% endblock %}
+
+{# Still inside the lab: its floor covers the page (see .lab-room) #}
+{% block main_class %}lab-room min-h-0 flex-1 overflow-y-auto p-3 pb-10{% endblock %}
+
+{% block content %}
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      {# -ml-3: the band starts at the menu, over the padding of the page #}
+      <a href="{% url 'lab:index' %}" class="title-band -ml-3" title="Back to the lab">‹ {{ view.tree.name }}</a>
+      <div class="lab-plate">{% include "lab/_wallet.html" %}</div>
+    </div>
+    <div id="tree-content" class="flex flex-col gap-4">
+      {% include "lab/_tree_content.html" %}
+    </div>
+  </div>
+{% endblock %}

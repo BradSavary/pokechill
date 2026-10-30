@@ -45,8 +45,8 @@ def at_work(zone: PlayerZone, pokemon: OwnedPokemon) -> dict:
     return {
         "pokemon": pokemon,
         "efficient": is_efficient(zone.spec, worker),
-        "per_hour": production_per_hour(zone.spec, worker) / 100,
-        "xp_per_hour": experience_per_hour(zone.spec, worker),
+        "per_hour": production_per_hour(zone.spec, worker, zone.yield_percent) / 100,
+        "xp_per_hour": experience_per_hour(zone.spec, worker, zone.xp_percent),
         # Towards the next level: "245 / 860 XP" and the blue bar of the games
         "xp_span": (span := level_span(pokemon)),
         "progress": min(100, 100 * pokemon.experience // span) if span else 100,
@@ -67,7 +67,7 @@ def rule_tips(zone: PlayerZone) -> dict:
             f"also earn {balance.XP_TYPE_BONUS_PERCENT} % more experience."
         ),
         "storage": (
-            f"The Pokémon work up to {balance.ZONE_WORK_HOURS_CAP} hours between two "
+            f"The Pokémon work up to {zone.work_cap} hours between two "
             "collections. Then the storage is full: they stop (no "
             f"{resource}, no experience) until you collect."
         ),
@@ -103,12 +103,15 @@ def harvest_summary(harvest: Harvest) -> dict:
 def zone_card(zone: PlayerZone) -> dict:
     """What the card of a zone shows: its Pokémon, current production, storage."""
     workers = workers_of(zone)
-    cap = balance.ZONE_WORK_HOURS_CAP
+    cap = zone.work_cap
     return {
         "zone": zone,
         "workers": workers,
         "types": sorted(zone.spec.types),
-        "per_hour": sum(production_per_hour(zone.spec, as_worker(p)) for p in workers) / 100,
+        "per_hour": sum(
+            production_per_hour(zone.spec, as_worker(p), zone.yield_percent) for p in workers
+        )
+        / 100,
         # Hours until the storage is full (and they stop): only if someone works
         "hours_left": cap - zone.hours_worked if workers else None,
     }
@@ -129,7 +132,6 @@ def index(request):
         {
             "active_tab": "zones",
             "zones": zones,
-            "work_cap": balance.ZONE_WORK_HOURS_CAP,
             **tutorial.context(request.player, "zones"),
         },
     )
@@ -179,7 +181,7 @@ def detail(request, slug):
             "empty_spots": empty_spots,
             "candidates": candidates,
             "per_hour": sum(w["per_hour"] for w in workers),
-            "work_cap": balance.ZONE_WORK_HOURS_CAP,
+            "work_cap": zone.work_cap,
             "xp_bonus": balance.XP_TYPE_BONUS_PERCENT,
             "tips": rule_tips(zone),
             "harvest": request.session.pop(HARVEST_KEY, None),  # shown once

@@ -1,0 +1,9 @@
+{% load ranch_extras %}
+{# One part of a node's cost (price: currency, amount, enough), red when the player lacks it #}
+<span class="inline-flex items-center gap-1 font-bold {% if not price.enough %}text-accent{% endif %}">
+  {% if price.currency == "research" %}
+    {% include "_research_points.html" with amount=price.amount size="size-5" %}
+  {% else %}
+    <img src="{{ price.currency|resource_icon }}" alt="{{ price.currency }}" class="pixelated size-5">{{ price.amount }}
+  {% endif %}
+</span>

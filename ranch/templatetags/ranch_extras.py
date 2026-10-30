@@ -67,3 +67,23 @@ def resource_icon(resource: str) -> str:
 def get_item(mapping, key):
     """{{ stages|get_item:species.id }}: a dict lookup by a variable key (None if absent)."""
     return mapping.get(key) if mapping else None
+
+
+@register.filter
+def balanced_rows(items, per_row) -> list[list]:
+    """
+    {% for row in balls|balanced_rows:10 %}: the items in as few rows as
+    `per_row` allows, of even lengths (the first rows one longer when they
+    can't all be equal): 13 balls -> 7 and 6, not 10 and 3.
+    """
+    items, per_row = list(items), int(per_row)
+    if not items:
+        return []
+    count = -(-len(items) // per_row)  # rows needed (rounded up)
+    size, longer = divmod(len(items), count)
+    rows, start = [], 0
+    for index in range(count):
+        end = start + size + (1 if index < longer else 0)
+        rows.append(items[start:end])
+        start = end
+    return rows

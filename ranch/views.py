@@ -39,7 +39,11 @@ def feeder_state(player) -> dict:
         return [types[slug] for slug in sorted(zone.types) if slug in types]
 
     def bonus(units):
-        return min(units, balance.FEEDER_MAX_UNITS) * balance.FEEDER_BONUS_PER_UNIT_PERCENT
+        # In tenths of a point per unit: the skill tree adds some (game.arrivals.lure_of)
+        tenths = (
+            balance.FEEDER_BONUS_PER_UNIT_PERCENT * 10 + player.skill_bonuses.feeder_unit_tenths
+        )
+        return min(units, player.feeder_max_units) * tenths // 10
 
     filled = [
         {
@@ -62,18 +66,22 @@ def feeder_state(player) -> dict:
             {
                 "zone": zone.spec,
                 "stock": stock.get(zone.spec.resource, 0),
-                "max": min(stock.get(zone.spec.resource, 0), balance.FEEDER_MAX_UNITS),
+                "max": min(stock.get(zone.spec.resource, 0), player.feeder_max_units),
                 "types": types_of(zone.spec),
             }
             for zone in player.zones.all()
         ],
-        "max_units": balance.FEEDER_MAX_UNITS,
-        "bonus_per_unit": balance.FEEDER_BONUS_PER_UNIT_PERCENT,
+        "max_units": player.feeder_max_units,
+        # What a unit adds, in points (the skill tree may raise it: 1.2...)
+        "bonus_per_unit": (
+            balance.FEEDER_BONUS_PER_UNIT_PERCENT * 10 + player.skill_bonuses.feeder_unit_tenths
+        )
+        / 10,
         # The rule, for its "i" bubble (written from the balance values)
         "tip": (
             f"Each unit in a slot adds {balance.FEEDER_BONUS_PER_UNIT_PERCENT} % of chance "
             "that the next Pokémon to arrive has one of the zone's types (up to "
-            f"+{bonus(balance.FEEDER_MAX_UNITS)} % with {balance.FEEDER_MAX_UNITS} units). "
+            f"+{bonus(player.feeder_max_units)} % with {player.feeder_max_units} units). "
             "That Pokémon eats the whole slot; the next one eats the next slot."
         ),
     }
@@ -107,6 +115,10 @@ def index(request):
             # first steps (the gift is revealed by the tutorial itself)
             "auto_open": waiting and player.tutorial_step > tutorial.GIFT,
             "feeder": feeder_state(player),
+            # Professor Oak's lab: open once the Pokédex holds enough species
+            "lab_open": player.lab_open,
+            # While it is shut, its sign shows how far the Pokédex is
+            "species_owned": 0 if player.lab_open else player.pokemon.count(),
         },
     )
 

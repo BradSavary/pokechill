@@ -56,7 +56,6 @@ LAB_DOOR_COL = LAB[0] + 3
 LAB_SIGN_AT = (LAB[0] + 5, LAB[1] + 5)
 TALL_GRASS_BOXES = [(5, 3, 9, 6), (6, 16, 11, 18), (16, 16, 20, 18)]
 FLOWER_SPOTS = [
-    (11, 4),
     (11, 6),
     (12, 9),
     (18, 9),

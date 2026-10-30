@@ -57,8 +57,8 @@
                 </span>
               </p>
               {# Storage: hours of work stored out of the cap; once full, they stop #}
-              <div class="gauge" title="{{ zone.hours_worked }} of {{ work_cap }} hours of work stored">
-                <span style="width: {% widthratio zone.hours_worked work_cap 100 %}%"
+              <div class="gauge" title="{{ zone.hours_worked }} of {{ zone.work_cap }} hours of work stored">
+                <span style="width: {% widthratio zone.hours_worked zone.work_cap 100 %}%"
                       class="{% if zone.is_full %}bg-accent{% else %}bg-menu-zones{% endif %}"></span>
               </div>
             </div>

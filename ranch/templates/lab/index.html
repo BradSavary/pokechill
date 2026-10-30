@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Lab · PokéChill{% endblock %}
+
+{# The page takes place inside the lab: its floor covers it (see .lab-room) #}
+{% block main_class %}lab-room min-h-0 flex-1 overflow-y-auto p-3 pb-10{% endblock %}
+
+{% block content %}
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      {# -ml-3: the band starts at the menu, over the padding of the page #}
+      <h1 class="title-band -ml-3">Professor Oak's Lab</h1>
+      <div class="lab-plate">{% include "lab/_wallet.html" %}</div>
+    </div>
+
+    <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,24rem)_1fr]">
+      {# --- The lab, and Professor Oak in it --- #}
+      <section class="flex flex-col gap-3" aria-label="Professor Oak">
+        <figure class="lab-scene">
+          <img src="{% static 'img/lab-inside.png' %}" width="208" height="208" alt="Inside Professor Oak's lab: machines, bookshelves and a table with three Poké Balls"
+               class="pixelated block w-full">
+        </figure>
+        <div class="flex items-center gap-4">
+          <img src="{% static 'img/professor-oak.png' %}" alt="Professor Oak" width="96" height="96" class="pixelated size-24 shrink-0">
+          <p class="oak-dialogue flex-1">Which research shall we work on today? The milestones of a tree bring the biggest rewards!</p>
+        </div>
+      </section>
+
+      {% comment %}
+        The trees, as research files (a tab on top). An open tree leads to its
+        page; a locked one says which node opens it (the Feeder: the Ranch
+        level 2).
+      {% endcomment %}
+      <section class="grid gap-x-4 gap-y-2 sm:grid-cols-2" aria-label="Trees">
+        {% for card in cards %}
+          {% if card.open %}
+            <a href="{% url 'lab:tree' card.tree.id %}" class="tree-card">
+          {% else %}
+            <div class="tree-card is-locked" title="Opens with {{ card.opener }}">
+          {% endif %}
+            <span class="flex items-center gap-3">
+              <span class="skill-disc">
+                {% if card.open %}<img src="{{ card.icon }}" alt="" class="pixelated size-[60%]">
+                {% else %}<span class="size-[45%] text-accent">{% include "icons/lock.svg" %}</span>{% endif %}
+              </span>
+              <span class="flex flex-col">
+                <strong class="text-lg">{{ card.tree.name }}</strong>
+                {% if card.open %}
+                  <span class="text-sm text-muted">{{ card.done }}/{{ card.total }} nodes</span>
+                {% else %}
+                  <span class="text-sm font-bold text-accent">Opens with {{ card.opener }}</span>
+                {% endif %}
+              </span>
+            </span>
+            <span class="text-sm text-muted">{{ card.tree.description }}</span>
+            {% if card.open %}
+              <span class="gauge"><span class="bg-menu-zones" style="width: {% widthratio card.done card.total 100 %}%"></span></span>
+            {% endif %}
+          {% if card.open %}</a>{% else %}</div>{% endif %}
+        {% endfor %}
+      </section>
+    </div>
+  </div>
+
+  {% comment %}
+    Professor Oak's introduction, at the first visit (data-auto-open: app.js
+    opens it). Its button tells the server it was seen, so it shows once.
+    autofocus: the dialog takes the focus, not its button.
+  {% endcomment %}
+  {% if intro %}
+    <dialog class="dialog-panel max-w-3xl" data-auto-open autofocus aria-label="Professor Oak">
+      <div class="flex gap-4">
+        <img src="{% static 'img/professor-oak.png' %}" alt="Professor Oak" width="128" height="128" class="pixelated size-32 shrink-0">
+        <div class="flex flex-col gap-2">
+          <h2 class="title-band -ml-6 self-start">Professor Oak</h2>
+          <p>Hello there! So you're the one running the ranch. I've heard a lot about your Pokédex!</p>
+          <p>Each challenge of your Pokédex earns <strong>research points</strong>. Here, at my lab, you can spend them, with the resources of your zones, to improve your ranch: a bigger Welcome area, a better feeder, busier zones...</p>
+          <p>Each tree reads from left to right. Its <strong>milestones</strong> bring the biggest rewards, and some of them open new trees. Choose wisely!</p>
+        </div>
+      </div>
+      <form method="post" action="{% url 'lab:intro_seen' %}" class="flex justify-end">
+        {% csrf_token %}
+        <button class="btn">Let's get to work!</button>
+      </form>
+    </dialog>
+  {% endif %}
+{% endblock %}

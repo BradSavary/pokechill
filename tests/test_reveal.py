@@ -10,7 +10,7 @@ from pokedex.models import Species
 from ranch import tutorial
 from ranch.models import Arrival, CandyStock, OwnedPokemon, Player
 from ranch.services import reveal_all, reveal_next
-from ranch.templatetags.ranch_extras import ball_name, ball_sprite
+from ranch.templatetags.ranch_extras import balanced_rows, ball_name, ball_sprite
 
 pytestmark = pytest.mark.django_db
 
@@ -204,3 +204,10 @@ def test_the_dialog_stays_closed_when_nobody_is_waiting(client):
     # The door is then a plain link to the Welcome area, without a badge
     assert 'title="Welcome area"' in html
     assert "map-badge" not in html
+
+
+def test_balls_make_rows_of_even_lengths():
+    assert [len(row) for row in balanced_rows(range(13), 10)] == [7, 6]
+    assert [len(row) for row in balanced_rows(range(8), 6)] == [4, 4]
+    assert [len(row) for row in balanced_rows(range(5), 10)] == [5]
+    assert balanced_rows([], 10) == []

@@ -130,6 +130,7 @@ def catch_up(
     workers: frozenset[tuple[str, str]] = frozenset(),
     max_units: int | None = None,
     unit_tenths: int = 0,
+    zone_levels: dict[str, int] | None = None,
 ) -> CatchUp:
     """
     Replay every hour since `last_slot`, in chronological order.
@@ -146,6 +147,7 @@ def catch_up(
     counts the hours left. The zones' work is computed apart (game.zones).
     The last processed slot is always the current hour. `max_units` and
     `unit_tenths`: the skill tree's bonuses of the feeder (see lure_of).
+    `zone_levels`: the level of each zone of the player (zone_level conditions).
     """
     feeder = [(resource, units) for resource, units in (feeder or []) if units > 0]
     slots = list(clock.slots_after(last_slot, now))
@@ -160,6 +162,7 @@ def catch_up(
             feeder=frozenset(resource for resource, _ in feeder),
             owned=owned,
             workers=workers,
+            zone_levels=zone_levels or {},
         )
         lure = lure_of(feeder[0], max_units, unit_tenths) if feeder else None
         arrival = draw_arrival(rules, context, clock.slot_rng(player_id, slot), lure)

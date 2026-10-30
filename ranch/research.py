@@ -197,6 +197,11 @@ class SpeciesResearch:
         )
 
 
+def with_bonus(player: Player, points: int) -> int:
+    """Research points as claimed: the skill tree's bonus included."""
+    return points * (100 + player.skill_bonuses.research_percent) // 100
+
+
 def research_of(player: Player, owned_list: list[OwnedPokemon], *, lock=False):
     """
     The research of the player's species (by species id), in two queries:
@@ -271,7 +276,7 @@ def claim(player: Player, species: Species, what: str) -> Claimed:
             row = research.rows[challenge.objective.key]
             row.claimed_at = now
             row.save(update_fields=["claimed_at"])
-            claimed.points += challenge_points(species.rarity)
+            claimed.points += with_bonus(locked, challenge_points(species.rarity))
 
     if what in ("all", "stage"):
         rewards = {reward.stage: reward for reward in stage_rewards(len(research.challenges))}
@@ -281,7 +286,7 @@ def claim(player: Player, species: Species, what: str) -> Claimed:
         while owned.research_stage < reached:
             owned.research_stage += 1
             reward = rewards[owned.research_stage]
-            claimed.points += reward.points
+            claimed.points += with_bonus(locked, reward.points)
             claimed.candies += reward.candies
             claimed.stages += (owned.research_stage,)
             if what == "stage":
@@ -417,7 +422,10 @@ def entry_research(player: Player | None, species: Species, owned: OwnedPokemon 
                 and research.is_done(challenge)
                 and not research.is_claimed(challenge),
                 "percent": 100 * done // objective.target,
-                "points": challenge_points(species.rarity),
+                # What claiming it gives (the skill tree's bonus included)
+                "points": with_bonus(player, challenge_points(species.rarity))
+                if player
+                else challenge_points(species.rarity),
             }
         )
 

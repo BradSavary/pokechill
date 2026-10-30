@@ -16,6 +16,8 @@ The leaves:
     {"zone_occupied": "meadow"}          at least one Pokémon works there
     {"works_in": {"species": "paras", "zone": "orchard"}}
                                          this species works in this zone
+    {"zone_level": {"zone": "meadow", "level": 2}}
+                                         the zone reached this level (skill tree)
 
 Example: "at night, with berries in the feeder" ->
     {"all": [{"time_of_day": "night"}, {"feeder": "berry"}]}
@@ -24,11 +26,11 @@ Zones and resources may be planned ones (game.zones.PLANNED_ZONES): the
 condition is valid, and never met until that zone is in the game.
 
 Leaves are declared in the LEAVES registry below: supporting a new kind of
-condition (zone level, day of the week...) only means adding an entry.
+condition (day of the week, Pokémon level...) only means adding an entry.
 """
 
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
@@ -57,6 +59,9 @@ class GameContext:
     owned: frozenset[str] = frozenset()  # slugs of the species the player owns
     # Who works where: (zone, species slug) pairs, e.g. ("orchard", "paras")
     workers: frozenset[tuple[str, str]] = frozenset()
+    # The level of each zone of the player (1 at the start, its skill tree's
+    # milestones raise it); a zone the player hasn't got is not there
+    zone_levels: Mapping[str, int] = field(default_factory=dict)
 
     @property
     def time_of_day(self) -> str:
@@ -103,6 +108,15 @@ def _validate_works_in(value: Any) -> None:
     _one_of("works_in zone", KNOWN_ZONES)(value["zone"])
 
 
+def _validate_zone_level(value: Any) -> None:
+    if not isinstance(value, dict) or value.keys() != {"zone", "level"}:
+        raise ConditionError(f'zone_level expects {{"zone": ..., "level": ...}}, got {value!r}')
+    _one_of("zone_level zone", KNOWN_ZONES)(value["zone"])
+    level = value["level"]
+    if not isinstance(level, int) or isinstance(level, bool) or level < 1:
+        raise ConditionError(f"zone_level level must be a positive integer, got {level!r}")
+
+
 LEAVES: dict[str, Leaf] = {
     "time_of_day": Leaf(
         check=lambda value, context: context.time_of_day == value,
@@ -123,6 +137,10 @@ LEAVES: dict[str, Leaf] = {
     "works_in": Leaf(
         check=lambda value, context: (value["zone"], value["species"]) in context.workers,
         validate=_validate_works_in,
+    ),
+    "zone_level": Leaf(
+        check=lambda value, context: context.zone_levels.get(value["zone"], 0) >= value["level"],
+        validate=_validate_zone_level,
     ),
 }
 

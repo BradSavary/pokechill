@@ -84,6 +84,12 @@ def receive_pokemon(player: Player, species: Species, *, nature: str, is_shiny: 
             unlocked_natures=[nature],
             shiny_unlocked=is_shiny,
         )
+        # Enough species: Professor Oak's lab opens (kept on the player, see
+        # Player.lab_open). Counted only when a new species comes.
+        owned_count = OwnedPokemon.objects.filter(player=player).count()
+        if not player.lab_open and owned_count >= balance.LAB_SPECIES_REQUIRED:
+            Player.objects.filter(pk=player.pk).update(lab_open=True)
+            player.lab_open = True
     else:
         owned.species = species  # already loaded: the challenges need it, no new query
         if outcome.new_nature:
@@ -132,6 +138,10 @@ def catch_up_player(player: Player, now=None) -> CatchUp:
             now=now,
             free_places=max(locked.welcome_capacity - locked.arrivals.count(), 0),
             feeder=locked.feeder,
+            # The skill tree's feeder: units per slot, and what each one adds
+            max_units=locked.feeder_max_units,
+            unit_tenths=locked.skill_bonuses.feeder_unit_tenths,
+            zone_levels={zone.zone: zone.level for zone in locked.zones.all()},
             owned=frozenset(locked.pokemon.values_list("species__slug", flat=True)),
             workers=frozenset(
                 locked.pokemon.filter(zone__isnull=False).values_list("zone__zone", "species__slug")
@@ -284,8 +294,9 @@ def use_candies(player: Player, species: Species, count: int | None) -> tuple[in
     )
     available = stock.amount if stock else 0
     curve, stage = species.growth_rate, species.evolution_stage
+    bonus = player.skill_bonuses.candy_xp_percent  # the skill tree's sweeter candies
     wanted = (
-        experience.candies_to_next_level(curve, pokemon.level, pokemon.experience, stage)
+        experience.candies_to_next_level(curve, pokemon.level, pokemon.experience, stage, bonus)
         if count is None
         else count
     )
@@ -298,7 +309,7 @@ def use_candies(player: Player, species: Species, count: int | None) -> tuple[in
 
     old_level = pokemon.level
     pokemon.level, pokemon.experience, eaten = experience.feed_candies(
-        curve, pokemon.level, pokemon.experience, stage, wanted
+        curve, pokemon.level, pokemon.experience, stage, wanted, bonus
     )
     pokemon.save(update_fields=["level", "experience"])
     CandyStock.objects.filter(pk=stock.pk).update(amount=F("amount") - eaten)

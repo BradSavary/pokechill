@@ -5,12 +5,17 @@ Django's User handles identity (username, password); Player holds the game
 save attached to it. Every table of the game state points to a Player.
 """
 
+from functools import cached_property
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
 from game import balance
+from game.skill_tree import Bonuses
 from game.zones import ZONES
+
+from .skill_data import skill_tree
 
 # Zones and resources as choices for the database: ("meadow", "Meadow")...
 ZONE_CHOICES = [(zone.slug, zone.name) for zone in ZONES.values()]
@@ -46,19 +51,42 @@ class Player(models.Model):
     # stage reached): the "!" of the Pokédex menu, read without any query.
     # Set by ranch.research.record, recomputed after each claim.
     has_rewards = models.BooleanField(default=False)
+    # Professor Oak's lab (the skill tree): open once the Pokédex holds
+    # balance.LAB_SPECIES_REQUIRED species. Kept here rather than counted at
+    # each page: the menu shows the lab on every page, for no query.
+    # Set by ranch.services.receive_pokemon when a new species comes.
+    lab_open = models.BooleanField(default=False)
+    # Professor Oak's introduction, at the first visit of the lab: seen once
+    lab_intro_seen = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return f"Player of {self.user.username}"
 
+    @cached_property
+    def skill_bonuses(self) -> Bonuses:
+        """
+        What the nodes the player unlocked add (game.skill_tree.Bonuses).
+        One query, then kept on this object for the rest of the request
+        (ranch.skills.unlock_node forgets it after a purchase).
+        """
+        unlocked = self.unlocked_nodes.values_list("node", flat=True)
+        known = skill_tree().nodes
+        return skill_tree().bonuses(node for node in unlocked if node in known)
+
     @property
     def welcome_capacity(self) -> int:
-        """Places of the Welcome area (research bonuses will be added in step 3)."""
-        return balance.WELCOME_CAPACITY_BASE
+        """Places of the Welcome area, the skill tree's included."""
+        return balance.WELCOME_CAPACITY_BASE + self.skill_bonuses.welcome_places
 
     @property
     def feeder_capacity(self) -> int:
-        """Slots of the feeder (the skill tree will add more)."""
-        return balance.FEEDER_SLOTS_BASE
+        """Slots of the feeder, the skill tree's included."""
+        return balance.FEEDER_SLOTS_BASE + self.skill_bonuses.feeder_slots
+
+    @property
+    def feeder_max_units(self) -> int:
+        """Units a slot of the feeder holds, the skill tree's included."""
+        return balance.FEEDER_MAX_UNITS + self.skill_bonuses.feeder_max_units
 
 
 class PlayerZone(models.Model):
@@ -89,10 +117,33 @@ class PlayerZone(models.Model):
         """The zone's definition in the engine (types, resource): game.zones.Zone."""
         return ZONES[self.zone]
 
+    def _bonus(self, effect: str) -> int:
+        # self.player: the same object as the player who listed its zones
+        # (player.zones.all()), so its bonuses are read once per request
+        return self.player.skill_bonuses.of_zone(effect, self.zone)
+
     @property
     def capacity(self) -> int:
-        """Pokémon it can hold (the skill tree will add slots)."""
-        return balance.ZONE_SLOTS_BASE
+        """Pokémon it can hold, the skill tree's slots included."""
+        return balance.ZONE_SLOTS_BASE + self._bonus("zone_slots")
+
+    @property
+    def work_cap(self) -> int:
+        """Hours of work its storage holds, the skill tree's included."""
+        return balance.ZONE_WORK_HOURS_CAP + self._bonus("zone_storage_hours")
+
+    @property
+    def yield_percent(self) -> int:
+        return self._bonus("zone_yield_percent")
+
+    @property
+    def xp_percent(self) -> int:
+        return self._bonus("zone_xp_percent")
+
+    @property
+    def level(self) -> int:
+        """Its level (1 at the start): its skill tree's milestones raise it."""
+        return self.player.skill_bonuses.zone_level.get(self.zone, 1)
 
     @property
     def stock(self) -> int:
@@ -102,7 +153,7 @@ class PlayerZone(models.Model):
     @property
     def is_full(self) -> bool:
         """The storage is full: its Pokémon have stopped working."""
-        return self.hours_worked >= balance.ZONE_WORK_HOURS_CAP
+        return self.hours_worked >= self.work_cap
 
 
 class OwnedPokemon(models.Model):
@@ -167,6 +218,22 @@ class OwnedPokemon(models.Model):
 
     def __str__(self) -> str:
         return f"{self.species.name} of {self.player.user.username}"
+
+
+class UnlockedNode(models.Model):
+    """A node of the skill tree the player unlocked (game.skill_tree, its id)."""
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="unlocked_nodes")
+    node = models.CharField(max_length=60)
+    unlocked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["player", "node"], name="one_unlock_per_node")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.node} ({self.player})"
 
 
 class ObjectiveProgress(models.Model):

@@ -147,6 +147,10 @@ STAGE_2_CANDIES = 50
 
 # --- Skill tree (game.skill_tree, data/skill_tree.json) -------------------------
 
+# Professor Oak's lab (the skill tree) opens once the Pokédex holds this many
+# species: a first goal, reached after a day or so
+LAB_SPECIES_REQUIRED = 10
+
 # A node costs base x growth^(col - 1) of each currency of its tree (its
 # column: the further right, the dearer), times SKILL_MILESTONE_FACTOR for a
 # milestone. "resource": the resource of a zone (berries, apricorns...).

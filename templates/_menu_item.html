@@ -4,7 +4,8 @@
   and is kept for screen readers (sr-only).
   Parameters: name, label, color (text-menu-* class), url (none for a locked
   entry), icon (file in templates/icons/, defaults to the name), badge (shows
-  a "!": something waits there, e.g. rewards to claim). The entry is active
+  a "!": something waits there, e.g. rewards to claim), locked (why a locked
+  entry is locked: "coming soon" by default). The entry is active
   when the page's `active_tab` equals its name. The "!" always exists, hidden
   when there is nothing: an HTMX answer can then show or hide it (its id).
 {% endcomment %}
@@ -19,9 +20,9 @@
             title="Rewards to claim">!</span>
     </a>
   {% else %}
-    <span title="{{ label }} (coming soon)" class="menu-item is-locked">
+    <span title="{{ label }} ({{ locked|default:'coming soon' }})" class="menu-item is-locked">
       <span class="menu-disc {{ color }}">{% include icon_template %}</span>
-      <span class="sr-only">{{ label }} (coming soon)</span>
+      <span class="sr-only">{{ label }} ({{ locked|default:'coming soon' }})</span>
     </span>
   {% endif %}
 {% endwith %}

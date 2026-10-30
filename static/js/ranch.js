@@ -53,7 +53,8 @@ if (feederForm) {
   const submit = feederForm.querySelector("button");
   const perUnit = Number(feederForm.dataset.bonusPerUnit);
   const show = () => {
-    preview.textContent = `${slider.value} → +${slider.value * perUnit} %`;
+    // Rounded down like the server (a unit may be worth 1.2 points with the skill tree)
+    preview.textContent = `${slider.value} → +${Math.floor(slider.value * perUnit + 1e-9)} %`;
   };
   feederForm.addEventListener("change", (event) => {
     if (event.target.name !== "resource") return;

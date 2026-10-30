@@ -35,10 +35,16 @@
       {% url "pokedex:index" as pokedex_url %}
       {% url "zones:index" as zones_url %}
       {% include "_menu_item.html" with name="ranch" label="Ranch" color="text-menu-ranch" url=ranch_url %}
-      {# Expeditions are locked (no url): their content comes in a later step #}
       {% include "_menu_item.html" with name="zones" label="Zones" color="text-menu-zones" url=zones_url %}
       {# The "!": research rewards to claim (read on the player, no query) #}
       {% include "_menu_item.html" with name="pokedex" icon="pokeball" label="Pokédex" color="text-menu-pokedex" url=pokedex_url badge=request.player.has_rewards %}
+      {% comment %}
+        Professor Oak's lab: no url (greyed out, the reason on hover) until the
+        Pokédex holds enough species (Player.lab_open, no query).
+      {% endcomment %}
+      {% if request.player.lab_open %}{% url "lab:index" as lab_url %}{% endif %}
+      {% include "_menu_item.html" with name="lab" icon="flask" label="Professor Oak's Lab" color="text-menu-lab" url=lab_url locked=lab_locked_reason %}
+      {# Expeditions are locked (no url): their content comes in a later step #}
       {% include "_menu_item.html" with name="expeditions" label="Expeditions" color="text-menu-expeditions" %}
 
       {# Account box, pinned to the bottom of the sidebar (mt-auto) #}

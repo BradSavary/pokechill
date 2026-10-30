@@ -5,7 +5,8 @@
       "name": "Ranch",
       "currencies": [
         "research"
-      ]
+      ],
+      "description": "The ranch itself: room for visitors, careful research, sweeter candies and bigger storehouses."
     },
     {
       "id": "feeder",
@@ -15,7 +16,8 @@
         "research",
         "berry",
         "apricorn"
-      ]
+      ],
+      "description": "Deeper bowls and tastier mixes: the feeder lures more of the types you are after."
     },
     {
       "id": "meadow",
@@ -27,7 +29,8 @@
       "milestone_currencies": [
         "berry",
         "research"
-      ]
+      ],
+      "description": "Swift pickers and bigger baskets: more berries from the Meadow, and new visitors."
     },
     {
       "id": "orchard",
@@ -39,7 +42,8 @@
       "milestone_currencies": [
         "apricorn",
         "research"
-      ]
+      ],
+      "description": "Nimble climbers and bigger crates: more apricorns from the Orchard, and new visitors."
     }
   ],
   "nodes": [
@@ -210,7 +214,7 @@
       "col": 1,
       "lane": 1,
       "effects": {
-        "feeder_max_units": 10
+        "feeder_max_units": 2
       }
     },
     {
@@ -233,7 +237,7 @@
       "col": 2,
       "lane": 2,
       "effects": {
-        "feeder_max_units": 10
+        "feeder_max_units": 2
       },
       "requires": [
         "feeder-units-1"
@@ -259,7 +263,7 @@
       "col": 3,
       "lane": 2,
       "effects": {
-        "feeder_max_units": 10
+        "feeder_max_units": 2
       },
       "requires": [
         "feeder-units-2"

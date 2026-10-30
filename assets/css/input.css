@@ -56,6 +56,7 @@
   --color-menu-zones: #43a047;
   --color-menu-pokedex: #e3343c;
   --color-menu-expeditions: #2f80ed;
+  --color-menu-lab: #8e44ad;
 
   /* Official-style type colors: bg-type-fire, bg-type-water... */
   --color-type-normal: #a8a77a;
@@ -390,6 +391,129 @@
     }
   }
 
+  /* --- Professor Oak's lab (the skill tree) ------------------------------- */
+
+  /* The lab's pages take place inside the lab: its floor (FRLG, HGSS colours:
+     scripts/build_lab_images.py) covers the page, at x3 like a game screen */
+  .lab-room {
+    background: url("/static/img/lab-floor.png") repeat;
+    background-size: 96px;
+    image-rendering: pixelated;
+  }
+  .lab-room > * {
+    image-rendering: auto;
+  }
+  /* A white plate over the floor (the wallet, a description) */
+  .lab-plate {
+    @apply rounded-full bg-surface/95 px-4 py-1 shadow-md;
+  }
+  /* The lab seen from above, in a frame */
+  .lab-scene {
+    @apply overflow-hidden rounded-2xl border-4 border-[#4a5a7a] bg-[#4a5a7a] shadow-lg;
+  }
+  /* Professor Oak's text box, like the games': white, with a thick rounded
+     border, and a tail towards him (on its left) */
+  .oak-dialogue {
+    @apply relative rounded-2xl border-4 border-[#4a5a7a] bg-surface px-5 py-3 shadow-lg;
+  }
+  .oak-dialogue::before {
+    @apply absolute top-1/2 -left-3.5 size-0 -translate-y-1/2 content-[''];
+    border-block: 10px solid transparent;
+    border-right: 12px solid #4a5a7a;
+  }
+
+  /* A tree on the lab's first page: a research file, its name on a tab */
+  .tree-card {
+    @apply relative mt-5 flex flex-col gap-3 rounded-tr-2xl rounded-b-2xl bg-surface p-4 shadow-lg transition hover:-translate-y-1;
+  }
+  .tree-card::before {
+    @apply absolute -top-5 left-0 h-5 w-28 rounded-t-xl bg-surface content-[''];
+  }
+  .tree-card.is-locked {
+    @apply cursor-not-allowed opacity-70 hover:translate-y-0;
+  }
+
+  /* The page of a tree: the tree drawn on a blueprint (blue, a fine grid) */
+  .blueprint {
+    @apply overflow-x-auto rounded-2xl border-4 border-[#4a5a7a] p-4 pb-6 shadow-lg;
+    background-color: #2d5f9a;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .blueprint .skill-lines line {
+    stroke: rgb(255 255 255 / 0.45);
+  }
+  .blueprint .skill-lines line.is-done {
+    stroke: #7ee08a;
+  }
+
+  /* A tree: a grid of nodes (a column per step, a lane per row). Its columns
+     share the whole width (7.5rem at least: on a narrow screen, its box
+     scrolls sideways); on a large screen the rows and nodes grow too */
+  .skill-grid {
+    @apply relative grid w-full min-w-max;
+    grid-template-columns: repeat(var(--cols), minmax(7.5rem, 1fr));
+    grid-template-rows: repeat(var(--lanes), 5.5rem);
+  }
+  @media (width >= 64rem) and (height >= 640px) {
+    .skill-grid {
+      grid-template-rows: repeat(var(--lanes), 8rem);
+    }
+  }
+  /* The lines between nodes, under them */
+  .skill-lines {
+    @apply pointer-events-none absolute inset-0 size-full;
+  }
+  .skill-lines line {
+    stroke: var(--color-line);
+    stroke-width: 4;
+  }
+  .skill-lines line.is-done {
+    stroke: var(--color-menu-zones);
+  }
+
+  /* A node: a disc with the sprite of its effect, its label below (out of the
+     flow, so the disc stays at the centre of its cell, where the lines end) */
+  .skill-node {
+    @apply relative z-10 grid place-items-center;
+  }
+  .skill-disc {
+    @apply grid size-14 shrink-0 place-items-center rounded-full border-4 border-line bg-surface transition lg:size-[4.5rem];
+  }
+  .skill-label {
+    @apply absolute top-1/2 mt-8 rounded-full bg-surface px-2 text-xs font-bold whitespace-nowrap shadow lg:mt-10 lg:text-sm;
+  }
+  .skill-node:hover .skill-disc {
+    @apply scale-110;
+  }
+  /* Milestones: bigger, with a golden ring */
+  .skill-node.is-milestone .skill-disc,
+  .skill-disc.is-milestone {
+    @apply size-[4.5rem] border-[#e0b230] lg:size-24;
+  }
+  .skill-node.is-milestone .skill-label {
+    @apply mt-10 lg:mt-13;
+  }
+  /* States: unlocked (green), can be bought (red, it calls), too dear
+     (plain), locked (greyed out) */
+  .is-unlocked .skill-disc,
+  .skill-disc.is-unlocked {
+    @apply border-menu-zones bg-[#e8f8ea];
+  }
+  .is-available .skill-disc,
+  .skill-disc.is-available {
+    @apply border-accent;
+    box-shadow: 0 0 0 4px rgb(230 57 70 / 0.25);
+  }
+  .skill-node.is-locked {
+    @apply opacity-50 grayscale;
+  }
+  .skill-node.is-selected .skill-disc {
+    @apply outline-4 outline-offset-2 outline-ink;
+  }
+
   /* The action buttons at the bottom of an entry (one is active) */
   .entry-actions {
     @apply sticky bottom-0 flex gap-2 border-t border-line bg-surface pt-3;
@@ -440,6 +564,18 @@
   .feeder-badge {
     @apply absolute -top-7 left-1/2 flex h-6 w-max -translate-x-1/2 items-center gap-0.5 rounded-full bg-surface px-1.5 text-sm font-bold text-ink;
     box-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
+  }
+  /* The shut lab on the Ranch map: the building shaded, and a sign over it
+     (what opens it, and how far the Pokédex is). Its text follows the width
+     of the map (--stage-width, see .map-stage), so the sign stays on the
+     building whatever the screen. */
+  .lab-closed {
+    @apply absolute grid cursor-not-allowed place-items-center rounded-sm bg-black/40;
+  }
+  .lab-sign {
+    @apply flex w-[90%] flex-col items-start gap-0.5 rounded-xl bg-surface/95 leading-tight text-ink shadow-lg;
+    font-size: clamp(0.55rem, calc(var(--stage-width) * 0.0105), 0.95rem);
+    padding: 0.5em 0.8em;
   }
   /* A slot of the feeder in its dialog; .is-empty for a free one */
   .feeder-slot {

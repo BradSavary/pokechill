@@ -23,7 +23,10 @@
     hence left 31/40 = 77.5 % and top 6/23 = 26.1 %; it is 1/40 = 2.5 %
     wide and spans 2 rows (8.7 %) with the doorstep below it. The feeder
     stands on the tiles (7, 8) and (7, 9) (FEEDER_AT in the map script):
-    left 7/40 = 17.5 %, top 8/23 = 34.8 %.
+    left 7/40 = 17.5 %, top 8/23 = 34.8 %. Professor Oak's lab covers the
+    tiles (19, 6) to (25, 10) (LAB in the map script), its roof starting
+    half-way down its first row: left 47.5 %, top 6.5/23 = 28.3 %, 7 tiles
+    wide (17.5 %) and 4.5 high (19.6 %).
   {% endcomment %}
   <div class="map-view">
     <div class="map-stage">
@@ -36,6 +39,27 @@
          class="map-spot" style="left: 77.5%; top: 26.1%; width: 2.5%; height: 8.7%;">
         {% if waiting %}<span class="map-badge animate-hop">{{ waiting }}</span>{% endif %}
       </a>
+      {# Professor Oak's lab: shut (with the species still needed) until the Pokédex holds enough #}
+      {% if lab_open %}
+        <a href="{% url 'lab:index' %}" class="map-spot" style="left: 47.5%; top: 28.3%; width: 17.5%; height: 19.6%;"
+           title="Professor Oak's Lab"></a>
+      {% else %}
+        {# Shut: the building is shaded, and a sign over it says what opens it, with the progress #}
+        <span class="lab-closed" style="left: 47.5%; top: 28.3%; width: 17.5%; height: 19.6%;"
+              title="Professor Oak's Lab opens when your Pokédex holds {{ lab_required }} species">
+          <span class="lab-sign">
+            <span class="flex items-center gap-1.5 font-bold">
+              <span class="size-4 shrink-0 text-accent phone:size-3">{% include "icons/lock.svg" %}</span>
+              Professor Oak's Lab
+            </span>
+            <span class="text-muted">Opens at {{ lab_required }} species</span>
+            <span class="flex w-full items-center gap-2">
+              <span class="gauge h-2 flex-1"><span class="bg-accent" style="width: {% widthratio species_owned lab_required 100 %}%"></span></span>
+              <span class="font-bold">{{ species_owned }}/{{ lab_required }}</span>
+            </span>
+          </span>
+        </span>
+      {% endif %}
       {# The feeder: its next slot (the one the next Pokémon will eat) shows above it #}
       <button type="button" data-open="#feeder" class="map-spot" style="left: 17.5%; top: 34.8%; width: 2.5%; height: 8.7%;"
               title="Feeder: {{ feeder.filled|length }}/{{ feeder.capacity }} slots filled">
@@ -62,9 +86,12 @@
   <section id="welcome-area" class="panel absolute bottom-8 left-3 z-10 flex w-72 flex-col gap-3 p-4"
            aria-label="Welcome area">
     <h2 class="section-title -ml-4 self-start">Welcome area <span class="font-normal text-white/70">{{ waiting }}/{{ request.player.welcome_capacity }}</span></h2>
-    <div class="flex flex-wrap gap-2">
+    <div class="flex flex-col gap-2">
       {# Arrivals stay hidden: one ball per waiting Pokémon, which tells its rarity #}
-      {% for rarity in rarities %}{% include "ranch/_ball.html" with rarity=rarity size="size-9" %}{% endfor %}
+      {# Rows of even lengths (6 at most): 8 balls make 4 and 4 #}
+      {% for row in rarities|balanced_rows:6 %}
+        <div class="flex gap-2">{% for rarity in row %}{% include "ranch/_ball.html" with rarity=rarity size="size-9" %}{% endfor %}</div>
+      {% endfor %}
       {% if not waiting %}<p class="text-sm text-muted">Nobody yet: a wild Pokémon shows up every hour.</p>{% endif %}
     </div>
     {% if waiting %}
@@ -184,8 +211,11 @@
         {% if catch_up.hours_while_full %}
           <p class="text-sm text-muted">The Welcome area was full for {{ catch_up.hours_while_full }} h: arrivals during that time were lost.</p>
         {% endif %}
-        <div class="flex flex-wrap justify-center gap-3 rounded-2xl bg-sky p-4">
-          {% for rarity in rarities %}{% include "ranch/_ball.html" with rarity=rarity size="size-9" %}{% endfor %}
+        {# Rows of even lengths (10 at most): 13 balls make 7 and 6, not 10 and 3 #}
+        <div class="flex flex-col items-center gap-3 rounded-2xl bg-sky p-4">
+          {% for row in rarities|balanced_rows:10 %}
+            <div class="flex justify-center gap-3">{% for rarity in row %}{% include "ranch/_ball.html" with rarity=rarity size="size-9" %}{% endfor %}</div>
+          {% endfor %}
         </div>
         <footer class="flex justify-end gap-2">
           {% if waiting > 1 %}

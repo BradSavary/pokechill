@@ -87,6 +87,8 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 # Adds `is_guest` to every template (account box of the sidebar)
                 "accounts.context_processors.account",
+                # Adds `lab_required` and `lab_locked_reason` (the menu, the Ranch map)
+                "ranch.context_processors.game",
             ],
             # {% load assets %}: versioned URLs of the CSS and scripts (config/assets.py)
             "libraries": {"assets": "config.assets"},

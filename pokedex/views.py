@@ -125,6 +125,7 @@ def experience_percent(species: Species, owned) -> int:
 def training_context(species: Species, owned, candies: int) -> dict:
     """The "Level & candies" action: the experience bar and what candies give."""
     curve, stage = species.growth_rate, species.evolution_stage
+    bonus = owned.player.skill_bonuses.candy_xp_percent  # the skill tree's sweeter candies
     at_max = owned.level >= experience.MAX_LEVEL
     needed = (
         0
@@ -132,13 +133,13 @@ def training_context(species: Species, owned, candies: int) -> dict:
         else experience.total_experience(curve, owned.level + 1)
         - experience.total_experience(curve, owned.level)
     )
-    to_next = experience.candies_to_next_level(curve, owned.level, owned.experience, stage)
+    to_next = experience.candies_to_next_level(curve, owned.level, owned.experience, stage, bonus)
     return {
         "at_max": at_max,
         "xp": owned.experience,
         "xp_needed": needed,
         "xp_percent": experience_percent(species, owned),
-        "candy_xp": experience.candy_experience(owned.level, stage),
+        "candy_xp": experience.candy_experience(owned.level, stage, bonus),
         "to_next": to_next,
         "can_feed": not at_max and candies > 0,
         "can_level": not at_max and 0 < to_next <= candies,

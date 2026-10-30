@@ -68,6 +68,15 @@ def test_valid_tree_passes_validation():
     validate({"works_in": {"species": "paras", "zone": "orchard"}})
 
 
+def test_zone_level_looks_at_the_zones_of_the_player():
+    ranch = GameContext(slot=DAY.slot, zone_levels={"meadow": 2, "orchard": 1})
+    assert evaluate({"zone_level": {"zone": "meadow", "level": 2}}, ranch)
+    assert not evaluate({"zone_level": {"zone": "orchard", "level": 2}}, ranch)
+    # A zone the player hasn't got (yet): never met
+    validate({"zone_level": {"zone": "pond", "level": 1}})
+    assert not evaluate({"zone_level": {"zone": "pond", "level": 1}}, ranch)
+
+
 def test_planned_zones_are_valid_but_never_met():
     # The Pond is not in the game yet: Blastoise may already wait for it
     tree = {
@@ -95,6 +104,8 @@ def test_planned_zones_are_valid_but_never_met():
         {"works_in": "paras"},  # needs a species and a zone
         {"works_in": {"species": "paras"}},  # the zone is missing
         {"works_in": {"species": "paras", "zone": "moon"}},  # unknown zone
+        {"zone_level": {"zone": "meadow"}},  # the level is missing
+        {"zone_level": {"zone": "meadow", "level": 0}},  # levels start at 1
         "night",  # not an object at all
     ],
 )

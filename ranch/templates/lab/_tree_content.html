@@ -1,0 +1,39 @@
+{% load static %}
+{% comment %}
+  A tree, drawn on a blueprint: its nodes on a grid (a column per step, a
+  lane per row), the lines between a node and those it needs (an SVG under
+  the nodes, 100 units per cell). Wider than the screen: it scrolls sideways.
+  Below, Professor Oak explains the node selected (_node_detail.html).
+  Replaced as a whole after an unlock (HTMX).
+{% endcomment %}
+<p class="lab-plate self-end text-sm">
+  <span class="font-bold ">{{ view.done }}/{{ view.total }} nodes</span>
+</p>
+<div class="blueprint">
+  {% if not view.open %}
+    <p class="mb-3 inline-block rounded-xl bg-surface px-4 py-2 font-bold text-accent">This tree opens with {{ view.opener }}.</p>
+  {% endif %}
+  <div class="skill-grid" style="--cols: {{ view.cols }}; --lanes: {{ view.lanes }}">
+    <svg class="skill-lines" viewBox="0 0 {% widthratio view.cols 1 100 %} {% widthratio view.lanes 1 100 %}" preserveAspectRatio="none" aria-hidden="true">
+      {% for edge in view.edges %}
+        <line x1="{{ edge.x1 }}" y1="{{ edge.y1 }}" x2="{{ edge.x2 }}" y2="{{ edge.y2 }}" vector-effect="non-scaling-stroke" class="{% if edge.done %}is-done{% endif %}"/>
+      {% endfor %}
+    </svg>
+    {% for cell in view.cells %}
+      <button type="button" data-skill-node
+              class="skill-node is-{{ cell.state }} {% if cell.node.milestone %}is-milestone{% endif %} {% if cell.node.id == selected.node.id %}is-selected{% endif %}"
+              style="grid-column: {{ cell.node.col }}; grid-row: {{ cell.node.lane|add:1 }}"
+              hx-get="{% url 'lab:node' view.tree.id cell.node.id %}" hx-target="#node-detail" hx-swap="outerHTML"
+              title="{{ cell.node.name }}">
+        <span class="skill-disc"><img src="{{ cell.icon }}" alt="" class="pixelated size-[60%]"></span>
+        <span class="skill-label">{{ cell.label }}</span>
+      </button>
+    {% endfor %}
+  </div>
+</div>
+
+{# Professor Oak explains the node selected, in his text box #}
+<div class="flex items-center gap-4">
+  <img src="{% static 'img/professor-oak.png' %}" alt="Professor Oak" width="96" height="96" class="pixelated size-24 shrink-0 phone:hidden">
+  {% include "lab/_node_detail.html" %}
+</div>

@@ -161,6 +161,7 @@ class Player:
             ),
             max_units=balance.FEEDER_MAX_UNITS + bonuses.feeder_max_units,
             unit_tenths=bonuses.feeder_unit_tenths,
+            zone_levels={zone: bonuses.zone_level[zone] for zone in self.assignment},
         )
         hours = (result.last_slot - self.last_slot) // ONE_HOUR
         self.last_slot = result.last_slot

@@ -1,0 +1,16 @@
+{% load ranch_extras %}
+{% comment %}
+  What the player can spend in the lab: research points, then the resource of
+  each zone. Its id lets the answer to an unlock (HTMX) refresh it, out of band
+  (oob=True).
+{% endcomment %}
+<p id="lab-wallet" {% if oob %}hx-swap-oob="true"{% endif %} class="flex items-center gap-4 text-xl">
+  {% include "_research_points.html" with amount=wallet.research %}
+  {% for currency, amount in wallet.items %}
+    {% if currency != "research" %}
+      <span class="inline-flex items-center gap-1 font-bold" title="{{ amount }} {{ amount|resource_word:currency }}">
+        <img src="{{ currency|resource_icon }}" alt="{{ amount|resource_word:currency }}" class="pixelated size-6">{{ amount }}
+      </span>
+    {% endif %}
+  {% endfor %}
+</p>

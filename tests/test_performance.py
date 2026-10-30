@@ -58,7 +58,8 @@ def test_the_pokedex_loads_an_entry_in_a_fixed_number_of_queries(
     guest, bulbasaur, django_assert_max_num_queries
 ):
     # An entry in the game, with its challenges: its types come with the
-    # species (select_related), its challenges' progress in a single query
+    # species (select_related), its challenges' progress in a single query,
+    # the skill tree's bonuses (points, candies) in another
     Species.objects.filter(pk=bulbasaur.pk).update(is_available=True, rarity="common")
-    with django_assert_max_num_queries(12):
+    with django_assert_max_num_queries(13):
         guest.get(reverse("pokedex:index"))
