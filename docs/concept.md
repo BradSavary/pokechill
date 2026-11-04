@@ -311,6 +311,7 @@ Une barre verticale sur le côté donne accès à 5 onglets : **Pension**, **Zon
 
 | Page | Contenu | Actions |
 | --- | --- | --- |
+| Écran titre | La carte de la Pension en fond, le nom du jeu, un badge « en développement », une courte présentation et les dernières nouveautés | Commencer une partie (invité), la continuer, se connecter. Un joueur inscrit ne le voit pas |
 | Pension (page principale) | Scène illustrée où les Pokémon se promènent, résumé de l'absence, Accueil (x/8), état de la mangeoire | Révéler les arrivées, remplir la mangeoire, ouvrir Quêtes, Arbre, Inventaire et Profil |
 | Zones | La liste des zones : Pokémon au travail, ressources à récupérer, depuis combien de temps ils travaillent, jauge de stockage | Choisir une zone : le clic récolte ressources et expérience accumulées (avec un résumé), puis ouvre la zone ; s'il n'y a rien à récolter, elle s'ouvre directement |
 | Détail d'une zone | La carte de la zone (décor pixel art) avec ses Pokémon qui sautillent (icônes de 7e génération), leur efficacité, les trouvailles rares (découvertes ou « ??? ») | Affecter (clic sur un emplacement vide, puis choix parmi les Pokémon libres, ceux du bon type en premier), retirer (clic sur un Pokémon) |

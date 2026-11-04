@@ -18,6 +18,7 @@ from ranch.models import CandyStock, ObjectiveProgress, OwnedPokemon, Player
 from ranch.research import ClaimError, claim, sync_research
 from ranch.services import CandyError, catch_up_player, receive_pokemon, use_candies
 from ranch.zones import collect, give_starting_zones, move_pokemon
+from tests.conftest import start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -179,7 +180,7 @@ def test_a_species_not_owned_has_nothing_to_claim(player, in_game):
 
 
 def test_the_rewards_of_a_species_are_marked_in_the_list(client, in_game):
-    client.get("/ranch/")  # a guest: Bulbasaur is one of its starters
+    start_game(client)  # a guest: Bulbasaur is one of its starters
     html = client.get(reverse("pokedex:index")).content.decode()
     assert 'class="reward-badge"' in html  # the "!" of its row
     # The "!" of the menu shows (not hidden)
@@ -188,7 +189,7 @@ def test_the_rewards_of_a_species_are_marked_in_the_list(client, in_game):
 
 def test_claiming_from_the_entry_refreshes_the_page_parts(client, in_game):
     bulbasaur, _ = in_game
-    client.get("/ranch/")
+    start_game(client)
     url = reverse("pokedex:claim", args=[bulbasaur.number])
     html = client.post(url, {"what": "all"}, **HTMX).content.decode()
     assert 'class="points-up"' in html  # what was claimed rises next to the total
@@ -200,7 +201,7 @@ def test_claiming_from_the_entry_refreshes_the_page_parts(client, in_game):
 
 
 def test_claim_actions_require_post(client, in_game):
-    client.get("/ranch/")
+    start_game(client)
     assert client.get(reverse("pokedex:claim", args=[1])).status_code == 405
 
 
@@ -255,13 +256,13 @@ def test_a_save_made_before_the_research_is_set_up_from_its_state(player, in_gam
 
 
 def test_new_saves_need_no_set_up(client, bulbasaur):
-    client.get("/ranch/")
+    start_game(client)
     assert Player.objects.get().research_synced
 
 
 def test_claiming_a_challenge_fills_the_stage_bar_from_where_it_was(client, in_game):
     bulbasaur, _ = in_game
-    client.get("/ranch/")  # Bulbasaur, a starter
+    start_game(client)  # Bulbasaur, a starter
     player = Player.objects.get()
     for nature in ("speed", "defense", "attack"):  # natures-3 done
         obtain(player, bulbasaur, nature)

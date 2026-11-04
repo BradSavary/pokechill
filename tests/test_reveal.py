@@ -11,6 +11,7 @@ from ranch import tutorial
 from ranch.models import Arrival, CandyStock, OwnedPokemon, Player
 from ranch.services import reveal_all, reveal_next
 from ranch.templatetags.ranch_extras import balanced_rows, ball_name, ball_sprite
+from tests.conftest import start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -82,7 +83,7 @@ def guest_with_arrivals(client, common, monkeypatch):
     """A guest who comes back after 3 hours: 3 arrivals are waiting."""
     now = START + timedelta(minutes=5)
     monkeypatch.setattr("django.utils.timezone.now", lambda: now)
-    client.get(reverse("ranch:index"))
+    start_game(client)
     Player.objects.update(tutorial_step=tutorial.DONE)  # tutorial already done
     monkeypatch.setattr("django.utils.timezone.now", lambda: now + timedelta(hours=3))
     return client
@@ -178,7 +179,7 @@ def test_skipping_goes_to_the_summary_of_the_whole_series(guest_with_arrivals):
 def test_a_single_arrival_ends_without_summary(client, common, monkeypatch):
     now = START + timedelta(minutes=5)
     monkeypatch.setattr("django.utils.timezone.now", lambda: now)
-    client.get(reverse("ranch:index"))
+    start_game(client)
     Player.objects.update(tutorial_step=tutorial.DONE)
     monkeypatch.setattr("django.utils.timezone.now", lambda: now + timedelta(hours=1))
     client.get(reverse("ranch:index"))  # the catch-up brings one arrival
@@ -198,7 +199,7 @@ def test_reveals_require_post(guest_with_arrivals):
 
 
 def test_the_dialog_stays_closed_when_nobody_is_waiting(client):
-    html = client.get(reverse("ranch:index")).content.decode()
+    html = start_game(client).content.decode()
     assert "data-auto-open" not in html
     assert "Welcome back" not in html
     # The door is then a plain link to the Welcome area, without a badge

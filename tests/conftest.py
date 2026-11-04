@@ -6,6 +6,7 @@ by any test simply by naming it as a parameter.
 """
 
 import pytest
+from django.urls import reverse
 
 from pokedex.models import EvolutionChain, Species, Type
 
@@ -71,3 +72,11 @@ def ivysaur(bulbasaur):
 def charmander(fire):
     chain = EvolutionChain.objects.create(pokeapi_id=2)
     return make_species(4, "Charmander", chain, fire)
+
+
+def start_game(client):
+    """
+    Start a game as a new visitor: the Start button of the title screen (a
+    guest with a fresh save), then the Ranch. Returns the Ranch page.
+    """
+    return client.post(reverse("start"), follow=True)

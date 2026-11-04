@@ -7,7 +7,7 @@ from game import balance
 from pokedex.models import EvolutionChain
 from ranch import tutorial
 from ranch.models import OwnedPokemon, Player, ResourceStock
-from tests.conftest import make_species
+from tests.conftest import make_species, start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -29,19 +29,19 @@ def current_step():
 
 
 def test_a_new_player_starts_the_tutorial(client):
-    html = client.get(reverse("ranch:index")).content.decode()
+    html = start_game(client).content.decode()
     assert "Welcome to PokéChill!" in html
     assert current_step() == tutorial.WELCOME
 
 
 def test_the_intro_shows_the_starters(client, bulbasaur, charmander):
-    html = client.get(reverse("ranch:index")).content.decode()
+    html = start_game(client).content.decode()
     assert "You're not alone" in html
     assert "<figcaption" in html and "Bulbasaur</figcaption>" in html
 
 
 def test_the_tutorial_goes_through_the_pokedex_and_back(client):
-    client.get(reverse("ranch:index"))
+    start_game(client)
 
     assert next_step(client, tutorial.WELCOME)["Location"] == reverse("ranch:index")
     response = next_step(client, tutorial.WELCOME_AREA)
@@ -53,14 +53,14 @@ def test_the_tutorial_goes_through_the_pokedex_and_back(client):
 
 
 def test_a_double_click_never_skips_a_step(client):
-    client.get(reverse("ranch:index"))
+    start_game(client)
     next_step(client, tutorial.WELCOME)
     next_step(client, tutorial.WELCOME)  # the same form sent twice
     assert current_step() == tutorial.WELCOME_AREA
 
 
 def test_the_gift_ends_the_tutorial_once(client, pikachu):
-    client.get(reverse("ranch:index"))
+    start_game(client)
     Player.objects.update(tutorial_step=tutorial.GIFT)
 
     html = client.post(reverse("ranch:tutorial_gift")).content.decode()
@@ -80,7 +80,7 @@ def test_the_tutorial_disappears_once_done(client):
 
 
 def test_a_tampered_step_is_ignored(client):
-    client.get(reverse("ranch:index"))
+    start_game(client)
     assert next_step(client, "abc").status_code == 302  # no server error
     assert current_step() == tutorial.WELCOME
 
@@ -90,7 +90,7 @@ def test_a_tampered_step_is_ignored(client):
 
 def at_step(client, step):
     """A guest at a given step of the tutorial (owning Bulbasaur, if it exists)."""
-    client.get(reverse("ranch:index"))  # the first visit creates the guest
+    start_game(client)  # the Start button creates the guest
     Player.objects.update(tutorial_step=step)
     return Player.objects.get()
 

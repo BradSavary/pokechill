@@ -161,6 +161,80 @@
     @apply rounded-2xl bg-surface shadow-[0_8px_24px_rgb(0_0_0/0.18)];
   }
 
+  /* The title screen: no box, the menu lies on the map. A wide shade,
+     darker in the middle, keeps the text readable; the logo is white with a
+     dark red outline (four offset shadows) and a drop shadow, like a game
+     title, and floats gently; what's new is frosted glass over the map.
+     The whole menu rises softly into place when the page opens. */
+  .title-shade {
+    @apply absolute inset-0;
+    /* Wide, and in several steps: the shade fades over the whole screen,
+       with no visible edge around the menu */
+    background: radial-gradient(
+      ellipse 75% 90% at 50% 50%,
+      rgb(8 22 12 / 0.75) 0%,
+      rgb(8 22 12 / 0.66) 25%,
+      rgb(8 22 12 / 0.5) 45%,
+      rgb(8 22 12 / 0.32) 65%,
+      rgb(8 22 12 / 0.18) 85%,
+      rgb(8 22 12 / 0.12) 100%
+    );
+  }
+  .title-menu {
+    @apply flex w-full max-w-xl flex-col items-center gap-5 phone:gap-3;
+    animation: title-enter 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .title-logo {
+    @apply flex items-center gap-3 text-6xl font-bold text-white phone:text-4xl;
+    text-shadow:
+      3px 0 0 var(--color-accent-dark),
+      -3px 0 0 var(--color-accent-dark),
+      0 3px 0 var(--color-accent-dark),
+      0 -3px 0 var(--color-accent-dark),
+      0 7px 0 rgb(0 0 0 / 0.35);
+  }
+  .title-ball {
+    @apply size-14 rounded-full bg-white text-accent phone:size-10;
+    box-shadow: 0 0 0 3px var(--color-accent-dark), 0 6px 0 rgb(0 0 0 / 0.35);
+    animation: title-float 3s ease-in-out infinite;
+  }
+  .title-pitch {
+    @apply max-w-md text-center text-white;
+    text-shadow: 0 2px 4px rgb(0 0 0 / 0.7);
+  }
+  .btn.title-start {
+    @apply px-12 py-3 text-2xl;
+    animation: title-glow 2.4s ease-in-out infinite;
+  }
+  .title-link {
+    @apply text-sm text-white/85 underline underline-offset-4 hover:text-white;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+  }
+  .title-news {
+    @apply flex w-full flex-col gap-2 rounded-2xl bg-white/10 px-5 py-3 text-white ring-1 ring-white/25;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+  }
+  @keyframes title-enter {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes title-float {
+    0%, 100% { transform: translateY(0) rotate(-6deg); }
+    50% { transform: translateY(-5px) rotate(6deg); }
+  }
+  @keyframes title-glow {
+    0%, 100% { box-shadow: 0 3px 0 var(--color-accent-dark), 0 0 0 0 rgb(230 57 70 / 0.5); }
+    50% { box-shadow: 0 3px 0 var(--color-accent-dark), 0 0 0 10px rgb(230 57 70 / 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .title-menu, .title-ball, .btn.title-start {
+      animation: none;
+    }
+  }
+  .dev-badge {
+    @apply rounded-full bg-[#fdf1c7] px-3 py-0.5 text-xs font-bold tracking-wide text-[#8a6100] uppercase ring-2 ring-[#e0b230];
+  }
+
   /* Slanted title band (Sword/Shield): dark red, right end cut diagonally */
   .title-band {
     @apply inline-block bg-accent-dark py-1.5 pr-9 pl-4 text-xl font-bold text-white;

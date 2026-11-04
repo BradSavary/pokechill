@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from pokedex.models import Species
 from ranch.models import CandyStock, OwnedPokemon, Player
+from tests.conftest import start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -19,7 +20,7 @@ def player_client(client, bulbasaur, ivysaur, charmander):
     Species.objects.filter(pk__in=[bulbasaur.pk, ivysaur.pk]).update(
         is_available=True, rarity="common"
     )
-    client.get(reverse("ranch:index"))  # creates the guest and the save
+    start_game(client)  # creates the guest and the save
     player = Player.objects.get()
     OwnedPokemon.objects.filter(player=player).delete()  # ignore the starters
     OwnedPokemon.objects.create(

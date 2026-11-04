@@ -11,6 +11,7 @@ from django.urls import reverse
 
 from pokedex.models import Species
 from ranch.models import Player
+from tests.conftest import start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -18,7 +19,7 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def guest(client, bulbasaur):
     """A guest who already visited the Ranch, tutorial done."""
-    client.get(reverse("ranch:index"))
+    start_game(client)
     Player.objects.update(tutorial_step=6)
     client.get(reverse("ranch:index"))
     return client

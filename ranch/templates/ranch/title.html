@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}PokéChill: an idle Pokémon ranch{% endblock %}
+
+{# The title screen has no menu: the game starts from here #}
+{% block nav %}{% endblock %}
+
+{# The map covers the page, the panel lies over it (the legal notice stays at the bottom) #}
+{% block main_class %}relative min-h-0 flex-1 overflow-hidden{% endblock %}
+
+{% block content %}
+  {% comment %}
+    The Ranch map behind (the same wallpaper as the Ranch page, see .map-view
+    in input.css), darkened, with a few Pokémon hopping on both sides. It is
+    decoration only (aria-hidden). Over it, without a box: the title, the notice
+    that the game is in development, a short pitch, the button to play, and
+    what's new (ranch.news: only what is already in the game).
+    A new visitor starts a game (a POST: only this button creates a guest);
+    a guest continues theirs, and is invited to save it.
+  {% endcomment %}
+  <div class="map-view" aria-hidden="true">
+    <div class="map-stage">
+      <img src="{% static 'img/ranch-map.png' %}" width="640" height="368" alt="" draggable="false"
+           class="pixelated block size-full select-none">
+      {% for pokemon in hoppers %}
+        <img src="{{ pokemon.icon }}" alt="" width="40" height="30" draggable="false"
+             class="pixelated absolute w-[6.25%] select-none motion-safe:animate-hop"
+             style="left: {{ pokemon.left }}%; top: {{ pokemon.top }}%; animation-delay: {{ pokemon.delay }}s">
+      {% endfor %}
+    </div>
+  </div>
+  {# A soft shade, darker behind the title: the text stays readable, the map stays visible #}
+  <div class="title-shade" aria-hidden="true"></div>
+
+  {# Scrolls if the screen is too short; m-auto centres the menu without cutting its top #}
+  <div class="relative flex h-full overflow-y-auto p-4 pb-12 phone:p-2 phone:pb-9">
+    <section class="title-menu m-auto" aria-labelledby="game-title">
+      <div class="flex flex-col items-center gap-3 text-center">
+        <h1 id="game-title" class="title-logo">
+          <span class="title-ball">{% include "icons/pokeball.svg" %}</span>
+          PokéChill
+        </h1>
+        <span class="dev-badge">In development</span>
+      </div>
+
+      <p class="title-pitch">
+        Take over an abandoned Pokémon ranch. Every hour, a wild Pokémon comes by,
+        even while you are away. Put your Pokémon to work, fill the feeder,
+        and research all 151 species of Kanto.
+      </p>
+
+      <div class="flex flex-col items-center gap-2.5">
+        {% if is_guest %}
+          <a href="{% url 'ranch:index' %}" class="btn title-start">Continue</a>
+          <a href="{% url 'accounts:sign_up' %}" class="title-link">Save your game: create an account</a>
+        {% else %}
+          <form method="post" action="{% url 'start' %}">
+            {% csrf_token %}
+            <button class="btn title-start">Start</button>
+          </form>
+          <a href="{% url 'accounts:login' %}" class="title-link">Already have an account? Log in</a>
+        {% endif %}
+      </div>
+
+      {% if news %}
+        {# Frosted glass over the map. Not on a phone: the title, the pitch and the button must fit its short screen #}
+        <section class="title-news phone:hidden" aria-label="What's new">
+          <h2 class="text-xs font-bold tracking-widest text-white/80 uppercase">What's new</h2>
+          <ul class="flex flex-col gap-1.5 text-sm">
+            {% for item in news %}
+              <li class="grid grid-cols-[3.5rem_1fr] gap-2">
+                <time datetime="{{ item.day|date:'Y-m-d' }}" class="font-bold text-[#ffd76a]">{{ item.day|date:"M j" }}</time>
+                <span>{{ item.text }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from config.assets import fingerprint
 from pokedex.models import Species, Type
+from tests.conftest import start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -103,6 +104,7 @@ def test_type_filter_only_lists_types_carried_by_species(client, bulbasaur):
 def test_pages_load_htmx_and_their_own_script(client, bulbasaur, page, script):
     # Without them the page still renders, but nothing reacts: no reveal
     # dialog, no countdown, no HTMX requests (and Python tests run no JS)
+    start_game(client)  # the Ranch is a game page: a game is needed
     html = client.get(reverse(page)).content.decode()
     assert "js/htmx.min.js" in html
     assert script in html

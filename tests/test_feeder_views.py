@@ -4,6 +4,7 @@ import pytest
 from django.urls import reverse
 
 from ranch.models import Player, ResourceStock
+from tests.conftest import start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -11,7 +12,7 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def guest(client, bulbasaur):
     """A guest with 10 berries and 4 apricorns in stock."""
-    client.get(reverse("ranch:index"))  # the first visit creates the guest
+    start_game(client)  # the Start button creates the guest
     player = Player.objects.get()
     ResourceStock.objects.create(player=player, resource="berry", amount=10)
     ResourceStock.objects.create(player=player, resource="apricorn", amount=4)

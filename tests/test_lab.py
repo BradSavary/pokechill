@@ -9,7 +9,7 @@ from ranch.models import OwnedPokemon, Player, ResourceStock
 from ranch.services import receive_pokemon
 from ranch.skill_data import skill_tree
 from ranch.skills import SkillError, unlock_node
-from tests.conftest import make_species
+from tests.conftest import make_species, start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -19,7 +19,7 @@ HTMX = {"HTTP_HX_REQUEST": "true"}
 @pytest.fixture
 def guest(client, grass):
     """A guest at the end of the tutorial."""
-    client.get(reverse("ranch:index"))
+    start_game(client)
     Player.objects.update(tutorial_step=6)
     return client, Player.objects.get()
 

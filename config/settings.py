@@ -128,7 +128,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "ranch:index"
-LOGOUT_REDIRECT_URL = "pokedex:index"
+# Back to the title screen, as a new visitor
+LOGOUT_REDIRECT_URL = "home"
 
 # Sessions last one year (default: two weeks). For a guest, the session cookie
 # IS the game: losing it means losing the save. An idle game is played over

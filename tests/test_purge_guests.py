@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from ranch.models import Player
 from ranch.services import ensure_player
+from tests.conftest import start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -67,7 +68,7 @@ def test_days_option_and_dry_run():
 
 
 def test_playing_keeps_a_guest_active(client):
-    client.get(reverse("ranch:index"))
+    start_game(client)
     player = Player.objects.get()
     Player.objects.filter(pk=player.pk).update(last_seen_at=timezone.now() - timedelta(days=200))
 

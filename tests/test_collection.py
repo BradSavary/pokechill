@@ -2,13 +2,12 @@
 
 import pytest
 from django.db import IntegrityError
-from django.urls import reverse
 
 from game import balance
 from pokedex.models import EvolutionChain, Species
 from ranch.models import CandyStock, OwnedPokemon, Player
 from ranch.services import receive_pokemon
-from tests.conftest import make_species
+from tests.conftest import make_species, start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -85,7 +84,7 @@ def test_a_new_player_owns_the_three_starters(client, bulbasaur, charmander, gra
         is_available=True, rarity="rare"
     )
 
-    client.get(reverse("ranch:index"))
+    start_game(client)
 
     owned = OwnedPokemon.objects.filter(player=Player.objects.get())
     assert sorted(owned.values_list("species__slug", flat=True)) == sorted(balance.STARTER_SPECIES)

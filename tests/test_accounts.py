@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from accounts.services import is_guest
 from ranch.models import Player
+from tests.conftest import start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -30,10 +31,10 @@ def logged_in_user(client):
 # --- Guest mode --------------------------------------------------------------
 
 
-def test_first_visit_to_the_ranch_creates_a_guest_with_a_save(client):
-    response = client.get(reverse("ranch:index"))
+def test_the_start_button_creates_a_guest_with_a_save(client):
+    response = client.post(reverse("start"))
 
-    assert response.status_code == 200
+    assert response["Location"] == reverse("ranch:index")
     user = logged_in_user(client)
     assert is_guest(user)
     assert user.username.startswith("guest-")
@@ -41,15 +42,16 @@ def test_first_visit_to_the_ranch_creates_a_guest_with_a_save(client):
 
 
 def test_the_guest_is_kept_across_visits(client):
+    start_game(client)
     client.get(reverse("ranch:index"))
-    client.get(reverse("ranch:index"))
+    client.post(reverse("start"))  # Start again (an old tab): the same save
     assert User.objects.count() == 1
 
 
 def test_a_new_save_starts_at_the_current_hour(client, monkeypatch):
     now = datetime(2026, 10, 26, 14, 37, tzinfo=UTC)
     monkeypatch.setattr("django.utils.timezone.now", lambda: now)
-    client.get(reverse("ranch:index"))
+    start_game(client)
     assert Player.objects.get().last_slot == datetime(2026, 10, 26, 14, tzinfo=UTC)
 
 
@@ -60,7 +62,7 @@ def test_browsing_the_pokedex_creates_no_account(client):
 
 
 def test_guests_are_invited_to_save_their_game(client):
-    html = client.get(reverse("ranch:index")).content.decode()
+    html = start_game(client).content.decode()
     assert "Save your game" in html
     assert "Log out" not in html  # logging out would lose the save
 
@@ -69,7 +71,7 @@ def test_guests_are_invited_to_save_their_game(client):
 
 
 def test_signing_up_converts_the_guest_and_keeps_the_save(client):
-    client.get(reverse("ranch:index"))
+    start_game(client)
     guest = logged_in_user(client)
     save = Player.objects.get(user=guest)
 
@@ -125,7 +127,7 @@ def test_log_in_and_log_out(client):
 
 
 def test_nobody_can_log_in_as_a_guest(client):
-    client.get(reverse("ranch:index"))
+    start_game(client)
     guest = logged_in_user(client)
     client.post(reverse("accounts:logout"))
 
@@ -136,7 +138,7 @@ def test_nobody_can_log_in_as_a_guest(client):
 
 
 def test_the_generated_guest_username_is_not_suggested(client):
-    client.get(reverse("ranch:index"))
+    start_game(client)
     guest = logged_in_user(client)
     html = client.get(reverse("accounts:sign_up")).content.decode()
     assert guest.username not in html

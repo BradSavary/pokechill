@@ -11,7 +11,7 @@ from ranch.models import OwnedPokemon, Player, ResourceStock
 from ranch.services import catch_up_player
 from ranch.templatetags.ranch_extras import resource_word
 from ranch.zones import move_pokemon
-from tests.conftest import make_species
+from tests.conftest import make_species, start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -19,7 +19,7 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def guest(client, bulbasaur, charmander):
     """A guest with two Pokémon: Bulbasaur (fits the Orchard) and Charmander."""
-    client.get(reverse("zones:index"))  # the first visit creates the guest...
+    start_game(client)  # the Start button creates the guest...
     player = Player.objects.get()
     # ...who gets the starters that exist in the test database: these two
     player.pokemon.update(level=10)

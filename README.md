@@ -53,7 +53,7 @@ Le jeu se construit en 8 étapes jouables, chacune déployée en ligne (concepti
 - **Des espèces pilotées par les données.** Chaque espèce disponible est un fichier JSON (rareté, niveau, arbre de conditions ET/OU, indice), validé strictement et rechargé à chaque déploiement : ajouter une espèce ne demande aucun code. Ses conditions s'affichent en anglais une fois l'espèce obtenue, écrites automatiquement à partir de l'arbre.
 - **Un moteur d'objectifs.** Les défis du Pokédex sont des objectifs alimentés par des événements de jeu (obtention, niveau, récolte...) ; les quêtes de l'étape 4 utiliseront le même moteur.
 - **Une économie réglée par simulation.** Les arbres de compétences sont des données, et le coût de leurs nœuds vient d'une formule à trois paramètres. Une commande (`simulate`) joue des semaines de jeu en quelques secondes avec les vraies règles, pour vérifier que la progression reste régulière.
-- **Mode invité.** On joue sans compte : un utilisateur sans mot de passe utilisable est créé à la première visite, puis converti sur place à l'inscription, ce qui conserve toute la partie.
+- **Mode invité.** On joue sans compte : un utilisateur sans mot de passe utilisable est créé par le bouton « Start » de l'écran titre, puis converti sur place à l'inscription, ce qui conserve toute la partie.
 - **Import des données en une fois.** Une commande Django (`import_pokeapi`) récupère espèces, types, attaques et listes d'attaques de Rouge Feu/Vert Feuille depuis [PokéAPI](https://pokeapi.co). Les réponses sont mises en cache sur disque, l'analyse est faite par des fonctions pures, et tout est écrit dans une seule transaction : un import qui échoue ne laisse jamais de données à moitié écrites. L'import est idempotent : le relancer met les lignes à jour au lieu de les dupliquer.
 - **Amélioration progressive avec HTMX.** Chaque fiche du Pokédex a sa propre URL et fonctionne sans JavaScript. Avec HTMX, un clic ne remplace que le panneau de la fiche, et la même vue renvoie soit un fragment, soit la page complète selon l'en-tête `HX-Request`.
 - **Vues attentives aux requêtes SQL.** Le nombre de requêtes d'une page ne dépend pas de la quantité de données, grâce à `select_related`, `prefetch_related` et des champs résumés sur le joueur ; des tests le plafonnent.
@@ -75,7 +75,7 @@ uv run python manage.py load_species                # rend disponibles les espè
 uv run python manage.py runserver
 ```
 
-Ouvrez ensuite <http://127.0.0.1:8000> : vous jouez en invité. Les sprites et les cris sont déjà dans le dépôt, d'où l'option `--no-media`.
+Ouvrez ensuite <http://127.0.0.1:8000> : l'écran titre s'affiche, et « Start » lance une partie en invité. Les sprites et les cris sont déjà dans le dépôt, d'où l'option `--no-media`.
 
 Commandes utiles :
 

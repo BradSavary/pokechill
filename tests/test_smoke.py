@@ -4,10 +4,11 @@ import pytest
 from django.urls import reverse
 
 
-def test_home_redirects_to_the_ranch(client):
+@pytest.mark.django_db
+def test_home_is_the_title_screen(client):
     response = client.get("/")
-    assert response.status_code == 302
-    assert response["Location"] == reverse("ranch:index")
+    assert response.status_code == 200
+    assert "PokéChill" in response.content.decode()
 
 
 @pytest.mark.django_db  # the Pokédex page reads the species table

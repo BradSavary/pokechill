@@ -11,6 +11,7 @@ from game.arrivals import catch_up
 from pokedex.models import Species
 from ranch.models import Arrival, Player
 from ranch.services import catch_up_player
+from tests.conftest import start_game
 
 pytestmark = pytest.mark.django_db
 
@@ -86,7 +87,7 @@ def test_the_database_refuses_two_arrivals_in_one_hour(player, always):
 def test_visiting_the_ranch_runs_the_catch_up(client, always, monkeypatch):
     now = START + timedelta(minutes=30)
     monkeypatch.setattr("django.utils.timezone.now", lambda: now)
-    client.get(reverse("ranch:index"))  # new guest: the clock starts at START
+    start_game(client)  # new guest: the clock starts at START
 
     now = START + timedelta(hours=2, minutes=5)  # two hours later
     html = client.get(reverse("ranch:index")).content.decode()

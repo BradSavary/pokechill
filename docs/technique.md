@@ -95,10 +95,13 @@ ranch/                   Partie du joueur
   context_processors.py  Valeurs communes à tous les templates (ouverture du laboratoire)
   internal_views.py      URL appelées par les Crons Vercel (purge des invités)
   tutorial.py            Étapes du tutoriel et cadeaux
-  decorators.py          @player_required (invité automatique + rattrapage)
+  decorators.py          @player_required (partie obligatoire + rattrapage)
+  title_views.py         Écran titre (/) et son bouton Start
+  news.py                Les nouveautés de l'écran titre (data/news.json)
   management/commands/   purge_guests, players, rewind_clock, reset_player, simulate
 data/species/            Un fichier JSON par espèce disponible (55 : #001 à #055)
 data/skill_tree.json     Les arbres de compétences et leurs 38 nœuds
+data/news.json           Les nouveautés affichées sur l'écran titre
 templates/               base.html, _menu_item.html, icons/ (SVG Tabler, MIT)
 assets/css/input.css     Source Tailwind (non servie)
 static/                  CSS compilé, HTMX, JS, polices, sprites, cris, icônes, bonbons, objets
@@ -261,7 +264,10 @@ Elles se combinent avec `all` (ET), `any` (OU) et `not`. Par exemple, Parasect :
 ## 7. Joueurs et comptes
 
 - **Un invité est un `User` sans mot de passe utilisable** (`set_unusable_password`). Il n'a besoin d'aucun champ ni modèle supplémentaire, et personne ne peut se connecter à sa place.
-- **`@player_required`** protège les pages de jeu. Il crée un invité à la première visite, crée sa partie avec les 3 starters, enregistre la visite, puis lance le rattrapage. Le Pokédex n'en a pas besoin : les robots d'indexation qui le parcourent ne créent donc aucun compte.
+- **L'écran titre** (`/`, [title_views.py](../ranch/title_views.py)) accueille tout visiteur sans compte inscrit : le nouveau venu y trouve « Start », l'invité « Continue » et une invitation à sauvegarder sa partie. Un joueur inscrit va directement à la Pension. Il affiche un badge « In development », une courte présentation et les trois dernières nouveautés ([data/news.json](../data/news.json), validé par un test). Seul ce qui est déjà dans le jeu y figure : les prochaines étapes ne sont pas annoncées.
+- **Seul le bouton « Start » crée un invité**, par un POST : il crée sa partie avec les 3 starters puis mène à la Pension. Un robot d'indexation ou l'aperçu d'un lien partagé ne crée donc plus aucun compte.
+- **`@player_required`** protège les pages de jeu. Sans partie, il renvoie vers l'écran titre (pour une requête HTMX, par l'en-tête `HX-Redirect`, pour que la page entière soit rechargée plutôt qu'insérée dans un coin). Sinon, il enregistre la visite et lance le rattrapage. Le Pokédex n'en a pas besoin : on le consulte sans partie.
+- **La déconnexion** ramène à l'écran titre.
 - **Créer un compte convertit l'invité** : le `UserCreationForm` de Django reçoit l'utilisateur existant (`instance=`), qui garde son identifiant et toute sa partie. `update_session_auth_hash` le garde connecté après le changement de mot de passe.
 - **La connexion et la déconnexion** utilisent les vues de Django. La déconnexion se fait uniquement en POST, et un invité n'a pas de bouton de déconnexion, qui lui ferait perdre sa partie.
 - **La purge des invités** supprime ceux qui sont inactifs depuis 180 jours (`GUEST_RETENTION_DAYS`), avec leur partie. Un compte inscrit n'est jamais supprimé. Elle se lance à la main (`purge_guests`, avec `--dry-run` pour compter seulement), et tourne **chaque jour à 4 h UTC en production**.

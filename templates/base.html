@@ -30,6 +30,8 @@
   <div class="flex min-h-0 flex-1 portrait-phone:hidden">
     {# Side menu, flush with the left edge, styled like the Sword/Shield main menu #}
     {# phone: smaller on a phone held in landscape (see the variant in input.css) #}
+    {# The nav block lets a page go without it (the title screen) #}
+    {% block nav %}
     <nav class="flex w-24 shrink-0 flex-col items-center gap-4 border-r-4 border-accent-dark bg-accent px-2 py-4 phone:w-16 phone:gap-2.5 phone:px-1 phone:py-2.5" aria-label="Main navigation">
       {% url "ranch:index" as ranch_url %}
       {% url "pokedex:index" as pokedex_url %}
@@ -65,6 +67,7 @@
         {% endif %}
       </div>
     </nav>
+    {% endblock %}
 
     {% comment %}
       Right column: the page, then the legal notice (the nav keeps the full
